@@ -1,0 +1,16 @@
+{
+	"name": "xwing_math",
+	"targetType": "executable",
+	"description": "X-Wing Math Simulator",
+	"copyright": "Copyright © 2016, Andrew Lauritzen",
+	"authors": ["Andrew Lauritzen"],
+	"dependencies": {
+		"vibe-d": "~>0.7.30",
+		"diet-ng": "~>1.1"
+	},	
+	"versions": ["VibeDisableCommandLineParsing", "VibeIdleCollect", "UseOpenSSL"],
+	
+	"targetType": "executable",
+	"mainSourceFile": "source/main.d",
+	"stringImportPaths": ["source/views/"]
+}

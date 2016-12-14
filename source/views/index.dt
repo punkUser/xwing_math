@@ -1,0 +1,8 @@
+extends layout
+
+block content    
+    .row
+        .large-12.columns
+            h1 X-Wing Math Simulator
+            p #{content}
+                

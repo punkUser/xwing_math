@@ -1,0 +1,10 @@
+extends layout
+
+block content    
+    .row
+        .large-12.columns
+            p #{error.message}
+            - auto extended_error = "";
+            - debug extended_error = error.debugMessage;
+            - if (extended_error.length > 0)
+                p #{extended_error}

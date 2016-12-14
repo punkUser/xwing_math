@@ -45,3 +45,12 @@ $RECYCLE.BIN/
 Network Trash Folder
 Temporary Items
 .apdisk
+
+
+
+.dub
+*.suo
+dub.selections.json
+*.dll
+xwing_math.exe
+xwing_math.sln
