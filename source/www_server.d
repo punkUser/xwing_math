@@ -1,3 +1,5 @@
+import simulation;
+
 import std.stdio;
 import std.uni;
 import std.stdint;
@@ -54,7 +56,43 @@ public class WWWServer
 
     private void index(HTTPServerRequest req, HTTPServerResponse res)
     {
-        string content = "Hello World!";
+        AttackSetup attack_setup;
+        DefenseSetup defense_setup;
+
+        attack_setup.dice = 4;
+        defense_setup.dice = 4;
+        defense_setup.evade_token_count = 0;
+
+        immutable kTrialCount = 1000000;
+
+        SimulationResult total_result;
+        SimulationResult[kMaxDice] total_hits_pdf;
+        foreach (i; 0 .. kTrialCount)
+        {
+            auto result = simulate_attack(attack_setup, defense_setup);
+            total_result = accumulate_result(total_result, result);
+
+            // Accumulate into the right bin of the total hits PDF
+            int total_hits = result.hits + result.crits;
+            total_hits_pdf[total_hits] = accumulate_result(total_hits_pdf[total_hits], result);
+        }
+
+        string[] content = [
+            format("E[Hits]: %s", cast(double)total_result.hits / total_result.trial_count),
+            format("E[Crits]: %s", cast(double)total_result.crits / total_result.trial_count),
+            format("E[Total]: %s", cast(double)(total_result.hits + total_result.crits) / total_result.trial_count)
+        ];
+
+        // Inverse CDF:
+        // total_hits_cdf[x] = pdf(i >= x)
+        SimulationResult[kMaxDice] total_hits_inv_cdf;
+        total_hits_inv_cdf[kMaxDice-1] = total_hits_pdf[kMaxDice-1];
+        for (int i = kMaxDice-2; i >= 0; --i)
+            total_hits_inv_cdf[i] = accumulate_result(total_hits_inv_cdf[i+1], total_hits_pdf[i]);
+
+        foreach (i; 1 .. attack_setup.dice + 1)
+            content ~= format("P(total_hits >= %s) = %s", i, cast(double)total_hits_inv_cdf[i].trial_count / kTrialCount);
+        
         res.render!("index.dt", content);
     }
 
