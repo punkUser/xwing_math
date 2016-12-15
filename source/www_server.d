@@ -54,19 +54,25 @@ public class WWWServer
 	    };
     }
 
+    private struct SimulationContent
+    {
+        double percent_of_trials_scale;
+        SimulationResult[] total_hit_pdf;
+    };
+
     private void index(HTTPServerRequest req, HTTPServerResponse res)
     {
         AttackSetup attack_setup;
         DefenseSetup defense_setup;
 
-        attack_setup.dice = 4;
-        defense_setup.dice = 4;
+        attack_setup.dice = 3;
+        defense_setup.dice = 3;
         defense_setup.evade_token_count = 0;
 
         immutable kTrialCount = 1000000;
 
         SimulationResult total_result;
-        SimulationResult[kMaxDice] total_hits_pdf;
+        SimulationResult[kMaxDice + 1] total_hits_pdf;
         foreach (i; 0 .. kTrialCount)
         {
             auto result = simulate_attack(attack_setup, defense_setup);
@@ -77,21 +83,34 @@ public class WWWServer
             total_hits_pdf[total_hits] = accumulate_result(total_hits_pdf[total_hits], result);
         }
 
+        /*
         string[] content = [
             format("E[Hits]: %s", cast(double)total_result.hits / total_result.trial_count),
             format("E[Crits]: %s", cast(double)total_result.crits / total_result.trial_count),
             format("E[Total]: %s", cast(double)(total_result.hits + total_result.crits) / total_result.trial_count)
         ];
+        */
 
         // Inverse CDF:
         // total_hits_cdf[x] = pdf(i >= x)
+        /*
         SimulationResult[kMaxDice] total_hits_inv_cdf;
         total_hits_inv_cdf[kMaxDice-1] = total_hits_pdf[kMaxDice-1];
         for (int i = kMaxDice-2; i >= 0; --i)
             total_hits_inv_cdf[i] = accumulate_result(total_hits_inv_cdf[i+1], total_hits_pdf[i]);
 
         foreach (i; 1 .. attack_setup.dice + 1)
-            content ~= format("P(total_hits >= %s) = %s", i, cast(double)total_hits_inv_cdf[i].trial_count / kTrialCount);
+        content ~= format("P(total_hits >= %s) = %s", i, cast(double)total_hits_inv_cdf[i].trial_count / kTrialCount);
+        */
+
+
+
+        // Setup page content        
+        SimulationContent content;
+        content.percent_of_trials_scale = 100.0 / cast(double)kTrialCount;
+        content.total_hit_pdf = total_hits_pdf[0 .. attack_setup.dice + 1];
+
+        
         
         res.render!("index.dt", content);
     }

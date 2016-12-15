@@ -4,7 +4,77 @@ block content
     .row
         .large-12.columns
             h1 X-Wing Math Simulator
-            p 
-                - foreach (line; content)
-                    p #{line}
-                
+
+            div(style="width: 75%")
+                canvas#pdf-canvas
+    
+    - import std.algorithm;
+    - string hit_pdf_js_string;
+    - string crit_pdf_js_string;
+    - foreach (p; content.total_hit_pdf)
+        - auto bar_height = p.trial_count * content.percent_of_trials_scale;
+        - auto percent_crits = p.crits / max(1.0, cast(double)(p.hits + p.crits));
+        - auto percent_hits  = 1.0 - percent_crits;
+        - hit_pdf_js_string  ~= to!string(bar_height * percent_hits ) ~ ", ";
+        - crit_pdf_js_string ~= to!string(bar_height * percent_crits) ~ ", ";
+
+    script.
+        window.chartColors = {
+            red: 'rgb(255, 99, 132)',
+            orange: 'rgb(255, 159, 64)',
+            yellow: 'rgb(255, 205, 86)',
+            green: 'rgb(75, 192, 192)',
+            blue: 'rgb(54, 162, 235)',
+            purple: 'rgb(153, 102, 255)',
+            grey: 'rgb(231,233,237)'
+        };
+        var chartData = {
+            labels: ["0", "1", "2", "3", "4", "5"],
+            datasets: [{
+                type: 'bar',
+                label: 'Hits',
+                backgroundColor: window.chartColors.red,
+                data: [#{hit_pdf_js_string}]
+            }, {
+                type: 'bar',
+                label: 'Crits',
+                backgroundColor: window.chartColors.orange,
+                data: [#{crit_pdf_js_string}]
+            }]
+        };
+
+        window.onload = function() {
+            var ctx = document.getElementById("pdf-canvas").getContext("2d");
+            window.myMixedChart = new Chart(ctx, {
+                type: 'bar',
+                data: chartData,
+                options: {
+                    responsive: true,
+                    title: {
+                        display: true,
+                        text: 'X-Wing'
+                    },
+                    tooltips: {
+                        mode: 'index',
+                        intersect: true
+                    },
+                    scales: {
+                        xAxes: [{
+                            stacked: true,
+                        }],
+                        yAxes: [{
+                            stacked: true
+                        }]
+                    }
+                }
+            });
+        };
+
+        document.getElementById('randomizeData').addEventListener('click', function() {
+            chartData.datasets.forEach(function(dataset) {
+                dataset.data = dataset.data.map(function() {
+                    return randomScalingFactor();
+                });
+            });
+            window.myMixedChart.update();
+        });
