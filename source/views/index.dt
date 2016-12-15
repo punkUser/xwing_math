@@ -64,8 +64,7 @@ block content
             });
         };
 
-        document.getElementById('simulate').addEventListener('click', function() {
-
+        $('#simulate').click(function() {
             $.getJSON('simulate.json', function(data) {
                 chart_data.datasets[0].data = data.hit_pdf;
                 chart_data.datasets[1].data = data.crit_pdf;
