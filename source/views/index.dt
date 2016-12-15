@@ -5,18 +5,12 @@ block content
         .large-12.columns
             h1 X-Wing Math Simulator
 
+            button#simulate.success.button(type="button") Simulate
+
             div(style="width: 75%")
                 canvas#pdf-canvas
     
-    - import std.algorithm;
-    - string hit_pdf_js_string;
-    - string crit_pdf_js_string;
-    - foreach (p; content.total_hit_pdf)
-        - auto bar_height = p.trial_count * content.percent_of_trials_scale;
-        - auto percent_crits = p.crits / max(1.0, cast(double)(p.hits + p.crits));
-        - auto percent_hits  = 1.0 - percent_crits;
-        - hit_pdf_js_string  ~= to!string(bar_height * percent_hits ) ~ ", ";
-        - crit_pdf_js_string ~= to!string(bar_height * percent_crits) ~ ", ";
+    
 
     script.
         window.chartColors = {
@@ -28,18 +22,18 @@ block content
             purple: 'rgb(153, 102, 255)',
             grey: 'rgb(231,233,237)'
         };
-        var chartData = {
+        var chart_data = {
             labels: ["0", "1", "2", "3", "4", "5"],
             datasets: [{
                 type: 'bar',
                 label: 'Hits',
                 backgroundColor: window.chartColors.red,
-                data: [#{hit_pdf_js_string}]
+                data: []
             }, {
                 type: 'bar',
                 label: 'Crits',
                 backgroundColor: window.chartColors.orange,
-                data: [#{crit_pdf_js_string}]
+                data: []
             }]
         };
 
@@ -47,7 +41,7 @@ block content
             var ctx = document.getElementById("pdf-canvas").getContext("2d");
             window.myMixedChart = new Chart(ctx, {
                 type: 'bar',
-                data: chartData,
+                data: chart_data,
                 options: {
                     responsive: true,
                     title: {
@@ -70,11 +64,16 @@ block content
             });
         };
 
-        document.getElementById('randomizeData').addEventListener('click', function() {
-            chartData.datasets.forEach(function(dataset) {
-                dataset.data = dataset.data.map(function() {
-                    return randomScalingFactor();
-                });
+        document.getElementById('simulate').addEventListener('click', function() {
+
+            $.ajax({
+                type        : 'GET',
+                url         : 'simulate.json',
+                dataType    : 'json',
+                encode      : true
+            }).done(function(data) {
+                chart_data.datasets[0].data = data.hit_pdf;
+                chart_data.datasets[1].data = data.crit_pdf;
+                window.myMixedChart.update();
             });
-            window.myMixedChart.update();
         });

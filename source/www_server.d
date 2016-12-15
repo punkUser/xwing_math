@@ -3,6 +3,7 @@ import simulation;
 import std.stdio;
 import std.uni;
 import std.stdint;
+import std.algorithm;
 
 import vibe.d;
 
@@ -19,6 +20,7 @@ public class WWWServer
 	    auto router = new URLRouter;
     
         router.get("/", &index);
+        router.get("/simulate.json", &simulate);
 	
         debug
         {
@@ -56,11 +58,11 @@ public class WWWServer
 
     private struct SimulationContent
     {
-        double percent_of_trials_scale;
-        SimulationResult[] total_hit_pdf;
+        float[] hit_pdf;
+        float[] crit_pdf;
     };
 
-    private void index(HTTPServerRequest req, HTTPServerResponse res)
+    private void simulate(HTTPServerRequest req, HTTPServerResponse res)
     {
         AttackSetup attack_setup;
         DefenseSetup defense_setup;
@@ -69,7 +71,7 @@ public class WWWServer
         defense_setup.dice = 3;
         defense_setup.evade_token_count = 0;
 
-        immutable kTrialCount = 1000000;
+        immutable kTrialCount = 100000;
 
         SimulationResult total_result;
         SimulationResult[kMaxDice + 1] total_hits_pdf;
@@ -83,36 +85,28 @@ public class WWWServer
             total_hits_pdf[total_hits] = accumulate_result(total_hits_pdf[total_hits], result);
         }
 
-        /*
-        string[] content = [
-            format("E[Hits]: %s", cast(double)total_result.hits / total_result.trial_count),
-            format("E[Crits]: %s", cast(double)total_result.crits / total_result.trial_count),
-            format("E[Total]: %s", cast(double)(total_result.hits + total_result.crits) / total_result.trial_count)
-        ];
-        */
-
-        // Inverse CDF:
-        // total_hits_cdf[x] = pdf(i >= x)
-        /*
-        SimulationResult[kMaxDice] total_hits_inv_cdf;
-        total_hits_inv_cdf[kMaxDice-1] = total_hits_pdf[kMaxDice-1];
-        for (int i = kMaxDice-2; i >= 0; --i)
-            total_hits_inv_cdf[i] = accumulate_result(total_hits_inv_cdf[i+1], total_hits_pdf[i]);
-
-        foreach (i; 1 .. attack_setup.dice + 1)
-        content ~= format("P(total_hits >= %s) = %s", i, cast(double)total_hits_inv_cdf[i].trial_count / kTrialCount);
-        */
-
-
-
-        // Setup page content        
+        // Setup page content
         SimulationContent content;
-        content.percent_of_trials_scale = 100.0 / cast(double)kTrialCount;
-        content.total_hit_pdf = total_hits_pdf[0 .. attack_setup.dice + 1];
+        content.hit_pdf  = new float[attack_setup.dice+1];
+        content.crit_pdf = new float[attack_setup.dice+1];
 
-        
-        
-        res.render!("index.dt", content);
+        float percent_of_trials_scale = 100.0f / cast(float)kTrialCount;
+        foreach (i; 0 .. attack_setup.dice+1)
+        {
+            auto bar_height = total_hits_pdf[i].trial_count * percent_of_trials_scale;
+            auto percent_crits = total_hits_pdf[i].crits / max(1.0f, cast(float)(total_hits_pdf[i].hits + total_hits_pdf[i].crits));
+            auto percent_hits  = 1.0f - percent_crits;
+            content.hit_pdf[i]  = bar_height * percent_hits ;
+            content.crit_pdf[i] = bar_height * percent_crits;
+        }
+
+        res.writeJsonBody(content);
+    }
+
+
+    private void index(HTTPServerRequest req, HTTPServerResponse res)
+    {
+        res.render!("index.dt");
     }
 
     // *************************************** ERROR ************************************************
