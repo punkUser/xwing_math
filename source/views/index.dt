@@ -66,12 +66,7 @@ block content
 
         document.getElementById('simulate').addEventListener('click', function() {
 
-            $.ajax({
-                type        : 'GET',
-                url         : 'simulate.json',
-                dataType    : 'json',
-                encode      : true
-            }).done(function(data) {
+            $.getJSON('simulate.json', function(data) {
                 chart_data.datasets[0].data = data.hit_pdf;
                 chart_data.datasets[1].data = data.crit_pdf;
                 window.myMixedChart.update();
