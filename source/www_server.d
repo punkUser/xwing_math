@@ -68,6 +68,7 @@ public class WWWServer
         DefenseSetup defense_setup;
 
         attack_setup.dice = 3;
+        attack_setup.juke = true;
         defense_setup.dice = 3;
         defense_setup.evade_token_count = 0;
 

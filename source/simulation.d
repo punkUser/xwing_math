@@ -35,6 +35,8 @@ struct AttackSetup
     int dice = 0;
     int focus_token_count = 0;
     int target_lock_count = 0;
+
+    bool juke = false; // Setting this to true implies evade token present as well for now
 };
 
 struct DefenseSetup
@@ -78,6 +80,8 @@ SimulationResult simulate_attack(AttackSetup attack_setup, DefenseSetup defense_
         d = kAttackDieResult[uniform(0, kDieSides)];
 
     // Modify Attack Dice
+    {
+    }
 
 
     // Roll Defense Dice
@@ -87,6 +91,21 @@ SimulationResult simulate_attack(AttackSetup attack_setup, DefenseSetup defense_
         d = kDefenseDieResult[uniform(0, kDieSides)];
 
     // Modify Defense Dice
+    {
+        // Attacker modify defense dice
+        if (attack_setup.juke)
+        {
+            // Find one evade and turn it to eye
+            foreach (ref d; defense_dice)
+            {
+                if (d == DieResult.Evade)
+                {
+                    d = DieResult.Focus;
+                    break;
+                }
+            }
+        }
+    }
 
 
     // Compare Results
