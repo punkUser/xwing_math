@@ -64,17 +64,20 @@ public class WWWServer
 
     private void simulate(HTTPServerRequest req, HTTPServerResponse res)
     {
+        //writeln(req.query);
+
         AttackSetup attack_setup;
         DefenseSetup defense_setup;
 
-        attack_setup.dice = 1;
-        attack_setup.target_lock_count = 0;
-        attack_setup.focus_token_count = 0;
-        attack_setup.juke = false;
+        attack_setup.dice              = to!int(req.query.get("attack_dice",              "3"));
+        attack_setup.focus_token_count = to!int(req.query.get("attack_focus_token_count", "0"));
+        attack_setup.target_lock_count = to!int(req.query.get("attack_target_lock_count", "0"));
+        
+        attack_setup.juke              = false;
 
-        defense_setup.dice = 1;
-        defense_setup.focus_token_count = 1;
-        defense_setup.evade_token_count = 0;
+        defense_setup.dice              = to!int(req.query.get("defense_dice",              "3"));
+        defense_setup.focus_token_count = to!int(req.query.get("defense_focus_token_count", "0"));
+        defense_setup.evade_token_count = to!int(req.query.get("defense_evade_token_count", "0"));
 
         immutable kTrialCount = 500000;
 

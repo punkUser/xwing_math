@@ -90,7 +90,7 @@ SimulationResult simulate_attack(AttackSetup initial_attack_setup, DefenseSetup 
     foreach (ref d; attack_dice)
         d = kAttackDieResult[uniform(0, kDieSides)];
 
-    // Track any that we re-roll... can only do this once total
+    // Track any that we re-roll... can only do this once per die
     bool[] attack_dice_rerolled = new bool[attack_setup.dice];
     foreach (ref d; attack_dice_rerolled)
         d = false;
@@ -197,8 +197,11 @@ SimulationResult simulate_attack(AttackSetup initial_attack_setup, DefenseSetup 
                 }
                 else
                 {
-                    spent_focus = defense_setup.focus_token_count > 0;
-                    uncanceled_hits -= defense_results[DieResult.Focus];
+                    if (defense_setup.focus_token_count > 0)
+                    {
+                        spent_focus = true;
+                        uncanceled_hits -= defense_results[DieResult.Focus];
+                    }
 
                     spent_evade_tokens = min(defense_setup.evade_token_count, uncanceled_hits);
                     uncanceled_hits -= spent_evade_tokens;
@@ -216,6 +219,8 @@ SimulationResult simulate_attack(AttackSetup initial_attack_setup, DefenseSetup 
                 foreach (i; 0 .. spent_evade_tokens)
                     defense_dice ~= DieResult.Evade;
                 defense_setup.evade_token_count -= spent_evade_tokens;
+
+                assert(uncanceled_hits == 0 || defense_setup.evade_token_count == 0);
             }
         }
     }

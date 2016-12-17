@@ -5,7 +5,33 @@ block content
         .large-12.columns
             h1 X-Wing Math Simulator
 
-            button#simulate.success.button(type="button") Simulate
+            form#simulate-form(action="simulate.json", method="GET")
+
+                - void slider_control(string name, string label, int min, int max, int init)
+                    .row
+                        .large-6.small-8.columns
+                            .input-group
+                                span.input-group-label #{label}
+                                input.input-group-field(id="#{name}_output", name="#{name}", type="number")
+                        .large-6.small-4.columns
+                            .slider(data-slider, data-initial-start="#{init}", data-start="#{min}", data-end="#{max}")
+                                span.slider-handle(data-slider-handle, role="slider", tabindex="1", aria-controls="#{name}_output")
+                                span(data-slider-fill)
+
+                .row
+                    .medium-6.columns
+                        .callout.alert
+                            - slider_control("attack_dice",               "Attack Dice",  1, 6, 3);
+                            - slider_control("attack_focus_token_count",  "Focus Tokens", 0, 2, 0);
+                            - slider_control("attack_target_lock_count",  "Target Locks", 0, 2, 0);
+
+                    .medium-6.columns
+                        .callout.success
+                            - slider_control("defense_dice",              "Defense Dice", 0, 6, 3);
+                            - slider_control("defense_focus_token_count", "Focus Tokens", 0, 2, 0);
+                            - slider_control("defense_evade_token_count", "Evade Tokens", 0, 2, 0);
+
+                button#simulate.button(type="submit") Simulate
 
             div
                 canvas#pdf-canvas
@@ -23,7 +49,7 @@ block content
             grey: 'rgb(231,233,237)'
         };
         var chart_data = {
-            labels: ["0", "1", "2", "3", "4", "5"],
+            labels: ["0", "1", "2", "3", "4", "5", "6"],
             datasets: [{
                 type: 'bar',
                 label: 'Hits',
@@ -46,7 +72,10 @@ block content
                     responsive: true,
                     title: {
                         display: true,
-                        text: 'X-Wing'
+                        text: 'Total Hit Probability Distribution'
+                    },
+                    legend: {
+                        onClick: (e) => e.stopPropagation()
                     },
                     tooltips: {
                         mode: 'index',
@@ -57,7 +86,7 @@ block content
                                 tooltipItems.forEach(function(tooltipItem) {
                                     sum += data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
                                 });
-                                return 'P(' + tooltipItems[0].xLabel + ' hits or crits) = ' + sum.toFixed(1) + '%';
+                                return sum.toFixed(1) + '%';
                             },
                             label: function(tooltipItem, data) {
                                 return '';
@@ -76,10 +105,14 @@ block content
             });
         };
 
-        $('#simulate').click(function() {
-            $.getJSON('simulate.json', function(data) {
-                chart_data.datasets[0].data = data.hit_pdf;
-                chart_data.datasets[1].data = data.crit_pdf;
-                window.myMixedChart.update();
+        $(document).ready(function() {
+            $('#simulate-form').submit(function(event) {
+                event.preventDefault();
+                
+                $.getJSON('simulate.json', $("#simulate-form").serialize(), function(data) {
+                    chart_data.datasets[0].data = data.hit_pdf;
+                    chart_data.datasets[1].data = data.crit_pdf;
+                    window.myMixedChart.update();
+                });
             });
         });
