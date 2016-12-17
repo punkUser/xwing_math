@@ -69,11 +69,13 @@ public class WWWServer
         AttackSetup attack_setup;
         DefenseSetup defense_setup;
 
-        attack_setup.dice              = to!int(req.query.get("attack_dice",              "3"));
-        attack_setup.focus_token_count = to!int(req.query.get("attack_focus_token_count", "0"));
-        attack_setup.target_lock_count = to!int(req.query.get("attack_target_lock_count", "0"));
+        attack_setup.dice               = to!int(req.query.get("attack_dice",              "3"));
+        attack_setup.focus_token_count  = to!int(req.query.get("attack_focus_token_count", "0"));
+        attack_setup.target_lock_count  = to!int(req.query.get("attack_target_lock_count", "0"));
         
-        attack_setup.juke              = false;
+        // Checkboxes will simply not be present in the parameters if unchecked
+        attack_setup.accuracy_corrector = req.query.get("attack_accuracy_corrector", "") == "on";
+        attack_setup.juke               = req.query.get("attack_juke", "")               == "on";
 
         defense_setup.dice              = to!int(req.query.get("defense_dice",              "3"));
         defense_setup.focus_token_count = to!int(req.query.get("defense_focus_token_count", "0"));
@@ -82,8 +84,11 @@ public class WWWServer
         immutable kTrialCount = 500000;
 
         SimulationResult total_result;
-        // TODO: Attack dice may not actually be a cap on total hits with some abilities... revisit
-        SimulationResult[] total_hits_pdf = new SimulationResult[attack_setup.dice+1];
+        
+        // TODO: Clean this up? Max hits is kind of unpredictable though TBH
+        immutable int max_hits = 10;
+
+        SimulationResult[] total_hits_pdf = new SimulationResult[max_hits];
         foreach (i; 0 .. kTrialCount)
         {
             auto result = simulate_attack(attack_setup, defense_setup);
@@ -96,11 +101,11 @@ public class WWWServer
 
         // Setup page content
         SimulationContent content;
-        content.hit_pdf  = new float[attack_setup.dice+1];
-        content.crit_pdf = new float[attack_setup.dice+1];
+        content.hit_pdf  = new float[max_hits];
+        content.crit_pdf = new float[max_hits];
 
         float percent_of_trials_scale = 100.0f / cast(float)kTrialCount;
-        foreach (i; 0 .. attack_setup.dice+1)
+        foreach (i; 0 .. max_hits)
         {
             auto bar_height = total_hits_pdf[i].trial_count * percent_of_trials_scale;
             auto percent_crits = total_hits_pdf[i].crits / max(1.0f, cast(float)(total_hits_pdf[i].hits + total_hits_pdf[i].crits));

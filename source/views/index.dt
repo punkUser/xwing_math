@@ -8,28 +8,38 @@ block content
             form#simulate-form(action="simulate.json", method="GET")
 
                 - void slider_control(string name, string label, int min, int max, int init)
-                    .row
-                        .large-6.small-8.columns
-                            .input-group
-                                span.input-group-label #{label}
-                                input.input-group-field(id="#{name}_output", name="#{name}", type="number")
-                        .large-6.small-4.columns
-                            .slider(data-slider, data-initial-start="#{init}", data-start="#{min}", data-end="#{max}")
-                                span.slider-handle(data-slider-handle, role="slider", tabindex="1", aria-controls="#{name}_output")
-                                span(data-slider-fill)
+                    .large-6.medium-9.small-8.columns
+                        .input-group
+                            span.input-group-label #{label}
+                            input.input-group-field(id="#{name}_output", name="#{name}", type="number")
+                    .large-6.medium-3.small-4.columns
+                        .slider(data-slider, data-initial-start="#{init}", data-start="#{min}", data-end="#{max}")
+                            span.slider-handle(data-slider-handle, role="slider", tabindex="1", aria-controls="#{name}_output")
+                            span(data-slider-fill)
+                - void switch_control(string name, string label)
+                    .large-6.medium-9.small-8.columns
+                        label #{label}
+                    .large-6.medium-3.small-4.columns
+                        .switch.small
+                            input.switch-input(id="#{name}", name="#{name}", type="checkbox")
+                            label.switch-paddle(for="#{name}")
 
                 .row
                     .medium-6.columns
                         .callout.alert
-                            - slider_control("attack_dice",               "Attack Dice",  1, 6, 3);
-                            - slider_control("attack_focus_token_count",  "Focus Tokens", 0, 2, 0);
-                            - slider_control("attack_target_lock_count",  "Target Locks", 0, 2, 0);
+                            .row
+                                - slider_control("attack_dice",                "Attack Dice",        1, 6, 3);
+                                - slider_control("attack_focus_token_count",   "Focus Tokens",       0, 2, 0);
+                                - slider_control("attack_target_lock_count",   "Target Locks",       0, 2, 0);
+                                - switch_control("attack_accuracy_corrector",  "Accuracy Corrector");
+                                - switch_control("attack_juke",                "Juke");
 
                     .medium-6.columns
                         .callout.success
-                            - slider_control("defense_dice",              "Defense Dice", 0, 6, 3);
-                            - slider_control("defense_focus_token_count", "Focus Tokens", 0, 2, 0);
-                            - slider_control("defense_evade_token_count", "Evade Tokens", 0, 2, 0);
+                            .row
+                                - slider_control("defense_dice",              "Defense Dice", 0, 6, 3);
+                                - slider_control("defense_focus_token_count", "Focus Tokens", 0, 2, 0);
+                                - slider_control("defense_evade_token_count", "Evade Tokens", 0, 2, 0);
 
                 button#simulate.button(type="submit") Simulate
 

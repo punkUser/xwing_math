@@ -56,6 +56,7 @@ struct SimulationResult
 
     int attack_target_locks_used = 0;
     int attack_focus_tokens_used = 0;
+
     int defense_focus_tokens_used = 0;
     int defense_evade_tokens_used = 0;
 };
@@ -77,9 +78,9 @@ SimulationResult accumulate_result(SimulationResult a, SimulationResult b)
 
 
 
+
 SimulationResult simulate_attack(AttackSetup initial_attack_setup, DefenseSetup initial_defense_setup)
 {
-
     auto attack_setup  = initial_attack_setup;
     auto defense_setup = initial_defense_setup;
 
@@ -143,6 +144,16 @@ SimulationResult simulate_attack(AttackSetup initial_attack_setup, DefenseSetup 
     int[DieResult.Num] attack_results;  // Init to 0 by default
     foreach (d; attack_dice)
         ++attack_results[d];
+
+    // Use accuracy corrector if we ended up with less than 2 hits/crits
+    if (attack_setup.accuracy_corrector &&
+        (attack_results[DieResult.Hit] + attack_results[DieResult.Crit] < 2))
+    {
+        attack_setup = initial_attack_setup;    // Undo any token spending
+        foreach (ref r; attack_results) r = 0;  // Cancel all results
+        attack_results[DieResult.Hit] = 2;      // Add two hits to the result
+        // No more modifaction
+    }
 
     // ----------------------------------------------------------------------------------------
 
