@@ -54,3 +54,4 @@ dub.selections.json
 *.dll
 xwing_math.exe
 xwing_math.sln
+xwing_math

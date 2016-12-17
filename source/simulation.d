@@ -106,7 +106,7 @@ SimulationResult simulate_attack(AttackSetup initial_attack_setup, DefenseSetup 
                 ++attack_results[d];
 
             int number_of_dice_rerolled = 0;
-            foreach (int i; 0 .. attack_dice.length)
+            foreach (i; 0 .. attack_dice.length)
             {
                 // If we don't have a focus token, also reroll focus results
                 if (!attack_dice_rerolled[i] &&
