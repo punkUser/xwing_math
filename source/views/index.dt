@@ -5,7 +5,7 @@ block content
         .large-12.columns
             h1 X-Wing Math Simulator
 
-            form#simulate-form(action="simulate.json", method="GET")
+            form#simulate-form(action="#", method="GET")
 
                 - void slider_control(string name, string label, int min, int max, int init)
                     .large-6.medium-9.small-8.columns
@@ -61,6 +61,14 @@ block content
         var chart_data = {
             labels: ["0", "1", "2", "3", "4", "5", "6"],
             datasets: [{
+                type: 'line',
+                label: 'Inv CDF',
+                borderColor: window.chartColors.blue,
+                backgroundColor: window.chartColors.blue,
+                borderWidth: 2,
+                fill: false,
+                data: []
+            }, {
                 type: 'bar',
                 label: 'Hits',
                 backgroundColor: window.chartColors.red,
@@ -69,7 +77,7 @@ block content
                 type: 'bar',
                 label: 'Crits',
                 backgroundColor: window.chartColors.orange,
-                data: []
+                data: [] 
             }]
         };
 
@@ -94,12 +102,13 @@ block content
                             title: function(tooltipItems, data) {
                                 var sum = 0;
                                 tooltipItems.forEach(function(tooltipItem) {
-                                    sum += data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
+                                    if (tooltipItem.datasetIndex > 0)
+                                        sum += data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
                                 });
                                 return sum.toFixed(1) + '%';
                             },
                             label: function(tooltipItem, data) {
-                                return '';
+                                return data.datasets[tooltipItem.datasetIndex].label + ': ' + tooltipItem.yLabel.toFixed(1) + '%';
                             },
                         },
                     },
@@ -108,6 +117,10 @@ block content
                             stacked: true,
                         }],
                         yAxes: [{
+                            ticks: {
+                                min: 0,
+                                max: 100,
+                            },
                             stacked: true
                         }]
                     }
@@ -120,8 +133,9 @@ block content
                 event.preventDefault();
                 
                 $.getJSON('simulate.json', $("#simulate-form").serialize(), function(data) {
-                    chart_data.datasets[0].data = data.hit_pdf;
-                    chart_data.datasets[1].data = data.crit_pdf;
+                    chart_data.datasets[0].data = data.hit_inv_cdf;
+                    chart_data.datasets[1].data = data.hit_pdf;
+                    chart_data.datasets[2].data = data.crit_pdf;
                     window.myMixedChart.update();
                 });
             });

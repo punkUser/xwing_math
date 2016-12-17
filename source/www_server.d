@@ -60,6 +60,7 @@ public class WWWServer
     {
         float[] hit_pdf;
         float[] crit_pdf;
+        float[] hit_inv_cdf;
     };
 
     private void simulate(HTTPServerRequest req, HTTPServerResponse res)
@@ -81,18 +82,14 @@ public class WWWServer
         defense_setup.focus_token_count = to!int(req.query.get("defense_focus_token_count", "0"));
         defense_setup.evade_token_count = to!int(req.query.get("defense_evade_token_count", "0"));
 
-        immutable kTrialCount = 500000;
-
-        SimulationResult total_result;
-        
         // TODO: Clean this up? Max hits is kind of unpredictable though TBH
+        immutable int k_trial_count = 500000;
         immutable int max_hits = 10;
 
         SimulationResult[] total_hits_pdf = new SimulationResult[max_hits];
-        foreach (i; 0 .. kTrialCount)
+        foreach (i; 0 .. k_trial_count)
         {
             auto result = simulate_attack(attack_setup, defense_setup);
-            total_result = accumulate_result(total_result, result);
 
             // Accumulate into the right bin of the total hits PDF
             int total_hits = result.hits + result.crits;
@@ -101,10 +98,12 @@ public class WWWServer
 
         // Setup page content
         SimulationContent content;
-        content.hit_pdf  = new float[max_hits];
-        content.crit_pdf = new float[max_hits];
+        content.hit_pdf     = new float[max_hits];
+        content.crit_pdf    = new float[max_hits];
+        content.hit_inv_cdf = new float[max_hits];
 
-        float percent_of_trials_scale = 100.0f / cast(float)kTrialCount;
+        // Compute PDF
+        float percent_of_trials_scale = 100.0f / cast(float)k_trial_count;
         foreach (i; 0 .. max_hits)
         {
             auto bar_height = total_hits_pdf[i].trial_count * percent_of_trials_scale;
@@ -112,6 +111,13 @@ public class WWWServer
             auto percent_hits  = 1.0f - percent_crits;
             content.hit_pdf[i]  = bar_height * percent_hits ;
             content.crit_pdf[i] = bar_height * percent_crits;
+        }
+
+        // Compute inverse CDF P(at least X hits)
+        content.hit_inv_cdf[max_hits-1] = content.hit_pdf[max_hits-1] + content.crit_pdf[max_hits-1];
+        for (int i = max_hits-2; i >= 0; --i)
+        {
+            content.hit_inv_cdf[i] = content.hit_inv_cdf[i+1] + content.hit_pdf[i] + content.crit_pdf[i];
         }
 
         res.writeJsonBody(content);
