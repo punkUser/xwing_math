@@ -7,7 +7,7 @@ block content
 
             button#simulate.success.button(type="button") Simulate
 
-            div(style="width: 75%")
+            div
                 canvas#pdf-canvas
     
     
@@ -50,7 +50,19 @@ block content
                     },
                     tooltips: {
                         mode: 'index',
-                        intersect: true
+                        intersect: true,
+                        callbacks: {
+                            title: function(tooltipItems, data) {
+                                var sum = 0;
+                                tooltipItems.forEach(function(tooltipItem) {
+                                    sum += data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
+                                });
+                                return 'P(' + tooltipItems[0].xLabel + ' hits or crits) = ' + sum.toFixed(1) + '%';
+                            },
+                            label: function(tooltipItem, data) {
+                                return '';
+                            },
+                        },
                     },
                     scales: {
                         xAxes: [{

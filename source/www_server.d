@@ -67,12 +67,15 @@ public class WWWServer
         AttackSetup attack_setup;
         DefenseSetup defense_setup;
 
-        attack_setup.dice = 3;
-        attack_setup.juke = true;
-        defense_setup.dice = 3;
+        attack_setup.dice = 1;
+        attack_setup.target_lock_count = 1;
+        attack_setup.focus_token_count = 1;
+        attack_setup.juke = false;
+
+        defense_setup.dice = 1;
         defense_setup.evade_token_count = 0;
 
-        immutable kTrialCount = 100000;
+        immutable kTrialCount = 500000;
 
         SimulationResult total_result;
         SimulationResult[kMaxDice + 1] total_hits_pdf;
