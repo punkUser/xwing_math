@@ -68,17 +68,19 @@ public class WWWServer
         DefenseSetup defense_setup;
 
         attack_setup.dice = 1;
-        attack_setup.target_lock_count = 1;
-        attack_setup.focus_token_count = 1;
+        attack_setup.target_lock_count = 0;
+        attack_setup.focus_token_count = 0;
         attack_setup.juke = false;
 
         defense_setup.dice = 1;
+        defense_setup.focus_token_count = 1;
         defense_setup.evade_token_count = 0;
 
         immutable kTrialCount = 500000;
 
         SimulationResult total_result;
-        SimulationResult[kMaxDice + 1] total_hits_pdf;
+        // TODO: Attack dice may not actually be a cap on total hits with some abilities... revisit
+        SimulationResult[] total_hits_pdf = new SimulationResult[attack_setup.dice+1];
         foreach (i; 0 .. kTrialCount)
         {
             auto result = simulate_attack(attack_setup, defense_setup);
