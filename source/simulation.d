@@ -188,19 +188,19 @@ SimulationResult simulate_attack(AttackSetup initial_attack_setup, DefenseSetup 
                 if (defense_setup.focus_token_count > 0 && defense_results[DieResult.Focus] >= uncanceled_hits)
                 {
                     spent_focus = true;
-                    uncanceled_hits -= defense_results[DieResult.Focus];
+                    uncanceled_hits = max(0, uncanceled_hits - defense_results[DieResult.Focus]);
                 }
                 else if (defense_setup.evade_token_count >= uncanceled_hits)
                 {
                     spent_evade_tokens = uncanceled_hits;
-                    uncanceled_hits -= spent_evade_tokens;
+                    uncanceled_hits = 0;
                 }
                 else
                 {
                     if (defense_setup.focus_token_count > 0)
                     {
                         spent_focus = true;
-                        uncanceled_hits -= defense_results[DieResult.Focus];
+                        uncanceled_hits = max(0, uncanceled_hits - defense_results[DieResult.Focus]);
                     }
 
                     spent_evade_tokens = min(defense_setup.evade_token_count, uncanceled_hits);
