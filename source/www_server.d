@@ -75,8 +75,17 @@ public class WWWServer
         attack_setup.target_lock_count  = to!int(req.query.get("attack_target_lock_count", "0"));
         
         // Checkboxes will simply not be present in the parameters if unchecked
-        attack_setup.accuracy_corrector = req.query.get("attack_accuracy_corrector", "") == "on";
-        attack_setup.juke               = req.query.get("attack_juke", "")               == "on";
+        attack_setup.accuracy_corrector  = req.query.get("attack_accuracy_corrector", "")   == "on";
+        attack_setup.juke                = req.query.get("attack_juke", "")                 == "on";
+        attack_setup.fire_control_system = req.query.get("attack_fire_control_system", "")  == "on";
+
+        // Bit awkward but good enough for now...
+        string attack_type = req.query.get("attack_type", "single");
+        if      (attack_type == "single")                     attack_setup.type = MultiAttackType.Single;
+        else if (attack_type == "secondary_perform_twice")    attack_setup.type = MultiAttackType.SecondaryPerformTwice;
+        else if (attack_type == "after_attack_does_not_hit")  attack_setup.type = MultiAttackType.AfterAttackDoesNotHit;
+        else if (attack_type == "after_attack")               attack_setup.type = MultiAttackType.AfterAttack;
+        else assert(false);
 
         defense_setup.dice              = to!int(req.query.get("defense_dice",              "3"));
         defense_setup.focus_token_count = to!int(req.query.get("defense_focus_token_count", "0"));

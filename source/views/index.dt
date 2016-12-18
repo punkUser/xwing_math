@@ -41,7 +41,27 @@ block content
                                 - slider_control("defense_focus_token_count", "Focus Tokens", 0, 2, 0);
                                 - slider_control("defense_evade_token_count", "Evade Tokens", 0, 2, 0);
 
-                button#simulate.button(type="submit") Simulate
+                .row
+                    .large-12.columns
+                        ul#multi_attack_tabs.tabs(data-tabs)
+                            li.tabs-title.is-active <a href="#single_attack" aria-selected="true">Single Attack</a>
+                            li.tabs-title           <a href="#secondary_perform_twice" aria-selected="true">Secondary Perfom Twice</a>
+                            li.tabs-title           <a href="#after_attack_does_not_hit" aria-selected="true">After Attack Does Not Hit</a>
+                            li.tabs-title           <a href="#after_attack" aria-selected="true">After Attack</a>
+                        div.tabs-content(data-tabs-content="multi_attack_tabs")
+                            div#single_attack.tabs-panel.is-active
+                                button#simulate_single_attack.button Simulate
+                            div#secondary_perform_twice.tabs-panel
+                                p Examples: Twin Laser Turret, Cluster Missiles
+                                button#simulate_secondary_perform_twice.button Simulate
+                            div#after_attack_does_not_hit.tabs-panel
+                                p Examples: Gunner, Luke Skywalker (Crew), IG88-B
+                                button#simulate_after_attack_does_not_hit.button Simulate
+                            div#after_attack.tabs-panel
+                                p Examples: Corran Horn
+                                button#simulate_after_attack.button Simulate
+
+                
 
             div
                 canvas#pdf-canvas
@@ -128,15 +148,37 @@ block content
             });
         };
 
+        function simulateUpdateChart(data) {
+            chart_data.datasets[0].data = data.hit_inv_cdf;
+            chart_data.datasets[1].data = data.hit_pdf;
+            chart_data.datasets[2].data = data.crit_pdf;
+            window.myMixedChart.update();
+        }
+
+        function ajaxSimulate(attackType) {
+            var data = $("#simulate-form").serializeArray();
+            data.push({ name: "attack_type", value: attackType });
+            $.getJSON('simulate.json', data, simulateUpdateChart);
+        }
+
         $(document).ready(function() {
-            $('#simulate-form').submit(function(event) {
+            $('#simulate_single_attack').click(function(event) {
                 event.preventDefault();
-                
-                $.getJSON('simulate.json', $("#simulate-form").serialize(), function(data) {
-                    chart_data.datasets[0].data = data.hit_inv_cdf;
-                    chart_data.datasets[1].data = data.hit_pdf;
-                    chart_data.datasets[2].data = data.crit_pdf;
-                    window.myMixedChart.update();
-                });
+                ajaxSimulate('single');
+            });
+
+            $('#simulate_secondary_perform_twice').click(function(event) {
+                event.preventDefault();
+                ajaxSimulate('secondary_perform_twice');
+            });
+
+            $('#simulate_after_attack_does_not_hit').click(function(event) {
+                event.preventDefault();
+                ajaxSimulate('after_attack_does_not_hit');
+            });
+
+            $('#simulate_after_attack').click(function(event) {
+                event.preventDefault();
+                ajaxSimulate('after_attack');
             });
         });
