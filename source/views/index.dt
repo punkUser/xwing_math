@@ -33,6 +33,7 @@ block content
                                 - slider_control("attack_target_lock_count",   "Target Locks",       0, 2, 0);
                                 - switch_control("attack_accuracy_corrector",  "Accuracy Corrector");
                                 - switch_control("attack_juke",                "Juke");
+                                - switch_control("attack_fire_control_system", "Fire Control System");
 
                     .medium-6.columns
                         .callout.success

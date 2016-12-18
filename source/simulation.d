@@ -38,14 +38,15 @@ enum MultiAttackType : int
 
 struct AttackSetup
 {
+    MultiAttackType type = MultiAttackType.Single;
+
     int dice = 0;
     int focus_token_count = 0;
     int target_lock_count = 0;
 
     bool juke = false;                  // Setting this to true implies evade token present as well
     bool accuracy_corrector = false;
-
-    MultiAttackType type = MultiAttackType.Single;
+    
     // Upgrades that only affect multi-attack situations
     bool fire_control_system = false;
 };
@@ -56,14 +57,6 @@ struct DefenseSetup
     int focus_token_count = 0;
     int evade_token_count = 0;
 };
-
-
-
-struct MultiAttackSetup
-{
-    
-};
-
 
 struct SimulationResult
 {

@@ -96,9 +96,11 @@ public class WWWServer
         immutable int max_hits = 10;
 
         SimulationResult[] total_hits_pdf = new SimulationResult[max_hits];
+        SimulationResult total_sum;
         foreach (i; 0 .. k_trial_count)
         {
             auto result = simulate_attack(attack_setup, defense_setup);
+            total_sum = accumulate_result(total_sum, result);
 
             // Accumulate into the right bin of the total hits PDF
             int total_hits = result.hits + result.crits;
@@ -128,6 +130,9 @@ public class WWWServer
         {
             content.hit_inv_cdf[i] = content.hit_inv_cdf[i+1] + content.hit_pdf[i] + content.crit_pdf[i];
         }
+
+        // TODO: Expected values in content somewhere
+        writefln("E[hits+crits] = %s", (total_sum.hits + total_sum.crits) / cast(float)k_trial_count);
 
         res.writeJsonBody(content);
     }
