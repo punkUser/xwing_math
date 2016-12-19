@@ -42,6 +42,7 @@ block content
                                 - slider_control("defense_dice",              "Defense Dice", 0, 6, 3);
                                 - slider_control("defense_focus_token_count", "Focus Tokens", 0, 2, 0);
                                 - slider_control("defense_evade_token_count", "Evade Tokens", 0, 2, 0);
+                                - switch_control("defense_autothrusters",     "Autothrusters");
 
                 .row
                     .large-12.columns

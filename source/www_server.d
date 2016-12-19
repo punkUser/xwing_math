@@ -93,6 +93,10 @@ public class WWWServer
         defense_setup.focus_token_count = to!int(req.query.get("defense_focus_token_count", "0"));
         defense_setup.evade_token_count = to!int(req.query.get("defense_evade_token_count", "0"));
 
+        defense_setup.autothrusters     = req.query.get("defense_autothrusters", "")        == "on";
+
+
+
         // TODO: Clean this up? Max hits is kind of unpredictable though TBH
         immutable int k_trial_count = 500000;
         immutable int max_hits = 20;

@@ -57,6 +57,8 @@ struct DefenseSetup
     int dice = 0;
     int focus_token_count = 0;
     int evade_token_count = 0;
+
+    bool autothrusters = false;
 };
 
 struct SimulationResult
@@ -194,75 +196,97 @@ private SimulationResult simulate_single_attack(AttackSetup initial_attack_setup
             }
         }
 
-        int[DieResult.Num] defense_results;
-        foreach (d; defense_dice)
-            ++defense_results[d];
-        int uncanceled_hits = attack_results[DieResult.Hit] + attack_results[DieResult.Crit] - defense_results[DieResult.Evade];
-
-        bool can_spend_focus = defense_setup.focus_token_count > 0 && defense_results[DieResult.Focus] > 0;
 
         // Defender modify defense dice
-        // Spend regular focus or evade tokens?
-        if (uncanceled_hits > 0 && (can_spend_focus || defense_setup.evade_token_count > 0))
+        if (defense_setup.autothrusters)
         {
-            // For now simple logic:
-            // Cancel all hits with just a focus? Do it.
-            // Cancel all hits with just evade tokens? Do that.
-            // If attacker has juke, flip this order - it's usually better to hang on to focus tokens vs. juke
-            //   NOTE: Optimal strategy here depends on quite a lot of factors, but this is good enough in most cases
-            //   One improvement to the logic would be to only invoke this behavior if # remaining attacks > # focus tokens
-            // Otherwise both.
-
-            bool can_cancel_all_with_focus = can_spend_focus && defense_results[DieResult.Focus] >= uncanceled_hits;
-            bool can_cancel_all_with_evade = defense_setup.evade_token_count >= uncanceled_hits;
-
-            bool spent_focus = false;
-            int spent_evade_tokens = 0;
-                                
-            // Do we need to spend both to cancel all hits?
-            if (!can_cancel_all_with_focus && !can_cancel_all_with_evade)
+            // Find one blank and turn it to an evade
+            foreach (ref d; defense_dice)
             {
-                int uncancelled_hits_after_focus = uncanceled_hits;
-                if (can_spend_focus)
+                if (d == DieResult.Blank)
                 {
-                    spent_focus = can_spend_focus;
-                    uncancelled_hits_after_focus = max(0, uncanceled_hits - defense_results[DieResult.Focus]);
+                    d = DieResult.Evade;
+                    break;
                 }
-                spent_evade_tokens = min(defense_setup.evade_token_count, uncancelled_hits_after_focus);
             }
-            else if (!attack_setup.juke)        // No juke - hold onto evade primarily
-            {
-                if (can_cancel_all_with_focus)
-                    spent_focus = true;
-                else
-                    spent_evade_tokens = uncanceled_hits;
-            }
-            else                                // Juke - hold on to focus primarily
-            {
-                if (can_cancel_all_with_evade)
-                    spent_evade_tokens = uncanceled_hits;
-                else
-                    spent_focus = true;
-            }
+        }
 
-            if (spent_focus)
+        // Spend regular focus or evade tokens?
+        if (defense_setup.focus_token_count > 0 || defense_setup.evade_token_count > 0)
+        {
+            int[DieResult.Num] defense_results;
+            foreach (d; defense_dice)
+                ++defense_results[d];
+            int uncanceled_hits = attack_results[DieResult.Hit] + attack_results[DieResult.Crit] - defense_results[DieResult.Evade];
+
+            bool can_spend_focus = defense_setup.focus_token_count > 0 && defense_results[DieResult.Focus] > 0;
+        
+            if (uncanceled_hits > 0 && (can_spend_focus || defense_setup.evade_token_count > 0))
             {
-                foreach (ref d; defense_dice)
-                    if (d == DieResult.Focus)
-                        d = DieResult.Evade;
-                --defense_setup.focus_token_count;
-                uncanceled_hits -= defense_results[DieResult.Focus];
+                // For now simple logic:
+                // Cancel all hits with just a focus? Do it.
+                // Cancel all hits with just evade tokens? Do that.
+                // If attacker has juke, flip this order - it's usually better to hang on to focus tokens vs. juke
+                //   NOTE: Optimal strategy here depends on quite a lot of factors, but this is good enough in most cases
+                //   One improvement to the logic would be to only invoke this behavior if # remaining attacks > # focus tokens
+                // Otherwise both.
+
+                // TODO: Probably makes sense to always prefer spending fewer tokens. i.e. if we can spend one focus vs. two evades
+                // even in the presence of Juke, etc. Certainly should make sense for smallish dice counts. TEST.
+                // Obviously optimal would consider all the effects and how many attacks and what tokens each person has, but 
+                // we should be able to get close enough for our purposes.
+
+                bool can_cancel_all_with_focus = can_spend_focus && defense_results[DieResult.Focus] >= uncanceled_hits;
+                bool can_cancel_all_with_evade = defense_setup.evade_token_count >= uncanceled_hits;
+
+                bool spent_focus = false;
+                int spent_evade_tokens = 0;
+                                
+                // Do we need to spend both to cancel all hits?
+                if (!can_cancel_all_with_focus && !can_cancel_all_with_evade)
+                {
+                    int uncancelled_hits_after_focus = uncanceled_hits;
+                    if (can_spend_focus)
+                    {
+                        spent_focus = can_spend_focus;
+                        uncancelled_hits_after_focus = max(0, uncanceled_hits - defense_results[DieResult.Focus]);
+                    }
+                    spent_evade_tokens = min(defense_setup.evade_token_count, uncancelled_hits_after_focus);
+                }
+                else if (!attack_setup.juke)        // No juke - hold onto evade primarily
+                {
+                    if (can_cancel_all_with_focus)
+                        spent_focus = true;
+                    else
+                        spent_evade_tokens = uncanceled_hits;
+                }
+                else                                // Juke - hold on to focus primarily
+                {
+                    if (can_cancel_all_with_evade)
+                        spent_evade_tokens = uncanceled_hits;
+                    else
+                        spent_focus = true;
+                }
+
+                if (spent_focus)
+                {
+                    foreach (ref d; defense_dice)
+                        if (d == DieResult.Focus)
+                            d = DieResult.Evade;
+                    --defense_setup.focus_token_count;
+                    uncanceled_hits -= defense_results[DieResult.Focus];
+                }
+
+                // Evade tokens add defense dice to the pool
+                foreach (i; 0 .. spent_evade_tokens)
+                    defense_dice ~= DieResult.Evade;
+                defense_setup.evade_token_count -= spent_evade_tokens;
+                uncanceled_hits -= spent_evade_tokens;
+
+                assert(defense_setup.evade_token_count >= 0);
+                assert(defense_setup.focus_token_count >= 0);
+                assert(uncanceled_hits <= 0 || defense_setup.evade_token_count == 0);
             }
-
-            // Evade tokens add defense dice to the pool
-            foreach (i; 0 .. spent_evade_tokens)
-                defense_dice ~= DieResult.Evade;
-            defense_setup.evade_token_count -= spent_evade_tokens;
-            uncanceled_hits -= spent_evade_tokens;
-
-            assert(defense_setup.evade_token_count >= 0);
-            assert(defense_setup.focus_token_count >= 0);
-            assert(uncanceled_hits <= 0 || defense_setup.evade_token_count == 0);
         }
     }
 
