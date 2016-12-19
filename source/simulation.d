@@ -46,6 +46,7 @@ struct AttackSetup
 
     bool juke = false;                  // Setting this to true implies evade token present as well
     bool accuracy_corrector = false;
+    bool one_damage_on_hit = false;     // If attack hits, 1 damage (TLT, Ion, etc)
     
     // Upgrades that only affect multi-attack situations
     bool fire_control_system = false;
@@ -269,6 +270,15 @@ private SimulationResult simulate_single_attack(AttackSetup initial_attack_setup
         int canceled_crits = min(attack_results[DieResult.Crit], defense_results[DieResult.Evade]);
         attack_results[DieResult.Crit]   -= canceled_crits;
         defense_results[DieResult.Evade] -= canceled_crits;
+    }
+
+    bool attack_hit = (attack_results[DieResult.Hit] + attack_results[DieResult.Crit]) > 0;
+
+    // TLT/ion does one damage if it hits, regardless of the dice results
+    if (attack_setup.one_damage_on_hit && attack_hit)
+    {
+        attack_results[DieResult.Hit] = 1;
+        attack_results[DieResult.Crit] = 0;
     }
 
     // Compute final results of this simulation step

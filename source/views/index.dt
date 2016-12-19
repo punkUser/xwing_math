@@ -34,6 +34,7 @@ block content
                                 - switch_control("attack_accuracy_corrector",  "Accuracy Corrector");
                                 - switch_control("attack_juke",                "Juke");
                                 - switch_control("attack_fire_control_system", "Fire Control System");
+                                - switch_control("attack_one_damage_on_hit",   "One Damage on Hit (TLT, Ion)");
 
                     .medium-6.columns
                         .callout.success
@@ -83,7 +84,7 @@ block content
             labels: ["0", "1", "2", "3", "4", "5", "6"],
             datasets: [{
                 type: 'line',
-                label: 'Inv CDF',
+                label: 'P(Hits>=x)',
                 borderColor: window.chartColors.blue,
                 backgroundColor: window.chartColors.blue,
                 borderWidth: 2,
@@ -104,14 +105,15 @@ block content
 
         window.onload = function() {
             var ctx = document.getElementById("pdf-canvas").getContext("2d");
-            window.myMixedChart = new Chart(ctx, {
+            window.pdf_chart = new Chart(ctx, {
                 type: 'bar',
                 data: chart_data,
                 options: {
                     responsive: true,
                     title: {
                         display: true,
-                        text: 'Total Hit Probability Distribution'
+                        text: 'Total Hit Probability Distribution',
+                        fontSize: 24,
                     },
                     legend: {
                         onClick: (e) => e.stopPropagation()
@@ -153,7 +155,8 @@ block content
             chart_data.datasets[0].data = data.hit_inv_cdf;
             chart_data.datasets[1].data = data.hit_pdf;
             chart_data.datasets[2].data = data.crit_pdf;
-            window.myMixedChart.update();
+            window.pdf_chart.options.title.text = "Expected Total Hits: " + data.expected_total_hits.toFixed(2);
+            window.pdf_chart.update();
         }
 
         function ajaxSimulate(attackType) {

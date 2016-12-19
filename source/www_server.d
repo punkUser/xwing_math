@@ -58,6 +58,7 @@ public class WWWServer
 
     private struct SimulationContent
     {
+        float expected_total_hits;
         float[] hit_pdf;
         float[] crit_pdf;
         float[] hit_inv_cdf;
@@ -78,6 +79,7 @@ public class WWWServer
         attack_setup.accuracy_corrector  = req.query.get("attack_accuracy_corrector", "")   == "on";
         attack_setup.juke                = req.query.get("attack_juke", "")                 == "on";
         attack_setup.fire_control_system = req.query.get("attack_fire_control_system", "")  == "on";
+        attack_setup.one_damage_on_hit   = req.query.get("attack_one_damage_on_hit", "")    == "on";
 
         // Bit awkward but good enough for now...
         string attack_type = req.query.get("attack_type", "single");
@@ -113,6 +115,9 @@ public class WWWServer
         content.crit_pdf    = new float[max_hits];
         content.hit_inv_cdf = new float[max_hits];
 
+        // Expected values
+        content.expected_total_hits = (total_sum.hits + total_sum.crits) / cast(float)k_trial_count;
+
         // Compute PDF
         float percent_of_trials_scale = 100.0f / cast(float)k_trial_count;
         foreach (i; 0 .. max_hits)
@@ -130,9 +135,6 @@ public class WWWServer
         {
             content.hit_inv_cdf[i] = content.hit_inv_cdf[i+1] + content.hit_pdf[i] + content.crit_pdf[i];
         }
-
-        // TODO: Expected values in content somewhere
-        writefln("E[hits+crits] = %s", (total_sum.hits + total_sum.crits) / cast(float)k_trial_count);
 
         res.writeJsonBody(content);
     }
