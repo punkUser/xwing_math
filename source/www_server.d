@@ -13,7 +13,7 @@ public class WWWServer
     {
         auto settings = new HTTPServerSettings;
         settings.errorPageHandler = toDelegate(&error_page);
-        settings.port = 80;
+        settings.port = 8080;
         //settings.sessionStore = new MemorySessionStore();
         //settings.accessLogFile = m_config.http_server_log_file;
 
@@ -95,7 +95,7 @@ public class WWWServer
 
         // TODO: Clean this up? Max hits is kind of unpredictable though TBH
         immutable int k_trial_count = 500000;
-        immutable int max_hits = 10;
+        immutable int max_hits = 20;
 
         SimulationResult[] total_hits_pdf = new SimulationResult[max_hits];
         SimulationResult total_sum;
