@@ -28,6 +28,71 @@ immutable DieResult[k_die_sides] k_defense_die_result = [
     DieResult.Evade, DieResult.Evade, DieResult.Evade
 ];
 
+struct AttackDie
+{
+    DieResult result = DieResult.Num;
+    int roll_count = 0;
+
+    void roll()
+    {
+        assert(can_reroll());
+        result = k_attack_die_result[uniform(0, k_die_sides)];
+        ++roll_count;
+    }
+    bool can_reroll() const { return roll_count < 2; }
+
+    void focus_to_hit()
+    {
+        if (result == DieResult.Focus)
+            result = DieResult.Hit;
+    }
+
+    // Convenience
+    @property bool blank() const { return result == DieResult.Blank; }
+    @property bool focus() const { return result == DieResult.Focus; }
+};
+
+struct DefenseDie
+{
+    DieResult result = DieResult.Num;
+    int roll_count = 0;
+
+    this(DieResult r)
+    {
+        result = r;
+        roll_count = 1;
+    }
+
+    void roll()
+    {
+        assert(can_reroll());
+        result = k_defense_die_result[uniform(0, k_die_sides)];
+        ++roll_count;
+    }
+    bool can_reroll() const { return roll_count < 2; }
+
+    void focus_to_evade()
+    {
+        if (result == DieResult.Focus)
+            result = DieResult.Evade;
+    }
+
+    // Convenience
+    @property bool blank() const { return result == DieResult.Blank; }
+    @property bool focus() const { return result == DieResult.Focus; }
+    @property bool evade() const { return result == DieResult.Evade; }
+};
+
+int[DieResult.Num] count_results(T)(const(T)[] dice)
+{
+    int[DieResult.Num] results;
+    foreach (d; dice)
+        ++results[d.result];
+    return results;
+}
+
+
+
 enum MultiAttackType : int
 {
     Single = 0,                   // Regular single attack
@@ -93,74 +158,60 @@ SimulationResult accumulate_result(SimulationResult a, SimulationResult b, bool 
     return a;
 }
 
-
-
-
-private SimulationResult simulate_single_attack(AttackSetup initial_attack_setup, DefenseSetup initial_defense_setup)
+void attacker_modify_attack_dice(ref AttackDie[] attack_dice,
+                                 ref AttackSetup attack_setup)
 {
-    auto attack_setup  = initial_attack_setup;
-    auto defense_setup = initial_defense_setup;
+    // First do any effects that are always obviously good... focus/blank->hit/crit or so on
 
-    // TODO: A lot of this could be optimized, but see how usable it is for now while keeping it readable
 
-    // Roll Attack Dice
-    DieResult[] attack_dice = new DieResult[attack_setup.dice];
-    foreach (ref d; attack_dice)
-        d = k_attack_die_result[uniform(0, k_die_sides)];
-
-    // Track any that we re-roll... can only do this once per die
-    bool[] attack_dice_rerolled = new bool[attack_setup.dice];
-    foreach (ref d; attack_dice_rerolled)
-        d = false;
-
-    // Modify Attack Dice
+    // Spend target lock?
+    if (attack_setup.target_lock_count > 0)
     {
-        // Spend target lock?
-        if (attack_setup.target_lock_count > 0)
+        auto attack_results = count_results(attack_dice);
+
+        int number_of_dice_rerolled = 0;
+        foreach (ref d; attack_dice)
         {
-            int[DieResult.Num] attack_results;
-            foreach (d; attack_dice)
-                ++attack_results[d];
-
-            int number_of_dice_rerolled = 0;
-            foreach (i; 0 .. attack_dice.length)
+            // If we don't have a focus token, also reroll focus results
+            if (d.can_reroll() &&
+                (d.blank || (d.focus && attack_setup.focus_token_count == 0)))
             {
-                // If we don't have a focus token, also reroll focus results
-                if (!attack_dice_rerolled[i] &&
-                    (attack_dice[i] == DieResult.Blank ||
-                    (attack_setup.focus_token_count == 0 && attack_dice[i] == DieResult.Focus)))
-                {
-                    attack_dice_rerolled[i] = true;
-                    ++number_of_dice_rerolled;
-                    attack_dice[i] = k_attack_die_result[uniform(0, k_die_sides)];
-                }
-            }
-
-            if (number_of_dice_rerolled > 0)
-                --attack_setup.target_lock_count;
-        }
-
-        // Spend regular focus?
-        if (attack_setup.focus_token_count > 0)
-        {
-            int[DieResult.Num] attack_results;
-            foreach (d; attack_dice)
-                ++attack_results[d];
-
-            if (attack_results[DieResult.Focus] > 0)
-            {
-                foreach (ref d; attack_dice)
-                    if (d == DieResult.Focus)
-                        d = DieResult.Hit;
-                --attack_setup.focus_token_count;
+                d.roll();
+                ++number_of_dice_rerolled;
             }
         }
+
+        if (number_of_dice_rerolled > 0)
+            --attack_setup.target_lock_count;
     }
 
-    // Done modifying attack dice - compute final attack results
-    int[DieResult.Num] attack_results;  // Init to 0 by default
-    foreach (d; attack_dice)
-        ++attack_results[d];
+    // Spend regular focus?
+    if (attack_setup.focus_token_count > 0)
+    {
+        auto attack_results = count_results(attack_dice);
+
+        if (attack_results[DieResult.Focus] > 0)
+        {
+            foreach (ref d; attack_dice)
+                d.focus_to_hit();
+            --attack_setup.focus_token_count;
+        }
+    }
+}
+
+int[DieResult.Num] roll_and_modify_attack_dice(ref AttackSetup attack_setup)
+{
+    AttackSetup initial_attack_setup = attack_setup;
+
+    // Roll Attack Dice
+    auto attack_dice = new AttackDie[attack_setup.dice];
+    foreach (ref d; attack_dice)
+        d.roll();
+
+    attacker_modify_attack_dice(attack_dice, attack_setup);
+
+    // Done modifying attack dice - compute attack results
+    auto attack_results = count_results(attack_dice);
 
     // Use accuracy corrector if we ended up with less than 2 hits/crits
     if (attack_setup.accuracy_corrector &&
@@ -172,12 +223,17 @@ private SimulationResult simulate_single_attack(AttackSetup initial_attack_setup
         // No more modifaction
     }
 
-    // ----------------------------------------------------------------------------------------
+    return attack_results;
+}
 
+int[DieResult.Num] roll_and_modify_defense_dice(int[DieResult.Num] attack_results,
+                                                const(AttackSetup) attack_setup,
+                                                ref DefenseSetup defense_setup)
+{
     // Roll Defense Dice
-    DieResult[] defense_dice = new DieResult[defense_setup.dice];
+    auto defense_dice = new DefenseDie[defense_setup.dice];
     foreach (ref d; defense_dice)
-        d = k_defense_die_result[uniform(0, k_die_sides)];
+        d.roll();
 
     // Modify Defense Dice
     int attack_target_lock_tokens_used = 0;
@@ -188,9 +244,9 @@ private SimulationResult simulate_single_attack(AttackSetup initial_attack_setup
             // Find one evade and turn it to a focus
             foreach (ref d; defense_dice)
             {
-                if (d == DieResult.Evade)
+                if (d.evade)
                 {
-                    d = DieResult.Focus;
+                    d.result = DieResult.Focus;
                     break;
                 }
             }
@@ -203,9 +259,9 @@ private SimulationResult simulate_single_attack(AttackSetup initial_attack_setup
             // Find one blank and turn it to an evade
             foreach (ref d; defense_dice)
             {
-                if (d == DieResult.Blank)
+                if (d.blank)
                 {
-                    d = DieResult.Evade;
+                    d.result = DieResult.Evade;
                     break;
                 }
             }
@@ -214,13 +270,11 @@ private SimulationResult simulate_single_attack(AttackSetup initial_attack_setup
         // Spend regular focus or evade tokens?
         if (defense_setup.focus_token_count > 0 || defense_setup.evade_token_count > 0)
         {
-            int[DieResult.Num] defense_results;
-            foreach (d; defense_dice)
-                ++defense_results[d];
+            auto defense_results = count_results(defense_dice);
             int uncanceled_hits = attack_results[DieResult.Hit] + attack_results[DieResult.Crit] - defense_results[DieResult.Evade];
 
             bool can_spend_focus = defense_setup.focus_token_count > 0 && defense_results[DieResult.Focus] > 0;
-        
+
             if (uncanceled_hits > 0 && (can_spend_focus || defense_setup.evade_token_count > 0))
             {
                 // For now simple logic:
@@ -241,7 +295,7 @@ private SimulationResult simulate_single_attack(AttackSetup initial_attack_setup
 
                 bool spent_focus = false;
                 int spent_evade_tokens = 0;
-                                
+
                 // Do we need to spend both to cancel all hits?
                 if (!can_cancel_all_with_focus && !can_cancel_all_with_evade)
                 {
@@ -271,15 +325,14 @@ private SimulationResult simulate_single_attack(AttackSetup initial_attack_setup
                 if (spent_focus)
                 {
                     foreach (ref d; defense_dice)
-                        if (d == DieResult.Focus)
-                            d = DieResult.Evade;
+                        d.focus_to_evade();
                     --defense_setup.focus_token_count;
                     uncanceled_hits -= defense_results[DieResult.Focus];
                 }
 
                 // Evade tokens add defense dice to the pool
                 foreach (i; 0 .. spent_evade_tokens)
-                    defense_dice ~= DieResult.Evade;
+                    defense_dice ~= DefenseDie(DieResult.Evade);
                 defense_setup.evade_token_count -= spent_evade_tokens;
                 uncanceled_hits -= spent_evade_tokens;
 
@@ -291,9 +344,22 @@ private SimulationResult simulate_single_attack(AttackSetup initial_attack_setup
     }
 
     // Done modifying defense dice - compute final defense results
-    int[DieResult.Num] defense_results; // Init to 0 by default    
-    foreach (d; defense_dice)
-        ++defense_results[d];
+    return count_results(defense_dice);
+}
+
+
+
+
+
+private SimulationResult simulate_single_attack(AttackSetup initial_attack_setup, DefenseSetup initial_defense_setup)
+{
+    auto attack_setup  = initial_attack_setup;
+    auto defense_setup = initial_defense_setup;
+
+    // TODO: A lot of this could be optimized, but see how usable it is for now while keeping it readable
+
+    auto attack_results = roll_and_modify_attack_dice(attack_setup);
+    auto defense_results = roll_and_modify_defense_dice(attack_results, attack_setup, defense_setup);
 
     // ----------------------------------------------------------------------------------------
 
