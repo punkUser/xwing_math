@@ -32,8 +32,10 @@ block content
                                 - slider_control("attack_focus_token_count",   "Focus Tokens",       0, 2, 0);
                                 - slider_control("attack_target_lock_count",   "Target Locks",       0, 2, 0);
                                 - switch_control("attack_accuracy_corrector",  "Accuracy Corrector");
-                                - switch_control("attack_juke",                "Juke");
                                 - switch_control("attack_fire_control_system", "Fire Control System");
+                                - switch_control("attack_juke",                "Juke");                                
+                                - switch_control("attack_mangler_cannon",      "Mangler Cannon");
+                                - switch_control("attack_marksmanship",        "Marksmanship");
                                 - switch_control("attack_one_damage_on_hit",   "One Damage on Hit (TLT, Ion)");
 
                     .medium-6.columns

@@ -77,8 +77,10 @@ public class WWWServer
         
         // Checkboxes will simply not be present in the parameters if unchecked
         attack_setup.accuracy_corrector  = req.query.get("attack_accuracy_corrector", "")   == "on";
-        attack_setup.juke                = req.query.get("attack_juke", "")                 == "on";
         attack_setup.fire_control_system = req.query.get("attack_fire_control_system", "")  == "on";
+        attack_setup.juke                = req.query.get("attack_juke", "")                 == "on";
+        attack_setup.mangler_cannon      = req.query.get("attack_mangler_cannon", "")       == "on";
+        attack_setup.marksmanship        = req.query.get("attack_marksmanship", "")         == "on";
         attack_setup.one_damage_on_hit   = req.query.get("attack_one_damage_on_hit", "")    == "on";
 
         // Bit awkward but good enough for now...

@@ -41,12 +41,6 @@ struct AttackDie
     }
     bool can_reroll() const { return roll_count < 2; }
 
-    void focus_to_hit()
-    {
-        if (result == DieResult.Focus)
-            result = DieResult.Hit;
-    }
-
     // Convenience
     @property bool blank() const { return result == DieResult.Blank; }
     @property bool focus() const { return result == DieResult.Focus; }
@@ -71,12 +65,6 @@ struct DefenseDie
     }
     bool can_reroll() const { return roll_count < 2; }
 
-    void focus_to_evade()
-    {
-        if (result == DieResult.Focus)
-            result = DieResult.Evade;
-    }
-
     // Convenience
     @property bool blank() const { return result == DieResult.Blank; }
     @property bool focus() const { return result == DieResult.Focus; }
@@ -91,9 +79,11 @@ int[DieResult.Num] count_results(T)(const(T)[] dice)
     return results;
 }
 
-int change_dice(T)(ref T[] dice, DieResult from, DieResult to, int max_count = 1)
+// Maxcount <= 0 means no maximum
+int change_dice(T)(ref T[] dice, DieResult from, DieResult to, int max_count = -1)
 {
-    assert(max_count > 0);
+    if (max_count <= 0)
+        max_count = dice.length;
 
     int changed_count = 0;
     foreach (ref d; dice)
@@ -114,7 +104,7 @@ enum MultiAttackType : int
 {
     Single = 0,                   // Regular single attack
     SecondaryPerformTwice,        // Ex. Twin Laser Turret, Cluster Missiles
-    AfterAttackDoesNotHit,        // Ex. Gunner, Luke, IG88-B
+    AfterAttackDoesNotHit,        // Ex. Gunner, Luke, IG88-B - TODO: Luke Gunner modeling somehow?
     AfterAttack,                  // Ex. Corran    
 };
 
@@ -128,10 +118,29 @@ struct AttackSetup
 
     bool juke = false;                  // Setting this to true implies evade token present as well
     bool accuracy_corrector = false;
-    bool one_damage_on_hit = false;     // If attack hits, 1 damage (TLT, Ion, etc)
+    bool mangler_cannon = false;        // One hit->crit
+    bool marksmanship = false;          // One focus->crit, rest focus->hit
+    // TODO: Predator (1 or 2 dice reroll)
+    // TODO: Lone wolf (1 dice reroll)
+    // TODO: Rage (3 dice reroll)
+    // TODO: Calculation (pay focus: one focus->crit)
+    // TODO: Crack shot?
+    // TODO: Wired (reroll focus)
+    // TODO: Fearlessness (add 1 hit result)
+    // TODO: Heavy laser cannon (on initial roll, all crits->hits)
+    // TODO: Autoblaster (hit results cannot be canceled)
+    // TODO: Mercenary copilot (one hit->crit)
+    // TODO: Han Solo Crew (spend TL: all hits->crits)
+    // TODO: Ezra Crew (one focus->crit)
+    // TODO: Zuckuss Crew
+    // TODO: 4-LOM Crew
+    // TODO: Dengar Crew
+
+    bool one_damage_on_hit = false;     // If attack hits, 1 damage (TLT, Ion, etc)    
     
     // Upgrades that only affect multi-attack situations
     bool fire_control_system = false;
+    // TODO: Bossk Crew (gets weird...)
 };
 
 struct DefenseSetup
@@ -141,6 +150,12 @@ struct DefenseSetup
     int evade_token_count = 0;
 
     bool autothrusters = false;
+    // TODO: Lone wolf (1 dice reroll)
+    // TODO: Elusiveness
+    // TODO: Wired (reroll focus)
+    // TODO: C-3PO
+    // TODO: Latts? Gets a bit weird/complex
+
 };
 
 struct SimulationResult
@@ -185,8 +200,7 @@ void attacker_modify_attack_dice(ref AttackSetup  attack_setup,
                                  ref DefenseSetup defense_setup,
                                  ref AttackDie[] attack_dice)
 {
-    // First do any effects that are always obviously good... focus/blank->hit/crit or so on
-
+    // Rerolls
 
     // Spend target lock?
     if (attack_setup.target_lock_count > 0)
@@ -209,21 +223,23 @@ void attacker_modify_attack_dice(ref AttackSetup  attack_setup,
             --attack_setup.target_lock_count;
     }
 
-    // Spend regular focus?
-    if (attack_setup.focus_token_count > 0)
+    if (attack_setup.marksmanship)
     {
-        auto attack_results = count_results(attack_dice);
-
-        if (attack_results[DieResult.Focus] > 0)
-        {
-            foreach (ref d; attack_dice)
-                d.focus_to_hit();
+        change_dice(attack_dice, DieResult.Focus, DieResult.Crit, 1);
+        change_dice(attack_dice, DieResult.Focus, DieResult.Hit);
+    }
+    else if (attack_setup.focus_token_count > 0)        // Spend regular focus?
+    {
+        int changed_results = change_dice(attack_dice, DieResult.Focus, DieResult.Hit);
+        if (changed_results > 0)
             --attack_setup.focus_token_count;
-        }
     }
 
-    // TODO: Accuracy corrector should technically go here instead of below... minor extra cost of
-    // recomputing results twice and so on.
+    // Mangler can make a hit into a crit - do this last in case we focused into any hits, etc.
+    if (attack_setup.mangler_cannon)
+        change_dice(attack_dice, DieResult.Hit, DieResult.Crit, 1);
+
+    // TODO: Accuracy corrector should technically go here as it is part of the attacker modify dice section
 }
 
 int[DieResult.Num] roll_and_modify_attack_dice(ref AttackSetup  attack_setup,
@@ -335,8 +351,7 @@ void defender_modify_defense_dice(ref AttackSetup attack_setup,
 
             if (spent_focus)
             {
-                foreach (ref d; defense_dice)
-                    d.focus_to_evade();
+                change_dice(defense_dice, DieResult.Focus, DieResult.Evade);
                 --defense_setup.focus_token_count;
                 uncanceled_hits -= defense_results[DieResult.Focus];
             }
