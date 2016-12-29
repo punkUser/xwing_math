@@ -79,10 +79,13 @@ int[DieResult.Num] count_results(T)(const(T)[] dice)
     return results;
 }
 
-// Maxcount <= 0 means no maximum
+// max_count < 0 means no maximum
+// Returns number of dice changed
 int change_dice(T)(ref T[] dice, DieResult from, DieResult to, int max_count = -1)
 {
-    if (max_count <= 0)
+    if (max_count == 0)
+        return 0;
+    else if (max_count < 0)
         max_count = dice.length;
 
     int changed_count = 0;
@@ -120,8 +123,12 @@ struct AttackSetup
     bool accuracy_corrector = false;
     bool mangler_cannon = false;        // One hit->crit
     bool marksmanship = false;          // One focus->crit, rest focus->hit
+
+    int predator_rerolls = 0;           // Should be 0, 1 or 2
+
     // TODO: Predator (1 or 2 dice reroll)
     // TODO: Lone wolf (1 dice reroll)
+
     // TODO: Rage (3 dice reroll)
     // TODO: Calculation (pay focus: one focus->crit)
     // TODO: Crack shot?
@@ -182,8 +189,8 @@ SimulationResult accumulate_result(SimulationResult a, SimulationResult b, bool 
     a.hits += b.hits;
     a.crits += b.crits;
 
-    a.attack_target_locks_used += b.attack_target_locks_used;
-    a.attack_focus_tokens_used += b.attack_focus_tokens_used;
+    a.attack_target_locks_used  += b.attack_target_locks_used;
+    a.attack_focus_tokens_used  += b.attack_focus_tokens_used;
     a.defense_evade_tokens_used += b.defense_evade_tokens_used;
     a.defense_evade_tokens_used += b.defense_evade_tokens_used;
 
@@ -200,29 +207,65 @@ void attacker_modify_attack_dice(ref AttackSetup  attack_setup,
                                  ref DefenseSetup defense_setup,
                                  ref AttackDie[] attack_dice)
 {
-    // Rerolls
+    auto initial_results = count_results(attack_dice);
 
-    // Spend target lock?
-    if (attack_setup.target_lock_count > 0)
+    // Compute attack setup metadata
+
+    // How many focus results can we turn into hits or crits?
+    int useful_focus_results = 0;
+    if (initial_results[DieResult.Focus] > 0)   // Just an early out
     {
-        auto attack_results = count_results(attack_dice);
-
-        int number_of_dice_rerolled = 0;
-        foreach (ref d; attack_dice)
-        {
-            // If we don't have a focus token, also reroll focus results
-            if (d.can_reroll() &&
-                (d.blank || (d.focus && attack_setup.focus_token_count == 0)))
-            {
-                d.roll();
-                ++number_of_dice_rerolled;
-            }
-        }
-
-        if (number_of_dice_rerolled > 0)
-            --attack_setup.target_lock_count;
+        // All of them
+        if (attack_setup.focus_token_count > 0 || attack_setup.marksmanship)
+            useful_focus_results = initial_results[DieResult.Focus];
+        // TODO: Other effects as we add them (Ezra, etc.)
     }
 
+    // How many free, unrestricted rerolls do we have?
+    int free_reroll_count = 0;
+    free_reroll_count += attack_setup.predator_rerolls;
+    // If we have a target lock, we can reroll everything if we want to
+    int total_reroll_count = attack_setup.target_lock_count > 0 ? attack_dice.length : free_reroll_count;
+    
+    // TODO: Any effects that modify blank dice into something useful here
+
+    // First, let's reroll any blanks we're allowed to - this is always useful
+    int rerolled_dice_count = 0;
+    for (int i = 0; i < attack_dice.length && rerolled_dice_count < total_reroll_count; ++i)
+    {
+        if (attack_dice[i].can_reroll() && attack_dice[i].blank)
+        {
+            attack_dice[i].roll();
+            ++rerolled_dice_count;
+        }
+    }
+
+    // Now reroll focus results that "aren't useful"
+    // Because not all dice can be rerolled (due to earlier rerolls), we need to eagerly reroll any that
+    // we are allowed to, so rely on the math here.
+    {
+        int focus_to_reroll = initial_results[DieResult.Focus] - useful_focus_results;
+        for (int i = 0; i < attack_dice.length && focus_to_reroll > 0 && rerolled_dice_count < total_reroll_count; ++i)
+        {
+            if (attack_dice[i].can_reroll() && attack_dice[i].focus)
+            {
+                attack_dice[i].roll();
+                --focus_to_reroll;
+                ++rerolled_dice_count;
+            }
+        }
+    }
+
+    // If we rerolled more than our total number of "free" rerolls, we have to spend a target lock
+    if (rerolled_dice_count > free_reroll_count)
+    {
+        assert(attack_setup.target_lock_count > 0);
+        --attack_setup.target_lock_count;
+    }
+
+    // Rerolls are done - deal with focus results
+
+    // Marksmanship is always a better choice than regular focus token
     if (attack_setup.marksmanship)
     {
         change_dice(attack_dice, DieResult.Focus, DieResult.Crit, 1);
@@ -238,6 +281,23 @@ void attacker_modify_attack_dice(ref AttackSetup  attack_setup,
     // Mangler can make a hit into a crit - do this last in case we focused into any hits, etc.
     if (attack_setup.mangler_cannon)
         change_dice(attack_dice, DieResult.Hit, DieResult.Crit, 1);
+
+
+    // Some final sanity checks in debug mode on the logic here as it is not always trivial...
+    debug
+    {
+        // Did we have the ability to reroll more dice than we did?
+        if (total_reroll_count > rerolled_dice_count)
+        {
+            // If so, every focus or blank result that is still around here should have been rerolled
+            foreach (d; attack_dice)
+            {
+                if (d.can_reroll() && (d.blank || d.focus))
+                    assert(false);
+            }
+        }
+    }
+
 
     // TODO: Accuracy corrector should technically go here as it is part of the attacker modify dice section
 }
@@ -397,6 +457,12 @@ private SimulationResult simulate_single_attack(AttackSetup initial_attack_setup
 
     auto attack_results  = roll_and_modify_attack_dice(attack_setup, defense_setup);
     auto defense_results = roll_and_modify_defense_dice(attack_setup, defense_setup, attack_results);
+
+    // Sanity checks on token spending
+    assert(attack_setup.target_lock_count >= 0 && attack_setup.target_lock_count <= initial_attack_setup.target_lock_count);
+    assert(attack_setup.focus_token_count >= 0 && attack_setup.focus_token_count <= initial_attack_setup.focus_token_count);
+    assert(defense_setup.evade_token_count >= 0 && defense_setup.evade_token_count <= initial_defense_setup.evade_token_count);
+    assert(defense_setup.focus_token_count >= 0 && defense_setup.focus_token_count <= initial_defense_setup.focus_token_count);
 
     // ----------------------------------------------------------------------------------------
 

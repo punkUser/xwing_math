@@ -82,6 +82,10 @@ public class WWWServer
         attack_setup.one_damage_on_hit   = req.query.get("attack_one_damage_on_hit", "")    == "on";
         attack_setup.fire_control_system = req.query.get("attack_fire_control_system", "")  == "on";
 
+        attack_setup.predator_rerolls =
+             req.query.get("attack_predator_1", "") == "on" ? 1 : 
+            (req.query.get("attack_predator_2", "") == "on" ? 2 : 0);
+
         // Bit awkward but good enough for now...
         string attack_type = req.query.get("attack_type", "single");
         if (attack_type == "single")
