@@ -160,6 +160,7 @@ block content
 
         function simulateUpdateChart(data)
          {
+            chart_data.labels = data.pdf_x_labels;
             chart_data.datasets[0].data = data.hit_inv_cdf;
             chart_data.datasets[1].data = data.hit_pdf;
             chart_data.datasets[2].data = data.crit_pdf;

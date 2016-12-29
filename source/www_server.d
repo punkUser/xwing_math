@@ -59,6 +59,7 @@ public class WWWServer
     private struct SimulationContent
     {
         float expected_total_hits;
+        string[] pdf_x_labels;
         float[] hit_pdf;
         float[] crit_pdf;
         float[] hit_inv_cdf;
@@ -113,9 +114,9 @@ public class WWWServer
 
         // TODO: Clean this up? Max hits is kind of unpredictable though TBH
         immutable int k_trial_count = 500000;
-        immutable int max_hits = 20;
 
-        SimulationResult[] total_hits_pdf = new SimulationResult[max_hits];
+        // We always show at least 0..6 labels on the graph as this looks nice
+        SimulationResult[] total_hits_pdf = new SimulationResult[7];
         SimulationResult total_sum;
         foreach (i; 0 .. k_trial_count)
         {
@@ -124,19 +125,29 @@ public class WWWServer
 
             // Accumulate into the right bin of the total hits PDF
             int total_hits = result.hits + result.crits;
+
+            if (total_hits >= total_hits_pdf.length)
+                total_hits_pdf.length = total_hits + 1;
             total_hits_pdf[total_hits] = accumulate_result(total_hits_pdf[total_hits], result);
         }
+        int max_hits = cast(int)total_hits_pdf.length;
+
 
         // Setup page content
         SimulationContent content;
-        content.hit_pdf     = new float[max_hits];
-        content.crit_pdf    = new float[max_hits];
-        content.hit_inv_cdf = new float[max_hits];
-
+        
         // Expected values
         content.expected_total_hits = (total_sum.hits + total_sum.crits) / cast(float)k_trial_count;
 
+        // Set up X labels on the total hits graph
+        content.pdf_x_labels = new string[max_hits];
+        foreach (i; 0 .. max_hits)
+            content.pdf_x_labels[i] = to!string(i);
+
         // Compute PDF
+        content.hit_pdf     = new float[max_hits];
+        content.crit_pdf    = new float[max_hits];
+        content.hit_inv_cdf = new float[max_hits];
         float percent_of_trials_scale = 100.0f / cast(float)k_trial_count;
         foreach (i; 0 .. max_hits)
         {
