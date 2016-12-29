@@ -66,7 +66,7 @@ public class WWWServer
 
     private void simulate(HTTPServerRequest req, HTTPServerResponse res)
     {
-        writeln(req.query.serializeToPrettyJson());
+        //writeln(req.query.serializeToPrettyJson());
 
         AttackSetup attack_setup;
         DefenseSetup defense_setup;
@@ -105,8 +105,8 @@ public class WWWServer
 
         defense_setup.autothrusters     = req.query.get("defense_autothrusters", "")        == "on";
 
-        writefln("Attack Setup: %s", attack_setup.serializeToPrettyJson());
-        writefln("Defense Setup: %s", defense_setup.serializeToPrettyJson());
+        //writefln("Attack Setup: %s", attack_setup.serializeToPrettyJson());
+        //writefln("Defense Setup: %s", defense_setup.serializeToPrettyJson());
 
 
         // TODO: Clean this up? Max hits is kind of unpredictable though TBH
