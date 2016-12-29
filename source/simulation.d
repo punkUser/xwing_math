@@ -124,26 +124,29 @@ struct AttackSetup
     bool mangler_cannon = false;        // One hit->crit
     bool marksmanship = false;          // One focus->crit, rest focus->hit
 
-    int predator_rerolls = 0;           // Should be 0, 1 or 2
+    int predator_rerolls = 0;           // 0-2 rerolls
+    bool rage = false;                  // 3 rerolls
+    
+    bool one_damage_on_hit = false;     // If attack hits, 1 damage (TLT, Ion, etc)
 
-    // TODO: Predator (1 or 2 dice reroll)
-    // TODO: Lone wolf (1 dice reroll)
+    // TODO: Lone wolf (1 blank reroll)
 
-    // TODO: Rage (3 dice reroll)
-    // TODO: Calculation (pay focus: one focus->crit)
     // TODO: Crack shot?
     // TODO: Wired (reroll focus)
     // TODO: Fearlessness (add 1 hit result)
     // TODO: Heavy laser cannon (on initial roll, all crits->hits)
     // TODO: Autoblaster (hit results cannot be canceled)
     // TODO: Mercenary copilot (one hit->crit)
-    // TODO: Han Solo Crew (spend TL: all hits->crits)
     // TODO: Ezra Crew (one focus->crit)
     // TODO: Zuckuss Crew
     // TODO: 4-LOM Crew
     // TODO: Dengar Crew
 
-    bool one_damage_on_hit = false;     // If attack hits, 1 damage (TLT, Ion, etc)    
+    // Ones that require spending tokens (more complex generally)
+    // TODO: Calculation (pay focus: one focus->crit)
+    // TODO: Han Solo Crew (spend TL: all hits->crits)
+
+    
     
     // Upgrades that only affect multi-attack situations
     bool fire_control_system = false;
@@ -157,7 +160,7 @@ struct DefenseSetup
     int evade_token_count = 0;
 
     bool autothrusters = false;
-    // TODO: Lone wolf (1 dice reroll)
+    // TODO: Lone wolf (1 blank reroll)
     // TODO: Elusiveness
     // TODO: Wired (reroll focus)
     // TODO: C-3PO
@@ -224,6 +227,8 @@ void attacker_modify_attack_dice(ref AttackSetup  attack_setup,
     // How many free, unrestricted rerolls do we have?
     int free_reroll_count = 0;
     free_reroll_count += attack_setup.predator_rerolls;
+    free_reroll_count += attack_setup.rage ? 3 : 0;
+
     // If we have a target lock, we can reroll everything if we want to
     int total_reroll_count = attack_setup.target_lock_count > 0 ? attack_dice.length : free_reroll_count;
     
@@ -452,6 +457,8 @@ int[DieResult.Num] roll_and_modify_defense_dice(ref AttackSetup attack_setup,
 
 private SimulationResult simulate_single_attack(AttackSetup initial_attack_setup, DefenseSetup initial_defense_setup)
 {
+    // TODO: Sanity checks on inputs?
+
     auto attack_setup  = initial_attack_setup;
     auto defense_setup = initial_defense_setup;
 
