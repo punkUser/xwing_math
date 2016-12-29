@@ -7,10 +7,6 @@ html(class="no-js", lang="en")
         
         title X-Wing Math Simulator
         
-        script(src="/js/vendor/jquery.js")
-        script(src="/js/vendor/foundation.js")
-        script(src="/js/vendor/Chart.bundle.min.js")
-
         link(rel="stylesheet", href="/css/foundation.css")
         link(rel="stylesheet", href="/css/app.css")
 
@@ -18,5 +14,8 @@ html(class="no-js", lang="en")
         #content
             block content
         
+        script(src="/js/vendor/jquery.js")
         script(src="/js/vendor/what-input.js")
+        script(src="/js/vendor/foundation.min.js")
+        script(src="/js/vendor/Chart.bundle.min.js")
         script(src="/js/app.js")
