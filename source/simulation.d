@@ -30,45 +30,51 @@ immutable DieResult[k_die_sides] k_defense_die_result = [
 
 struct AttackDie
 {
-    DieResult result = DieResult.Num;
-    int roll_count = 0;
+    public  DieResult result = DieResult.Num;
+    private int roll_count = 0;
 
-    void roll()
+    public this(DieResult r)
+    {
+        result = r;
+        roll_count = 1;
+    }
+    public void roll()
     {
         assert(can_reroll());
         result = k_attack_die_result[uniform(0, k_die_sides)];
         ++roll_count;
     }
-    bool can_reroll() const { return roll_count < 2; }
+    public bool can_reroll() const { return roll_count < 2; }
 
     // Convenience
-    @property bool blank() const { return result == DieResult.Blank; }
-    @property bool focus() const { return result == DieResult.Focus; }
+    public @property bool blank() const { return result == DieResult.Blank; }
+    public @property bool focus() const { return result == DieResult.Focus; }
+    public @property bool hit() const   { return result == DieResult.Hit; }
+    public @property bool crit() const   { return result == DieResult.Crit; }
 };
 
 struct DefenseDie
 {
-    DieResult result = DieResult.Num;
-    int roll_count = 0;
+    public  DieResult result = DieResult.Num;
+    private int roll_count = 0;
 
-    this(DieResult r)
+    public this(DieResult r)
     {
         result = r;
         roll_count = 1;
     }
-
-    void roll()
+    public void roll()
     {
         assert(can_reroll());
         result = k_defense_die_result[uniform(0, k_die_sides)];
         ++roll_count;
     }
-    bool can_reroll() const { return roll_count < 2; }
+    public bool can_reroll() const { return roll_count < 2; }
 
     // Convenience
-    @property bool blank() const { return result == DieResult.Blank; }
-    @property bool focus() const { return result == DieResult.Focus; }
-    @property bool evade() const { return result == DieResult.Evade; }
+    public @property bool blank() const { return result == DieResult.Blank; }
+    public @property bool focus() const { return result == DieResult.Focus; }
+    public @property bool evade() const { return result == DieResult.Evade; }
 };
 
 int[DieResult.Num] count_results(T)(const(T)[] dice)
@@ -115,19 +121,21 @@ struct AttackSetup
 {
     MultiAttackType type = MultiAttackType.Single;
 
+    // Tokens
     int dice = 0;
     int focus_token_count = 0;
     int target_lock_count = 0;
+    int stress_count = 0;
 
+    bool accuracy_corrector = false;    // Can cancel all results and replace with 2 hits
     bool juke = false;                  // Setting this to true implies evade token present as well
-    bool accuracy_corrector = false;
+    bool heavy_laser_cannon = false;    // After initial roll, change all crits->hits
     bool mangler_cannon = false;        // One hit->crit
     bool marksmanship = false;          // One focus->crit, rest focus->hit
-
-    int predator_rerolls = 0;           // 0-2 rerolls
-    bool rage = false;                  // 3 rerolls
-    
+    bool mercenary_copilot = false;     // One hit->crit
     bool one_damage_on_hit = false;     // If attack hits, 1 damage (TLT, Ion, etc)
+    int  predator_rerolls = 0;          // 0-2 rerolls
+    bool rage = false;                  // 3 rerolls
 
     // TODO: Lone wolf (1 blank reroll)
 
@@ -145,8 +153,7 @@ struct AttackSetup
     // Ones that require spending tokens (more complex generally)
     // TODO: Calculation (pay focus: one focus->crit)
     // TODO: Han Solo Crew (spend TL: all hits->crits)
-
-    
+    // TODO: R4 Agromech (after spending focus, gain TL that can be used in same attack)
     
     // Upgrades that only affect multi-attack situations
     bool fire_control_system = false;
@@ -155,11 +162,14 @@ struct AttackSetup
 
 struct DefenseSetup
 {
+    // Tokens
     int dice = 0;
     int focus_token_count = 0;
     int evade_token_count = 0;
+    int stress_count = 0;
 
     bool autothrusters = false;
+    // TODO: Lightweight frame
     // TODO: Lone wolf (1 blank reroll)
     // TODO: Elusiveness
     // TODO: Wired (reroll focus)
@@ -284,9 +294,15 @@ void attacker_modify_attack_dice(ref AttackSetup  attack_setup,
             --attack_setup.focus_token_count;
     }
 
-    // Mangler can make a hit into a crit - do this last in case we focused into any hits, etc.
-    if (attack_setup.mangler_cannon)
-        change_dice(attack_dice, DieResult.Hit, DieResult.Crit, 1);
+    // Mangler and merc copilot can make a hit into a crit
+    // Do this last in case we focused into any hits, etc.
+    {
+        int hits_to_crits =
+            (attack_setup.mercenary_copilot ? 1 : 0) +
+            (attack_setup.mangler_cannon    ? 1 : 0);
+        if (hits_to_crits > 0)
+            change_dice(attack_dice, DieResult.Hit, DieResult.Crit, hits_to_crits);
+    }
 
 
     // Some final sanity checks in debug mode on the logic here as it is not always trivial...
@@ -318,6 +334,10 @@ int[DieResult.Num] roll_and_modify_attack_dice(ref AttackSetup  attack_setup,
     foreach (ref d; attack_dice)
         d.roll();
 
+    // "Immediately after rolling" events
+    if (attack_setup.heavy_laser_cannon)
+        change_dice(attack_dice, DieResult.Crit, DieResult.Hit);
+
     defender_modify_attack_dice(attack_setup, defense_setup, attack_dice);
     attacker_modify_attack_dice(attack_setup, defense_setup, attack_dice);
 
@@ -325,6 +345,8 @@ int[DieResult.Num] roll_and_modify_attack_dice(ref AttackSetup  attack_setup,
     auto attack_results = count_results(attack_dice);
 
     // Use accuracy corrector if we ended up with less than 2 hits/crits
+    // TODO: We probably need to actually change the dice themselves eventually
+    // to properly handle things like lightweight frame.
     if (attack_setup.accuracy_corrector &&
         (attack_results[DieResult.Hit] + attack_results[DieResult.Crit] < 2))
     {

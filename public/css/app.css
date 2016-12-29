@@ -7,3 +7,14 @@ canvas {
 	-webkit-user-select: none;
 	-ms-user-select: none;
 }
+
+.switch {
+	margin-bottom: 0;
+}
+.input-group {
+	margin-bottom: 0.5rem;
+}
+.slider {
+	margin-top: 1.0rem;
+	margin-bottom: 1.5rem;
+}
