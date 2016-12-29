@@ -86,7 +86,7 @@ int change_dice(T)(ref T[] dice, DieResult from, DieResult to, int max_count = -
     if (max_count == 0)
         return 0;
     else if (max_count < 0)
-        max_count = dice.length;
+        max_count = cast(int)dice.length;
 
     int changed_count = 0;
     foreach (ref d; dice)
@@ -213,6 +213,7 @@ void attacker_modify_attack_dice(ref AttackSetup  attack_setup,
     auto initial_results = count_results(attack_dice);
 
     // Compute attack setup metadata
+    int attack_dice_count = cast(int)attack_dice.length;
 
     // How many focus results can we turn into hits or crits?
     int useful_focus_results = 0;
@@ -230,13 +231,13 @@ void attacker_modify_attack_dice(ref AttackSetup  attack_setup,
     free_reroll_count += attack_setup.rage ? 3 : 0;
 
     // If we have a target lock, we can reroll everything if we want to
-    int total_reroll_count = attack_setup.target_lock_count > 0 ? attack_dice.length : free_reroll_count;
+    int total_reroll_count = attack_setup.target_lock_count > 0 ? attack_dice_count : free_reroll_count;
     
     // TODO: Any effects that modify blank dice into something useful here
 
     // First, let's reroll any blanks we're allowed to - this is always useful
     int rerolled_dice_count = 0;
-    for (int i = 0; i < attack_dice.length && rerolled_dice_count < total_reroll_count; ++i)
+    for (int i = 0; i < attack_dice_count && rerolled_dice_count < total_reroll_count; ++i)
     {
         if (attack_dice[i].can_reroll() && attack_dice[i].blank)
         {
@@ -250,7 +251,7 @@ void attacker_modify_attack_dice(ref AttackSetup  attack_setup,
     // we are allowed to, so rely on the math here.
     {
         int focus_to_reroll = initial_results[DieResult.Focus] - useful_focus_results;
-        for (int i = 0; i < attack_dice.length && focus_to_reroll > 0 && rerolled_dice_count < total_reroll_count; ++i)
+        for (int i = 0; i < attack_dice_count && focus_to_reroll > 0 && rerolled_dice_count < total_reroll_count; ++i)
         {
             if (attack_dice[i].can_reroll() && attack_dice[i].focus)
             {
