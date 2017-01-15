@@ -75,19 +75,23 @@ public class WWWServer
         attack_setup.dice               = to!int(req.query.get("attack_dice",              "3"));
         attack_setup.focus_token_count  = to!int(req.query.get("attack_focus_token_count", "0"));
         attack_setup.target_lock_count  = to!int(req.query.get("attack_target_lock_count", "0"));
-        
-        attack_setup.accuracy_corrector  = req.query.get("attack_accuracy_corrector", "")   == "on";
-        attack_setup.fire_control_system = req.query.get("attack_fire_control_system", "")  == "on";
-        attack_setup.heavy_laser_cannon  = req.query.get("attack_heavy_laser_cannon", "")   == "on";
+                
+        attack_setup.expertise           = req.query.get("attack_expertise", "")            == "on";
         attack_setup.juke                = req.query.get("attack_juke", "")                 == "on";
+        attack_setup.predator_rerolls =
+            req.query.get("attack_predator_1", "") == "on" ? 1 : 
+        (req.query.get("attack_predator_2", "") == "on" ? 2 : 0);
+        attack_setup.rage                = req.query.get("attack_rage", "")                 == "on";
+
+        attack_setup.mercenary_copilot   = req.query.get("attack_mercenary_copilot", "")    == "on";
+        
+        attack_setup.heavy_laser_cannon  = req.query.get("attack_heavy_laser_cannon", "")   == "on";        
         attack_setup.mangler_cannon      = req.query.get("attack_mangler_cannon", "")       == "on";
         attack_setup.marksmanship        = req.query.get("attack_marksmanship", "")         == "on";
-        attack_setup.mercenary_copilot   = req.query.get("attack_mercenary_copilot", "")    == "on";
         attack_setup.one_damage_on_hit   = req.query.get("attack_one_damage_on_hit", "")    == "on";
-        attack_setup.predator_rerolls =
-             req.query.get("attack_predator_1", "") == "on" ? 1 : 
-            (req.query.get("attack_predator_2", "") == "on" ? 2 : 0);
-        attack_setup.rage                = req.query.get("attack_rage", "")                 == "on";
+
+        attack_setup.accuracy_corrector  = req.query.get("attack_accuracy_corrector", "")   == "on";
+        attack_setup.fire_control_system = req.query.get("attack_fire_control_system", "")  == "on";
 
         // Bit awkward but good enough for now...
         string attack_type = req.query.get("attack_type", "single");

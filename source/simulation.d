@@ -117,6 +117,10 @@ enum MultiAttackType : int
     AfterAttack,                  // Ex. Corran    
 };
 
+// TODO: Optimize the bools into a bitfield since this structure does got copied/passed by value a few times
+// Alternatively, maybe just separate out the tokens into a separate structure, since the other stuff is
+// read-only.
+
 struct AttackSetup
 {
     MultiAttackType type = MultiAttackType.Single;
@@ -127,37 +131,39 @@ struct AttackSetup
     int target_lock_count = 0;
     int stress_count = 0;
 
-    bool accuracy_corrector = false;    // Can cancel all results and replace with 2 hits
+    // EPT
     bool juke = false;                  // Setting this to true implies evade token present as well
-    bool heavy_laser_cannon = false;    // After initial roll, change all crits->hits
-    bool mangler_cannon = false;        // One hit->crit
     bool marksmanship = false;          // One focus->crit, rest focus->hit
-    bool mercenary_copilot = false;     // One hit->crit
-    bool one_damage_on_hit = false;     // If attack hits, 1 damage (TLT, Ion, etc)
     int  predator_rerolls = 0;          // 0-2 rerolls
     bool rage = false;                  // 3 rerolls
-
+    bool expertise = false;             // all focus -> hits
     // TODO: Lone wolf (1 blank reroll)
-
-    // TODO: Crack shot?
     // TODO: Wired (reroll focus)
     // TODO: Fearlessness (add 1 hit result)
-    // TODO: Heavy laser cannon (on initial roll, all crits->hits)
-    // TODO: Autoblaster (hit results cannot be canceled)
-    // TODO: Mercenary copilot (one hit->crit)
+    // TODO: Crack shot? (gets a little bit complex as presence affects defender logic and as well)
+
+    // Crew
+    bool mercenary_copilot = false;     // One hit->crit
     // TODO: Ezra Crew (one focus->crit)
     // TODO: Zuckuss Crew
     // TODO: 4-LOM Crew
     // TODO: Dengar Crew
+    // TODO: Bossk Crew (gets weird/hard...)
 
+    // System upgrades
+    bool accuracy_corrector = false;    // Can cancel all results and replace with 2 hits    
+    bool fire_control_system = false;   // Get a target lock after attack (only affects multi-attack)
+    
+    // Secondary weapons
+    bool heavy_laser_cannon = false;    // After initial roll, change all crits->hits
+    bool mangler_cannon = false;        // One hit->crit
+    bool one_damage_on_hit = false;     // If attack hits, 1 damage (TLT, Ion, etc)    
+    // TODO: Autoblaster (hit results cannot be canceled)
+    
     // Ones that require spending tokens (more complex generally)
     // TODO: Calculation (pay focus: one focus->crit)
     // TODO: Han Solo Crew (spend TL: all hits->crits)
     // TODO: R4 Agromech (after spending focus, gain TL that can be used in same attack)
-    
-    // Upgrades that only affect multi-attack situations
-    bool fire_control_system = false;
-    // TODO: Bossk Crew (gets weird...)
 };
 
 struct DefenseSetup
@@ -168,14 +174,18 @@ struct DefenseSetup
     int evade_token_count = 0;
     int stress_count = 0;
 
-    bool autothrusters = false;
-    // TODO: Lightweight frame
+    // EPTs
     // TODO: Lone wolf (1 blank reroll)
     // TODO: Elusiveness
     // TODO: Wired (reroll focus)
-    // TODO: C-3PO
+
+    // Crew
+    // TODO: C-3PO (always guess 0 probably the most relevant)
     // TODO: Latts? Gets a bit weird/complex
 
+    // Modifications
+    bool autothrusters = false;
+    // TODO: Lightweight frame
 };
 
 struct SimulationResult
@@ -230,7 +240,7 @@ void attacker_modify_attack_dice(ref AttackSetup  attack_setup,
     if (initial_results[DieResult.Focus] > 0)   // Just an early out
     {
         // All of them
-        if (attack_setup.focus_token_count > 0 || attack_setup.marksmanship)
+        if (attack_setup.focus_token_count > 0 || attack_setup.marksmanship || attack_setup.expertise)
             useful_focus_results = initial_results[DieResult.Focus];
         // TODO: Other effects as we add them (Ezra, etc.)
     }
@@ -281,13 +291,23 @@ void attacker_modify_attack_dice(ref AttackSetup  attack_setup,
 
     // Rerolls are done - deal with focus results
 
+    // TODO: Semi-complex logic in the case of abilities where you can spend something to change
+    // a finite number of focus or blank results, etc. Gets a bit complicated in the presence of
+    // other abilities like marksmanship and expertise and so on.
+
     // Marksmanship is always a better choice than regular focus token
     if (attack_setup.marksmanship)
     {
         change_dice(attack_dice, DieResult.Focus, DieResult.Crit, 1);
         change_dice(attack_dice, DieResult.Focus, DieResult.Hit);
     }
-    else if (attack_setup.focus_token_count > 0)        // Spend regular focus?
+    // Expertise is the same as a regular focus token, but doesn't cost anything
+    else if (attack_setup.expertise)
+    {
+        change_dice(attack_dice, DieResult.Focus, DieResult.Hit);
+    }
+    // Spend regular focus?
+    else if (attack_setup.focus_token_count > 0)
     {
         int changed_results = change_dice(attack_dice, DieResult.Focus, DieResult.Hit);
         if (changed_results > 0)
@@ -344,16 +364,33 @@ int[DieResult.Num] roll_and_modify_attack_dice(ref AttackSetup  attack_setup,
     // Done modifying attack dice - compute attack results
     auto attack_results = count_results(attack_dice);
 
-    // Use accuracy corrector if we ended up with less than 2 hits/crits
-    // TODO: We probably need to actually change the dice themselves eventually
-    // to properly handle things like lightweight frame.
-    if (attack_setup.accuracy_corrector &&
-        (attack_results[DieResult.Hit] + attack_results[DieResult.Crit] < 2))
+    // Use accuracy corrector in the following cases:
+    // a) We ended up with less than 2 hits/crits
+    // b) We got exactly 2 hits/crits but we only care if we "hit the attack" (TLT, Ion, etc)
+    // b) We got exactly 2 hits and no crits (still better to remove the extra die for LWF, and not spend tokens)
+    if (attack_setup.accuracy_corrector)
     {
-        attack_setup = initial_attack_setup;    // Undo any token spending
-        foreach (ref r; attack_results) r = 0;  // Cancel all results
-        attack_results[DieResult.Hit] = 2;      // Add two hits to the result
-        // No more modifaction
+        int hits = attack_results[DieResult.Hit];
+        int crits = attack_results[DieResult.Crit];
+        if (((hits + crits) <  2) ||
+            (hits == 2 && crits == 0) ||
+            ((hits + crits) == 2 && attack_setup.one_damage_on_hit))
+        {
+            // TODO: This is actually a bit too optimistic/simplistic...
+            // In some cases it's fair to just conclude that we could have foreseen how many hits we
+            // could get via modification and thus decided to use AC *instead*, but in cases of
+            // stuff like spending target locks for rerolls, it's impossible to perfectly predict.
+            // Thus we should really have actual logic that decides the best thing to do
+            // probabilistically, and in some cases "wastes" tokens due to bad rerolls.
+            attack_setup = initial_attack_setup;    // Undo any token spending
+
+            foreach (ref r; attack_results) r = 0;  // Cancel all results
+            attack_results[DieResult.Hit] = 2;      // Add two hits to the result
+            // No more modifaction
+
+            // TODO: We probably need to actually change the dice themselves eventually
+            // to properly handle things like lightweight frame.
+        }
     }
 
     return attack_results;
