@@ -91,5 +91,9 @@ block content
                                 - radio_switch_control("attack_type", "After Attack",              "after_attack");
                             .row.text-center
                                 button#simulate.button.large.simulate-button Simulate
-            div
-                canvas#pdf-canvas
+            
+            .row
+                .medium-6.columns
+                    canvas#pdf-canvas(height="300")
+                .medium-6.columns
+                    canvas#token-canvas(height="300")

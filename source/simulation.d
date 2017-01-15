@@ -195,33 +195,30 @@ struct SimulationResult
     int hits = 0;
     int crits = 0;
 
-    // Initial - after for all values here
-    int attack_target_locks_used = 0;
-    int attack_focus_tokens_used = 0;
-    int attack_stress_used       = 0;
+    // After - Before for all values here
+    int attack_delta_focus_tokens = 0;
+    int attack_delta_target_locks = 0;
+    int attack_delta_stress       = 0;
 
-    int defense_focus_tokens_used = 0;
-    int defense_evade_tokens_used = 0;
-    int defense_stress_used       = 0;
+    int defense_delta_focus_tokens = 0;
+    int defense_delta_evade_tokens = 0;
+    int defense_delta_stress       = 0;
 };
 
-SimulationResult accumulate_result(SimulationResult a, SimulationResult b, bool separate_trials = true)
+SimulationResult accumulate_result(SimulationResult a, SimulationResult b)
 {
-    if (separate_trials)
-        a.trial_count += b.trial_count;
-    else
-        assert(a.trial_count == 1); // Multi-attack use case
+    a.trial_count += b.trial_count;
 
     a.hits += b.hits;
     a.crits += b.crits;
 
-    a.attack_target_locks_used  += b.attack_target_locks_used;
-    a.attack_focus_tokens_used  += b.attack_focus_tokens_used;
-    a.attack_stress_used        += b.attack_stress_used;
+    a.attack_delta_focus_tokens  += b.attack_delta_focus_tokens;
+    a.attack_delta_target_locks  += b.attack_delta_target_locks;
+    a.attack_delta_stress        += b.attack_delta_stress;
 
-    a.defense_evade_tokens_used += b.defense_evade_tokens_used;
-    a.defense_evade_tokens_used += b.defense_evade_tokens_used;
-    a.defense_stress_used       += b.defense_stress_used;
+    a.defense_delta_focus_tokens += b.defense_delta_focus_tokens;
+    a.defense_delta_evade_tokens += b.defense_delta_evade_tokens;
+    a.defense_delta_stress       += b.defense_delta_stress;
 
     return a;
 }
@@ -527,24 +524,12 @@ int[DieResult.Num] roll_and_modify_defense_dice(ref AttackSetup attack_setup,
 
 
 
-
-private SimulationResult simulate_single_attack(AttackSetup initial_attack_setup, DefenseSetup initial_defense_setup)
+// Modifies input setups to adjust for token spending
+// Also returned as part of simulation result, but convenient to modify in place for multiple attacks
+private int[DieResult.Num] simulate_single_attack(ref AttackSetup attack_setup, ref DefenseSetup defense_setup, bool trigger_after_attack = true)
 {
-    // TODO: Sanity checks on inputs?
-
-    auto attack_setup  = initial_attack_setup;
-    auto defense_setup = initial_defense_setup;
-
     auto attack_results  = roll_and_modify_attack_dice(attack_setup, defense_setup);
     auto defense_results = roll_and_modify_defense_dice(attack_setup, defense_setup, attack_results);
-
-    // Sanity checks on token spending
-    assert(attack_setup.target_lock_count >= 0 && attack_setup.target_lock_count <= initial_attack_setup.target_lock_count);
-    assert(attack_setup.focus_token_count >= 0 && attack_setup.focus_token_count <= initial_attack_setup.focus_token_count);
-    assert(defense_setup.evade_token_count >= 0 && defense_setup.evade_token_count <= initial_defense_setup.evade_token_count);
-    assert(defense_setup.focus_token_count >= 0 && defense_setup.focus_token_count <= initial_defense_setup.focus_token_count);
-
-    // ----------------------------------------------------------------------------------------
 
     // Compare results
 
@@ -568,6 +553,74 @@ private SimulationResult simulate_single_attack(AttackSetup initial_attack_setup
         attack_results[DieResult.Hit] = 1;
         attack_results[DieResult.Crit] = 0;
     }
+    
+    // Trigger any "after attacking" abilities if request
+    if (trigger_after_attack)
+    {
+        // Update any abilities that trigger "after attacking" or "after defending"
+        if (attack_setup.fire_control_system)
+        {
+            // TODO: Handle multi-target-lock stuff... really only an issue with Redline and so on
+            attack_setup.target_lock_count = max(attack_setup.target_lock_count, 1);
+        }
+    }
+
+    return attack_results;
+}
+
+
+SimulationResult simulate_attack(AttackSetup attack_setup, DefenseSetup defense_setup)
+{
+    // TODO: Sanity checks on inputs?
+
+    auto initial_attack_setup  = attack_setup;
+    auto initial_defense_setup = defense_setup;
+
+    // Simulate first attack
+    // TODO: We'll eventually need to pass some hints into this about the fact that there is a second attack
+    // as it does change the optimal token spend strategies and so on somewhat.
+    // Also upgrades matter here (FCS, etc).
+    // NOTE: Attack/defense setup passed by reference as tokens are modified in place
+
+    int[DieResult.Num] attack_results;
+    bool first_attack_hit = (attack_results[DieResult.Hit] != 0 || attack_results[DieResult.Crit] != 0);
+    
+    if (attack_setup.type == MultiAttackType.Single)
+    {
+        attack_results = simulate_single_attack(attack_setup, defense_setup, true);
+    }
+    else if (attack_setup.type == MultiAttackType.SecondaryPerformTwice)
+    {
+        // We DO NOT trigger "after attack" type abilities between two "secondary perfom twice" attacks
+        attack_results    = simulate_single_attack(attack_setup, defense_setup, false);
+        attack_results[] += simulate_single_attack(attack_setup, defense_setup, true)[];
+    }    
+    else if (attack_setup.type == MultiAttackType.AfterAttack)
+    {
+        // After attack abilities trigger after both of these
+        attack_results    = simulate_single_attack(attack_setup, defense_setup, true);
+        attack_results[] += simulate_single_attack(attack_setup, defense_setup, true)[];
+    }
+    else if (attack_setup.type == MultiAttackType.AfterAttackDoesNotHit && !first_attack_hit)
+    {
+        // After attack abilities trigger after both of these
+        attack_results    = simulate_single_attack(attack_setup, defense_setup, true);
+        // Only do second attack if the first one missed
+        if (attack_results[DieResult.Hit] == 0 && attack_results[DieResult.Crit] == 0)
+            attack_results[] += simulate_single_attack(attack_setup, defense_setup, true)[];
+    }
+    else
+    {
+        assert(false);  // Unknown attack type
+    }
+
+    // Sanity checks on token spending
+    assert(attack_setup.target_lock_count >= 0);        // Possible to gain target locks due to FCS
+    assert(attack_setup.focus_token_count >= 0 && attack_setup.focus_token_count <= initial_attack_setup.focus_token_count);
+    assert(attack_setup.stress_count >= 0);
+    assert(defense_setup.evade_token_count >= 0 && defense_setup.evade_token_count <= initial_defense_setup.evade_token_count);
+    assert(defense_setup.focus_token_count >= 0 && defense_setup.focus_token_count <= initial_defense_setup.focus_token_count);
+    assert(defense_setup.stress_count >= 0);
 
     // Compute final results of this simulation step
     SimulationResult result;
@@ -576,65 +629,12 @@ private SimulationResult simulate_single_attack(AttackSetup initial_attack_setup
     result.hits  = attack_results[DieResult.Hit];
     result.crits = attack_results[DieResult.Crit];
 
-    result.attack_target_locks_used  = initial_attack_setup.target_lock_count  - attack_setup.target_lock_count;
-    result.attack_focus_tokens_used  = initial_attack_setup.focus_token_count  - attack_setup.focus_token_count;
-    result.attack_stress_used        = initial_attack_setup.stress_count       - attack_setup.stress_count;
-
-    result.defense_focus_tokens_used = initial_defense_setup.focus_token_count - defense_setup.focus_token_count;
-    result.defense_evade_tokens_used = initial_defense_setup.evade_token_count - defense_setup.evade_token_count;
-    result.defense_stress_used       = initial_defense_setup.stress_count      - defense_setup.stress_count;
+    result.attack_delta_focus_tokens  = attack_setup.focus_token_count  - initial_attack_setup.focus_token_count ; 
+    result.attack_delta_target_locks  = attack_setup.target_lock_count  - initial_attack_setup.target_lock_count ; 
+    result.attack_delta_stress        = attack_setup.stress_count       - initial_attack_setup.stress_count      ;
+    result.defense_delta_focus_tokens = defense_setup.focus_token_count - initial_defense_setup.focus_token_count; 
+    result.defense_delta_evade_tokens = defense_setup.evade_token_count - initial_defense_setup.evade_token_count; 
+    result.defense_delta_stress       = defense_setup.stress_count      - initial_defense_setup.stress_count     ; 
 
     return result;
-}
-
-
-SimulationResult simulate_attack(AttackSetup attack_setup, DefenseSetup defense_setup)
-{
-    // Simulate first attack
-    // TODO: We'll eventually need to pass some hints into this about the fact that there is a second attack
-    // as it does change the optimal token spend strategies and so on somewhat.
-    // Also upgrades matter here (FCS, etc).
-    auto result_1 = simulate_single_attack(attack_setup, defense_setup);
-    
-    // Update token spend
-    attack_setup.focus_token_count  -= result_1.attack_focus_tokens_used;
-    attack_setup.target_lock_count  -= result_1.attack_target_locks_used;
-    defense_setup.focus_token_count -= result_1.defense_focus_tokens_used;
-    defense_setup.evade_token_count -= result_1.defense_evade_tokens_used;
-
-    if (attack_setup.type == MultiAttackType.Single)
-    {
-        return result_1;
-    }
-    else if (attack_setup.type == MultiAttackType.SecondaryPerformTwice)
-    {
-        // Second attack, do not consider a separate "trial" in the PDF
-        auto result_2 = simulate_single_attack(attack_setup, defense_setup);
-        return accumulate_result(result_1, result_2, false);
-    }
-    else if (attack_setup.type == MultiAttackType.AfterAttack ||
-             attack_setup.type == MultiAttackType.AfterAttackDoesNotHit)
-    {
-        // Update any abilities that trigger "after attacking" or "after defending"
-        if (attack_setup.fire_control_system)
-        {
-            // TODO: Handle multi-target-lock stuff... really only an issue with Redline and so on
-            attack_setup.target_lock_count = max(attack_setup.target_lock_count, 1);
-        }
-
-        if (attack_setup.type == MultiAttackType.AfterAttack || (result_1.hits == 0 && result_1.crits == 0))
-        {
-            // Second attack, do not consider a separate "trial" in the PDF
-            auto result_2 = simulate_single_attack(attack_setup, defense_setup);
-            return accumulate_result(result_1, result_2, false);
-        }
-        else
-        {
-            // First attack hit, no second attack
-            return result_1;
-        }
-    }
-
-    // Should have returned from somewhere above
-    assert(false);
 }

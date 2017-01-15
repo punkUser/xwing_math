@@ -63,6 +63,10 @@ public class WWWServer
         float[] hit_pdf;
         float[] crit_pdf;
         float[] hit_inv_cdf;
+
+        string[4] exp_token_labels;
+        float[4] exp_attack_tokens;
+        float[4] exp_defense_tokens;
     };
 
     private void simulate(HTTPServerRequest req, HTTPServerResponse res)
@@ -168,6 +172,19 @@ public class WWWServer
         {
             content.hit_inv_cdf[i] = content.hit_inv_cdf[i+1] + content.hit_pdf[i] + content.crit_pdf[i];
         }
+
+        // Tokens (see labels above)
+        content.exp_token_labels = ["Focus", "Target Lock", "Evade", "Stress"];
+        content.exp_attack_tokens = [
+            total_sum.attack_delta_focus_tokens / cast(float)k_trial_count,
+            total_sum.attack_delta_target_locks / cast(float)k_trial_count,
+            0.0f,
+            total_sum.attack_delta_stress       / cast(float)k_trial_count];
+        content.exp_defense_tokens = [
+            total_sum.defense_delta_focus_tokens / cast(float)k_trial_count,
+            0.0f,
+            total_sum.defense_delta_evade_tokens / cast(float)k_trial_count,
+            total_sum.defense_delta_stress       / cast(float)k_trial_count];
 
         res.writeJsonBody(content);
     }

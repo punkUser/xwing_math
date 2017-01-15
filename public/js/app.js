@@ -11,7 +11,7 @@ window.chartColors =
 	grey: 'rgb(231,233,237)'
 };
 
-var chart_data =
+var pdf_chart_data =
 {
 	labels: ["0", "1", "2", "3", "4", "5", "6"],
 	datasets: [{
@@ -35,14 +35,29 @@ var chart_data =
 	}]
 };
 
+var token_chart_data =
+{
+	labels: ["Focus", "Target Lock", "Evade", "Stress"],
+	datasets: [{
+		label: 'Attacker',
+		backgroundColor: window.chartColors.red,
+		data: []
+	}, {
+		label: 'Defender',
+		backgroundColor: window.chartColors.green,
+		data: []
+	}]
+}
+
 window.onload = function()
 {
-	var ctx = document.getElementById("pdf-canvas").getContext("2d");
-	window.pdf_chart = new Chart(ctx, {
+	var pdf_ctx = document.getElementById("pdf-canvas").getContext("2d");	
+	window.pdf_chart = new Chart(pdf_ctx, {
 		type: 'bar',
-		data: chart_data,
+		data: pdf_chart_data,
 		options: {
 			responsive: true,
+			maintainAspectRatio: false,
 			title: {
 				display: true,
 				text: 'Total Hit Probability Distribution',
@@ -82,16 +97,56 @@ window.onload = function()
 			}
 		}
 	});
+	
+	var token_ctx = document.getElementById("token-canvas").getContext("2d");
+	window.token_chart = new Chart(token_ctx, {
+		type: 'bar',
+		data: token_chart_data,
+		options: {
+			responsive: true,
+			maintainAspectRatio: false,
+			title: {
+				display: true,
+				text: 'Expected Token Delta',
+				fontSize: 24,
+			},
+			legend: {
+				position: 'top',
+			},
+			tooltips: {
+				mode: 'index',
+				intersect: true,
+				callbacks: {
+					label: function(tooltipItem, data) {
+						return data.datasets[tooltipItem.datasetIndex].label + ': ' + tooltipItem.yLabel.toFixed(3);
+					},
+				},
+			},
+			scales: {
+				yAxes: [{
+					ticks: {
+						suggestedMin: -1,
+						suggestedMax:  1,
+					},
+				}]
+			}
+		}
+	});
 };
 
 function simulateUpdateChart(data)
 {
-	chart_data.labels = data.pdf_x_labels;
-	chart_data.datasets[0].data = data.hit_inv_cdf;
-	chart_data.datasets[1].data = data.hit_pdf;
-	chart_data.datasets[2].data = data.crit_pdf;
+	pdf_chart_data.labels = data.pdf_x_labels;
+	pdf_chart_data.datasets[0].data = data.hit_inv_cdf;
+	pdf_chart_data.datasets[1].data = data.hit_pdf;
+	pdf_chart_data.datasets[2].data = data.crit_pdf;
 	window.pdf_chart.options.title.text = "Expected Total Hits: " + data.expected_total_hits.toFixed(2);
 	window.pdf_chart.update();
+	
+	token_chart_data.labels = data.exp_token_labels;
+	token_chart_data.datasets[0].data = data.exp_attack_tokens;
+	token_chart_data.datasets[1].data = data.exp_defense_tokens;
+	window.token_chart.update();
 }
 
 $(document).ready(function()
