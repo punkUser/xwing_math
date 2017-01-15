@@ -195,11 +195,14 @@ struct SimulationResult
     int hits = 0;
     int crits = 0;
 
+    // Initial - after for all values here
     int attack_target_locks_used = 0;
     int attack_focus_tokens_used = 0;
+    int attack_stress_used       = 0;
 
     int defense_focus_tokens_used = 0;
     int defense_evade_tokens_used = 0;
+    int defense_stress_used       = 0;
 };
 
 SimulationResult accumulate_result(SimulationResult a, SimulationResult b, bool separate_trials = true)
@@ -214,8 +217,11 @@ SimulationResult accumulate_result(SimulationResult a, SimulationResult b, bool 
 
     a.attack_target_locks_used  += b.attack_target_locks_used;
     a.attack_focus_tokens_used  += b.attack_focus_tokens_used;
+    a.attack_stress_used        += b.attack_stress_used;
+
     a.defense_evade_tokens_used += b.defense_evade_tokens_used;
     a.defense_evade_tokens_used += b.defense_evade_tokens_used;
+    a.defense_stress_used       += b.defense_stress_used;
 
     return a;
 }
@@ -231,6 +237,13 @@ void attacker_modify_attack_dice(ref AttackSetup  attack_setup,
                                  ref AttackDie[] attack_dice)
 {
     auto initial_results = count_results(attack_dice);
+
+    // TODO: There are a few effects that should technically change our token spending behavior here...
+    // Ex. One Damage on Hit (TLT, Ion) vs. enemies that can only ever get a maximum # of evade results
+    // Doing more than that + 1 hits is just wasting tokens, and crits are useless (ex. Calculation)
+    // It would be difficult to perfectly model this, and human behavior would not be perfect either.
+    // That said, there is probably some low hanging fruit in a few situations that should get us
+    // "close enough".
 
     // Compute attack setup metadata
     int attack_dice_count = cast(int)attack_dice.length;
@@ -565,8 +578,11 @@ private SimulationResult simulate_single_attack(AttackSetup initial_attack_setup
 
     result.attack_target_locks_used  = initial_attack_setup.target_lock_count  - attack_setup.target_lock_count;
     result.attack_focus_tokens_used  = initial_attack_setup.focus_token_count  - attack_setup.focus_token_count;
+    result.attack_stress_used        = initial_attack_setup.stress_count       - attack_setup.stress_count;
+
     result.defense_focus_tokens_used = initial_defense_setup.focus_token_count - defense_setup.focus_token_count;
     result.defense_evade_tokens_used = initial_defense_setup.evade_token_count - defense_setup.evade_token_count;
+    result.defense_stress_used       = initial_defense_setup.stress_count      - defense_setup.stress_count;
 
     return result;
 }
