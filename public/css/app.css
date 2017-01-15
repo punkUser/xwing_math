@@ -23,3 +23,11 @@ canvas {
 	margin-top: 0.5rem;
 	margin-bottom: 0.5rem;
 }
+
+hr {
+	margin: 0.75rem auto;
+}
+
+label {
+	font-size: 100%;
+}
