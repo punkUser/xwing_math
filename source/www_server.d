@@ -14,6 +14,7 @@ public class WWWServer
         auto settings = new HTTPServerSettings;
         settings.errorPageHandler = toDelegate(&error_page);
         settings.port = 8080;
+
         //settings.sessionStore = new MemorySessionStore();
         //settings.accessLogFile = m_config.http_server_log_file;
 
@@ -112,12 +113,12 @@ public class WWWServer
         else
             assert(false);
 
-        defense_setup.dice              = to!int(req.query.get("defense_dice",              "3"));
-        defense_setup.focus_token_count = to!int(req.query.get("defense_focus_token_count", "0"));
-        defense_setup.evade_token_count = to!int(req.query.get("defense_evade_token_count", "0"));
+        defense_setup.dice                      = to!int(req.query.get("defense_dice",              "3"));
+        defense_setup.initial_focus_token_count = to!int(req.query.get("defense_focus_token_count", "0"));
+        defense_setup.initial_evade_token_count = to!int(req.query.get("defense_evade_token_count", "0"));
 
-        defense_setup.autothrusters     = req.query.get("defense_autothrusters", "")        == "on";
-        defense_setup.wired             = req.query.get("defense_wired", "")                == "on";
+        defense_setup.autothrusters             = req.query.get("defense_autothrusters", "")        == "on";
+        defense_setup.wired                     = req.query.get("defense_wired", "")                == "on";
 
         //writefln("Attack Setup: %s", attack_setup.serializeToPrettyJson());
         //writefln("Defense Setup: %s", defense_setup.serializeToPrettyJson());
