@@ -52,30 +52,6 @@ struct AttackDie
     public @property bool crit() const   { return result == DieResult.Crit; }
 };
 
-struct DefenseDie
-{
-    public  DieResult result = DieResult.Num;
-    private int roll_count = 0;
-
-    public this(DieResult r)
-    {
-        result = r;
-        roll_count = 1;
-    }
-    public void roll()
-    {
-        assert(can_reroll());
-        result = k_defense_die_result[uniform(0, k_die_sides)];
-        ++roll_count;
-    }
-    public bool can_reroll() const { return roll_count < 2; }
-
-    // Convenience
-    public @property bool blank() const { return result == DieResult.Blank; }
-    public @property bool focus() const { return result == DieResult.Focus; }
-    public @property bool evade() const { return result == DieResult.Evade; }
-};
-
 int[DieResult.Num] count_results(T)(const(T)[] dice)
 {
     int[DieResult.Num] results;
