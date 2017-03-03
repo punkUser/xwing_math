@@ -131,15 +131,17 @@ struct AttackSetup
     int target_lock_count = 0;
     int stress_count = 0;
 
+    // Pilots
+
     // EPT
     bool juke = false;                  // Setting this to true implies evade token present as well
     bool marksmanship = false;          // One focus->crit, rest focus->hit
     int  predator_rerolls = 0;          // 0-2 rerolls
     bool rage = false;                  // 3 rerolls
-    bool expertise = false;             // all focus -> hits
+    bool wired = false;                 // reroll any/all focus
+    bool expertise = false;             // all focus -> hits    
+    bool fearlessness = false;          // add 1 hit result
     // TODO: Lone wolf (1 blank reroll)
-    // TODO: Wired (reroll focus)
-    // TODO: Fearlessness (add 1 hit result)
     // TODO: Crack shot? (gets a little bit complex as presence affects defender logic and as well)
 
     // Crew
@@ -174,10 +176,12 @@ struct DefenseSetup
     int evade_token_count = 0;
     int stress_count = 0;
 
+    // Pilots
+
     // EPTs
+    bool wired = false;
     // TODO: Lone wolf (1 blank reroll)
     // TODO: Elusiveness
-    // TODO: Wired (reroll focus)
 
     // Crew
     // TODO: C-3PO (always guess 0 probably the most relevant)
@@ -233,7 +237,12 @@ void attacker_modify_attack_dice(ref AttackSetup  attack_setup,
                                  ref DefenseSetup defense_setup,
                                  ref AttackDie[] attack_dice)
 {
-    auto initial_results = count_results(attack_dice);
+    // Add any free results
+    // TODO: Probably better to figure out a way to do this without allocation
+    if (attack_setup.fearlessness)
+        attack_dice ~= AttackDie(DieResult.Hit);
+
+    auto dice_results = count_results(attack_dice);
 
     // TODO: There are a few effects that should technically change our token spending behavior here...
     // Ex. One Damage on Hit (TLT, Ion) vs. enemies that can only ever get a maximum # of evade results
@@ -247,13 +256,33 @@ void attacker_modify_attack_dice(ref AttackSetup  attack_setup,
 
     // How many focus results can we turn into hits or crits?
     int useful_focus_results = 0;
-    if (initial_results[DieResult.Focus] > 0)   // Just an early out
+    if (dice_results[DieResult.Focus] > 0)   // Just an early out
     {
         // All of them
         if (attack_setup.focus_token_count > 0 || attack_setup.marksmanship || attack_setup.expertise)
-            useful_focus_results = initial_results[DieResult.Focus];
+            useful_focus_results = dice_results[DieResult.Focus];
+
         // TODO: Other effects as we add them (Ezra, etc.)
+
+        // If we are able to free reroll any focus results (wired, etc) that aren't useful, do so now
+        if (attack_setup.wired)
+        {
+            int focus_to_reroll = dice_results[DieResult.Focus] - useful_focus_results;
+            for (int i = 0; i < attack_dice_count && focus_to_reroll > 0; ++i)
+            {
+                if (attack_dice[i].can_reroll() && attack_dice[i].focus)
+                {
+                    attack_dice[i].roll();
+                    --focus_to_reroll;
+                }
+            }
+
+            // Recount after rerolling (could update as we go, but this is simpler)
+            dice_results = count_results(attack_dice);
+        }
     }
+
+    // TODO: Any effects that modify blank dice into something useful here
 
     // How many free, unrestricted rerolls do we have?
     int free_reroll_count = 0;
@@ -262,8 +291,6 @@ void attacker_modify_attack_dice(ref AttackSetup  attack_setup,
 
     // If we have a target lock, we can reroll everything if we want to
     int total_reroll_count = attack_setup.target_lock_count > 0 ? attack_dice_count : free_reroll_count;
-    
-    // TODO: Any effects that modify blank dice into something useful here
 
     // First, let's reroll any blanks we're allowed to - this is always useful
     int rerolled_dice_count = 0;
@@ -280,7 +307,7 @@ void attacker_modify_attack_dice(ref AttackSetup  attack_setup,
     // Because not all dice can be rerolled (due to earlier rerolls), we need to eagerly reroll any that
     // we are allowed to, so rely on the math here.
     {
-        int focus_to_reroll = initial_results[DieResult.Focus] - useful_focus_results;
+        int focus_to_reroll = dice_results[DieResult.Focus] - useful_focus_results;
         for (int i = 0; i < attack_dice_count && focus_to_reroll > 0 && rerolled_dice_count < total_reroll_count; ++i)
         {
             if (attack_dice[i].can_reroll() && attack_dice[i].focus)
@@ -428,6 +455,18 @@ void defender_modify_defense_dice(ref AttackSetup attack_setup,
     // Find one blank and turn it to an evade
     if (defense_setup.autothrusters)
         change_dice(defense_dice, DieResult.Blank, DieResult.Evade, 1);
+
+    // If we have any focus results and no focus token, reroll our focuses
+    if (defense_setup.focus_token_count == 0 && defense_setup.wired)
+    {
+        for (int i = 0; i < defense_dice.length; ++i)
+        {
+            if (defense_dice[i].can_reroll() && defense_dice[i].focus)
+            {
+                defense_dice[i].roll();
+            }
+        }
+    }
 
     // Spend regular focus or evade tokens?
     if (defense_setup.focus_token_count > 0 || defense_setup.evade_token_count > 0)

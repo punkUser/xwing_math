@@ -40,7 +40,7 @@ block content
                     .medium-6.columns
                         .callout.small.alert
                             .row
-                                - slider_control("attack_dice",                "Attack Dice",        1, 6, 3);
+                                - slider_control("attack_dice",                "Attack Dice",        1, 8, 3);
                                 - slider_control("attack_focus_token_count",   "Focus Tokens",       0, 2, 0);
                                 - slider_control("attack_target_lock_count",   "Target Locks",       0, 2, 0);
                                 
@@ -48,11 +48,13 @@ block content
                                 .small-12.columns
                                     hr
                                 - switch_control("attack_expertise",           "Expertise");
+                                - switch_control("attack_fearlessness",        "Fearlessness");
                                 - switch_control("attack_juke",                "Juke");
                                 - switch_control("attack_marksmanship",        "Marksmanship");
                                 - switch_control("attack_predator_1",          "Predator (1 reroll)");
                                 - switch_control("attack_predator_2",          "Predator (2 rerolls)");
                                 - switch_control("attack_rage",                "Rage (3 rerolls)");
+                                - switch_control("attack_wired",               "Wired");
                                 
                             .row
                                 .small-12.columns
@@ -78,6 +80,12 @@ block content
                                 - slider_control("defense_dice",              "Defense Dice", 0, 6, 3);
                                 - slider_control("defense_focus_token_count", "Focus Tokens", 0, 2, 0);
                                 - slider_control("defense_evade_token_count", "Evade Tokens", 0, 2, 0);
+                                
+                            .row
+                                .small-12.columns
+                                    hr
+                                - switch_control("defense_wired",               "Wired");
+
                             .row
                                 .small-12.columns
                                     hr
