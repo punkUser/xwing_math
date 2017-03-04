@@ -4,6 +4,7 @@ import std.stdio;
 import std.uni;
 import std.stdint;
 import std.algorithm;
+import std.random;
 
 import vibe.d;
 
@@ -77,16 +78,16 @@ public class WWWServer
         AttackSetup attack_setup;
         DefenseSetup defense_setup;
 
-        attack_setup.dice               = to!int(req.query.get("attack_dice",              "3"));
-        attack_setup.focus_token_count  = to!int(req.query.get("attack_focus_token_count", "0"));
-        attack_setup.target_lock_count  = to!int(req.query.get("attack_target_lock_count", "0"));
+        attack_setup.dice                       = to!int(req.query.get("attack_dice",              "3"));
+        attack_setup.initial_focus_token_count  = to!int(req.query.get("attack_focus_token_count", "0"));
+        attack_setup.initial_target_lock_count  = to!int(req.query.get("attack_target_lock_count", "0"));
                 
         attack_setup.expertise           = req.query.get("attack_expertise", "")            == "on";
         attack_setup.fearlessness        = req.query.get("attack_fearlessness", "")         == "on";
         attack_setup.juke                = req.query.get("attack_juke", "")                 == "on";
         attack_setup.predator_rerolls =
             req.query.get("attack_predator_1", "") == "on" ? 1 : 
-        (req.query.get("attack_predator_2", "") == "on" ? 2 : 0);
+            (req.query.get("attack_predator_2", "") == "on" ? 2 : 0);
         attack_setup.rage                = req.query.get("attack_rage", "")                 == "on";
         attack_setup.wired               = req.query.get("attack_wired", "")                == "on";
 
@@ -126,6 +127,9 @@ public class WWWServer
 
         // TODO: Clean this up? Max hits is kind of unpredictable though TBH
         immutable int k_trial_count = 500000;
+
+        // debug
+        //rndGen.seed(1337);
 
         // We always show at least 0..6 labels on the graph as this looks nice
         SimulationResult[] total_hits_pdf = new SimulationResult[7];
