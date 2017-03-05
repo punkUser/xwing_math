@@ -35,10 +35,6 @@ enum MultiAttackType : int
     AfterAttack,                  // Ex. Corran    
 };
 
-// TODO: Optimize the bools into a bitfield since this structure does got copied/passed by value a few times
-// Alternatively, maybe just separate out the tokens into a separate structure, since the other stuff is
-// read-only.
-
 struct AttackSetup
 {
     MultiAttackType type = MultiAttackType.Single;
@@ -64,11 +60,16 @@ struct AttackSetup
 
     // Crew
     bool mercenary_copilot = false;     // One hit->crit
+    bool finn = false;                  // Add one blank result to roll
     // TODO: Ezra Crew (one focus->crit)
     // TODO: Zuckuss Crew
     // TODO: 4-LOM Crew
-    // TODO: Dengar Crew
+    // TODO: Dengar Crew (overlaps w/ EPT rerolls...)
     // TODO: Bossk Crew (gets weird/hard...)
+    // TODO: Hot shot copilot
+    // TODO: Captain rex (only affects multi-attack)
+    // TODO: Operations specialist? Again only multi-attack
+    // TODO: Bistain (hit -> crit, like merc copilot)
 
     // System upgrades
     bool accuracy_corrector = false;    // Can cancel all results and replace with 2 hits    
@@ -102,6 +103,7 @@ struct DefenseSetup
     // TODO: Elusiveness
 
     // Crew
+    bool finn = false;                  // Add one blank result to roll
     // TODO: C-3PO (always guess 0 probably the most relevant)
     // TODO: Latts? Gets a bit weird/complex
 
@@ -279,9 +281,10 @@ void attacker_modify_attack_dice(ref const(AttackSetup)  attack_setup,
                                  ref TokenState attack_tokens)
 {
     // Add any free results
-    // TODO: Probably better to figure out a way to do this without allocation
     if (attack_setup.fearlessness)
         ++attack_dice.results[DieResult.Hit];
+    if (attack_setup.finn)
+        ++attack_dice.results[DieResult.Blank];
 
     // TODO: There are a few effects that should technically change our token spending behavior here...
     // Ex. One Damage on Hit (TLT, Ion) vs. enemies that can only ever get a maximum # of evade results
@@ -461,6 +464,10 @@ void defender_modify_defense_dice(ref const(AttackSetup) attack_setup,
                                   ref DiceState defense_dice,
                                   ref TokenState defense_tokens)
 {
+    // Add free results
+    if (attack_setup.finn)
+        ++defense_dice.results[DieResult.Blank];
+
     // Find one blank and turn it to an evade
     if (defense_setup.autothrusters)
         defense_dice.change_dice(DieResult.Blank, DieResult.Evade, 1);

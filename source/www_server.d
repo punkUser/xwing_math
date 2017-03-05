@@ -92,6 +92,7 @@ public class WWWServer
         attack_setup.wired               = req.query.get("attack_wired", "")                == "on";
 
         attack_setup.mercenary_copilot   = req.query.get("attack_mercenary_copilot", "")    == "on";
+        attack_setup.finn                = req.query.get("attack_finn", "")                 == "on";
         
         attack_setup.heavy_laser_cannon  = req.query.get("attack_heavy_laser_cannon", "")   == "on";        
         attack_setup.mangler_cannon      = req.query.get("attack_mangler_cannon", "")       == "on";
@@ -118,8 +119,10 @@ public class WWWServer
         defense_setup.initial_focus_token_count = to!int(req.query.get("defense_focus_token_count", "0"));
         defense_setup.initial_evade_token_count = to!int(req.query.get("defense_evade_token_count", "0"));
 
-        defense_setup.autothrusters             = req.query.get("defense_autothrusters", "")        == "on";
         defense_setup.wired                     = req.query.get("defense_wired", "")                == "on";
+        defense_setup.finn                      = req.query.get("defense_finn", "")                 == "on";
+        defense_setup.autothrusters             = req.query.get("defense_autothrusters", "")        == "on";
+        
 
         //writefln("Attack Setup: %s", attack_setup.serializeToPrettyJson());
         //writefln("Defense Setup: %s", defense_setup.serializeToPrettyJson());
