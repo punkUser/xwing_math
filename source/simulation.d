@@ -147,9 +147,6 @@ SimulationResult accumulate_result(SimulationResult a, SimulationResult b)
     return a;
 }
 
-
-
-
 //-----------------------------------------------------------------------------------
 
 struct TokenState
@@ -201,7 +198,7 @@ struct DiceState
 
         int rerolled_count = min(results[from], max_count);
         results[from] -= rerolled_count;
-        
+
         foreach (i; 0 .. rerolled_count)
         {
             auto new_result = k_attack_die_result[uniform(0, k_die_sides)];
@@ -256,448 +253,446 @@ struct DiceState
             results[to]   += delta;
             changed_count += delta;
         }
-        
+
         return changed_count;
     }
 }
 
+//-----------------------------------------------------------------------------------
 
 
 
 
-
-
-
-void defender_modify_attack_dice(ref const(AttackSetup)  attack_setup,
-                                 ref const(DefenseSetup) defense_setup,
-                                 ref DiceState attack_dice,
-                                 ref TokenState attack_tokens)
+class Simulation
 {
-}
-
-void attacker_modify_attack_dice(ref const(AttackSetup)  attack_setup,
-                                 ref const(DefenseSetup) defense_setup,
-                                 ref DiceState attack_dice,
-                                 ref TokenState attack_tokens)
-{
-    // Add any free results
-    if (attack_setup.fearlessness)
-        ++attack_dice.results[DieResult.Hit];
-    if (attack_setup.finn)
-        ++attack_dice.results[DieResult.Blank];
-
-    // TODO: There are a few effects that should technically change our token spending behavior here...
-    // Ex. One Damage on Hit (TLT, Ion) vs. enemies that can only ever get a maximum # of evade results
-    // Doing more than that + 1 hits is just wasting tokens, and crits are useless (ex. Calculation)
-    // It would be difficult to perfectly model this, and human behavior would not be perfect either.
-    // That said, there is probably some low hanging fruit in a few situations that should get us
-    // "close enough".
-
-    // How many focus results can we turn into hits or crits?
-    int useful_focus_results = 0;
-    if (attack_dice.count(DieResult.Focus) > 0)   // Just an early out
+    public this(ref const(AttackSetup)  attack_setup,
+                ref const(DefenseSetup) defense_setup)
     {
-        // All of them
-        if (attack_tokens.focus > 0 || attack_setup.marksmanship || attack_setup.expertise)
-            useful_focus_results = int.max;
+        m_attack_setup = attack_setup;
+        m_defense_setup = defense_setup;
+    }
 
-        // TODO: Other effects as we add them (Ezra, etc.)
+    private void defender_modify_attack_dice(ref DiceState attack_dice,
+                                             ref TokenState attack_tokens)
+    {
+    }
 
-        // If we are able to free reroll any focus results (wired, etc) that aren't useful, do so now
-        if (attack_setup.wired)
+    private void attacker_modify_attack_dice(ref DiceState attack_dice,
+                                             ref TokenState attack_tokens)
+    {
+        // Add any free results
+        if (m_attack_setup.fearlessness)
+            ++attack_dice.results[DieResult.Hit];
+        if (m_attack_setup.finn)
+            ++attack_dice.results[DieResult.Blank];
+
+        // TODO: There are a few effects that should technically change our token spending behavior here...
+        // Ex. One Damage on Hit (TLT, Ion) vs. enemies that can only ever get a maximum # of evade results
+        // Doing more than that + 1 hits is just wasting tokens, and crits are useless (ex. Calculation)
+        // It would be difficult to perfectly model this, and human behavior would not be perfect either.
+        // That said, there is probably some low hanging fruit in a few situations that should get us
+        // "close enough".
+
+        // How many focus results can we turn into hits or crits?
+        int useful_focus_results = 0;
+        if (attack_dice.count(DieResult.Focus) > 0)   // Just an early out
         {
-            int focus_to_reroll = max(0, attack_dice.count(DieResult.Focus) - useful_focus_results);
-            attack_dice.reroll_attack_dice(DieResult.Focus, focus_to_reroll);
-        }
-    }
+            // All of them
+            if (attack_tokens.focus > 0 || m_attack_setup.marksmanship || m_attack_setup.expertise)
+                useful_focus_results = int.max;
 
-    // TODO: Any effects that modify blank dice into something useful here
+            // TODO: Other effects as we add them (Ezra, etc.)
 
-    // How many free, unrestricted rerolls do we have?
-    immutable int free_reroll_count =
-        attack_setup.predator_rerolls +
-        (attack_setup.rage ? 3 : 0);
-
-    // If we have a target lock, we can reroll everything if we want to
-    immutable int total_reroll_count = attack_tokens.target_lock > 0 ? int.max : free_reroll_count;
-    int rerolled_dice_count = 0;
-
-    // First, let's reroll any blanks we're allowed to - this is always useful
-    rerolled_dice_count += attack_dice.reroll_attack_dice(DieResult.Blank, total_reroll_count);
-
-    // Now reroll focus results that "aren't useful"
-    {
-        int focus_to_reroll = attack_dice.count(DieResult.Focus) - useful_focus_results;
-        focus_to_reroll = clamp(focus_to_reroll, 0, total_reroll_count - rerolled_dice_count);
-
-        rerolled_dice_count += attack_dice.reroll_attack_dice(DieResult.Focus, focus_to_reroll);
-    }
-
-    // If we rerolled more than our total number of "free" rerolls, we have to spend a target lock
-    if (rerolled_dice_count > free_reroll_count)
-    {
-        assert(attack_tokens.target_lock > 0);
-        --attack_tokens.target_lock;
-    }
-
-    // Rerolls are done - deal with focus results
-
-    // TODO: Semi-complex logic in the case of abilities where you can spend something to change
-    // a finite number of focus or blank results, etc. Gets a bit complicated in the presence of
-    // other abilities like marksmanship and expertise and so on.
-
-    // Marksmanship is always a better choice than regular focus token
-    if (attack_setup.marksmanship)
-    {
-        attack_dice.change_dice(DieResult.Focus, DieResult.Crit, 1);
-        attack_dice.change_dice(DieResult.Focus, DieResult.Hit);
-    }
-    // Expertise is the same as a regular focus token, but doesn't cost anything
-    else if (attack_setup.expertise)
-    {
-        attack_dice.change_dice(DieResult.Focus, DieResult.Hit);
-    }
-    // Spend regular focus?
-    else if (attack_tokens.focus > 0)
-    {
-        int changed_results = attack_dice.change_dice(DieResult.Focus, DieResult.Hit);
-        if (changed_results > 0)
-            --attack_tokens.focus;
-    }
-
-    // Mangler and merc copilot can make a hit into a crit
-    // Do this last in case we focused into any hits, etc.
-    {
-        int hits_to_crits =
-            (attack_setup.mercenary_copilot ? 1 : 0) +
-            (attack_setup.mangler_cannon    ? 1 : 0);
-        attack_dice.change_dice(DieResult.Hit, DieResult.Crit, hits_to_crits);
-    }
-
-    // Some final sanity checks in debug mode on the logic here as it is not always trivial...
-    debug
-    {
-        // Did we have the ability to reroll more dice than we did?
-        if (total_reroll_count > rerolled_dice_count)
-        {
-            // If so, every focus or blank result that is still around here should have been rerolled
-            assert(attack_dice.results[DieResult.Blank] == 0);
-            assert(attack_dice.results[DieResult.Focus] == 0);
-        }
-    }
-
-
-    // TODO: Accuracy corrector should technically go here as it is part of the attacker modify dice section
-}
-
-int[DieResult.Num] roll_and_modify_attack_dice(ref const(AttackSetup)  attack_setup,
-                                               ref TokenState attack_tokens,
-                                               ref const(DefenseSetup) defense_setup)
-{
-    TokenState initial_attack_tokens = attack_tokens;
-
-    // Roll Attack Dice
-    DiceState attack_dice;
-    foreach (i; 0 .. attack_setup.dice)
-        attack_dice.add_random_attack_die();
-
-    // "Immediately after rolling" events
-    if (attack_setup.heavy_laser_cannon)
-        attack_dice.change_dice(DieResult.Crit, DieResult.Hit);
-
-    defender_modify_attack_dice(attack_setup, defense_setup, attack_dice, attack_tokens);
-    attacker_modify_attack_dice(attack_setup, defense_setup, attack_dice, attack_tokens);
-
-    // Done modifying attack dice - compute attack results
-    auto attack_results = attack_dice.count_all();
-
-    // Use accuracy corrector in the following cases:
-    // a) We ended up with less than 2 hits/crits
-    // b) We got exactly 2 hits/crits but we only care if we "hit the attack" (TLT, Ion, etc)
-    // b) We got exactly 2 hits and no crits (still better to remove the extra die for LWF, and not spend tokens)
-    if (attack_setup.accuracy_corrector)
-    {
-        int hits = attack_results[DieResult.Hit];
-        int crits = attack_results[DieResult.Crit];
-        if (((hits + crits) <  2) ||
-            (hits == 2 && crits == 0) ||
-            ((hits + crits) == 2 && attack_setup.one_damage_on_hit))
-        {
-            // TODO: This is actually a bit too optimistic/simplistic...
-            // In some cases it's fair to just conclude that we could have foreseen how many hits we
-            // could get via modification and thus decided to use AC *instead*, but in cases of
-            // stuff like spending target locks for rerolls, it's impossible to perfectly predict.
-            // Thus we should really have actual logic that decides the best thing to do
-            // probabilistically, and in some cases "wastes" tokens due to bad rerolls.
-            attack_tokens = initial_attack_tokens;  // Undo any token spending
-
-            foreach (ref r; attack_results) r = 0;  // Cancel all results
-            attack_results[DieResult.Hit] = 2;      // Add two hits to the result
-            // No more modifaction
-
-            // TODO: We probably need to actually change the dice themselves eventually
-            // to properly handle things like lightweight frame.
-        }
-    }
-
-    return attack_results;
-}
-
-
-
-
-
-void attacker_modify_defense_dice(ref const(AttackSetup) attack_setup,
-                                  ref const(DefenseSetup) defense_setup,
-                                  int[DieResult.Num] attack_results,
-                                  ref DiceState defense_dice,
-                                  ref TokenState defense_tokens)
-{
-    // Find one evade and turn it to a focus
-    if (attack_setup.juke)
-        defense_dice.change_dice(DieResult.Evade, DieResult.Focus, 1);
-}
-
-void defender_modify_defense_dice(ref const(AttackSetup) attack_setup,
-                                  ref const(DefenseSetup) defense_setup,
-                                  int[DieResult.Num] attack_results,
-                                  ref DiceState defense_dice,
-                                  ref TokenState defense_tokens)
-{
-    // Add free results
-    if (attack_setup.finn)
-        ++defense_dice.results[DieResult.Blank];
-
-    // Find one blank and turn it to an evade
-    if (defense_setup.autothrusters)
-        defense_dice.change_dice(DieResult.Blank, DieResult.Evade, 1);
-
-    // If we have any focus results and no focus token, reroll our focuses
-    if (defense_tokens.focus == 0 && defense_setup.wired)
-    {
-        defense_dice.reroll_defense_dice(DieResult.Focus);
-    }
-
-    // Spend regular focus or evade tokens?
-    if (defense_tokens.focus > 0 || defense_tokens.evade > 0)
-    {
-        int uncanceled_hits = attack_results[DieResult.Hit] + attack_results[DieResult.Crit] - defense_dice.count(DieResult.Evade);
-
-        bool can_spend_focus = defense_tokens.focus > 0 && defense_dice.count(DieResult.Focus) > 0;
-
-        if (uncanceled_hits > 0 && (can_spend_focus || defense_tokens.evade > 0))
-        {
-            // For now simple logic:
-            // Cancel all hits with just a focus? Do it.
-            // Cancel all hits with just evade tokens? Do that.
-            // If attacker has juke, flip this order - it's usually better to hang on to focus tokens vs. juke
-            //   NOTE: Optimal strategy here depends on quite a lot of factors, but this is good enough in most cases
-            //   One improvement to the logic would be to only invoke this behavior if # remaining attacks > # focus tokens
-            // Otherwise both.
-
-            // TODO: Probably makes sense to always prefer spending fewer tokens. i.e. if we can spend one focus vs. two evades
-            // even in the presence of Juke, etc. Certainly should make sense for smallish dice counts. TEST.
-            // Obviously optimal would consider all the effects and how many attacks and what tokens each person has, but 
-            // we should be able to get close enough for our purposes.
-
-            bool can_cancel_all_with_focus = can_spend_focus && (defense_dice.count(DieResult.Focus) >= uncanceled_hits);
-            bool can_cancel_all_with_evade = defense_tokens.evade >= uncanceled_hits;
-
-            bool spent_focus = false;
-            int spent_evade_tokens = 0;
-
-            // Do we need to spend both to cancel all hits?
-            if (!can_cancel_all_with_focus && !can_cancel_all_with_evade)
+            // If we are able to free reroll any focus results (wired, etc) that aren't useful, do so now
+            if (m_attack_setup.wired)
             {
-                int uncancelled_hits_after_focus = uncanceled_hits;
-                if (can_spend_focus)
+                int focus_to_reroll = max(0, attack_dice.count(DieResult.Focus) - useful_focus_results);
+                attack_dice.reroll_attack_dice(DieResult.Focus, focus_to_reroll);
+            }
+        }
+
+        // TODO: Any effects that modify blank dice into something useful here
+
+        // How many free, unrestricted rerolls do we have?
+        immutable int free_reroll_count =
+            m_attack_setup.predator_rerolls +
+            (m_attack_setup.rage ? 3 : 0);
+
+        // If we have a target lock, we can reroll everything if we want to
+        immutable int total_reroll_count = attack_tokens.target_lock > 0 ? int.max : free_reroll_count;
+        int rerolled_dice_count = 0;
+
+        // First, let's reroll any blanks we're allowed to - this is always useful
+        rerolled_dice_count += attack_dice.reroll_attack_dice(DieResult.Blank, total_reroll_count);
+
+        // Now reroll focus results that "aren't useful"
+        {
+            int focus_to_reroll = attack_dice.count(DieResult.Focus) - useful_focus_results;
+            focus_to_reroll = clamp(focus_to_reroll, 0, total_reroll_count - rerolled_dice_count);
+
+            rerolled_dice_count += attack_dice.reroll_attack_dice(DieResult.Focus, focus_to_reroll);
+        }
+
+        // If we rerolled more than our total number of "free" rerolls, we have to spend a target lock
+        if (rerolled_dice_count > free_reroll_count)
+        {
+            assert(attack_tokens.target_lock > 0);
+            --attack_tokens.target_lock;
+        }
+
+        // Rerolls are done - deal with focus results
+
+        // TODO: Semi-complex logic in the case of abilities where you can spend something to change
+        // a finite number of focus or blank results, etc. Gets a bit complicated in the presence of
+        // other abilities like marksmanship and expertise and so on.
+
+        // Marksmanship is always a better choice than regular focus token
+        if (m_attack_setup.marksmanship)
+        {
+            attack_dice.change_dice(DieResult.Focus, DieResult.Crit, 1);
+            attack_dice.change_dice(DieResult.Focus, DieResult.Hit);
+        }
+        // Expertise is the same as a regular focus token, but doesn't cost anything
+        else if (m_attack_setup.expertise)
+        {
+            attack_dice.change_dice(DieResult.Focus, DieResult.Hit);
+        }
+        // Spend regular focus?
+        else if (attack_tokens.focus > 0)
+        {
+            int changed_results = attack_dice.change_dice(DieResult.Focus, DieResult.Hit);
+            if (changed_results > 0)
+                --attack_tokens.focus;
+        }
+
+        // Mangler and merc copilot can make a hit into a crit
+        // Do this last in case we focused into any hits, etc.
+        {
+            int hits_to_crits =
+                (m_attack_setup.mercenary_copilot ? 1 : 0) +
+                (m_attack_setup.mangler_cannon    ? 1 : 0);
+            attack_dice.change_dice(DieResult.Hit, DieResult.Crit, hits_to_crits);
+        }
+
+        // Some final sanity checks in debug mode on the logic here as it is not always trivial...
+        debug
+        {
+            // Did we have the ability to reroll more dice than we did?
+            if (total_reroll_count > rerolled_dice_count)
+            {
+                // If so, every focus or blank result that is still around here should have been rerolled
+                assert(attack_dice.results[DieResult.Blank] == 0);
+                assert(attack_dice.results[DieResult.Focus] == 0);
+            }
+        }
+
+
+        // TODO: Accuracy corrector should technically go here as it is part of the attacker modify dice section
+    }
+
+    int[DieResult.Num] roll_and_modify_attack_dice(ref TokenState attack_tokens)
+    {
+        TokenState initial_attack_tokens = attack_tokens;
+
+        // Roll Attack Dice
+        DiceState attack_dice;
+        foreach (i; 0 .. m_attack_setup.dice)
+            attack_dice.add_random_attack_die();
+
+        // "Immediately after rolling" events
+        //if (m_attack_setup.heavy_laser_cannon)
+        //    attack_dice.change_dice(DieResult.Crit, DieResult.Hit);
+
+        //defender_modify_attack_dice(m_attack_setup, m_defense_setup, attack_dice, attack_tokens);
+        //attacker_modify_attack_dice(m_attack_setup, m_defense_setup, attack_dice, attack_tokens);
+
+        // Done modifying attack dice - compute attack results
+        auto attack_results = attack_dice.count_all();
+
+        // Use accuracy corrector in the following cases:
+        // a) We ended up with less than 2 hits/crits
+        // b) We got exactly 2 hits/crits but we only care if we "hit the attack" (TLT, Ion, etc)
+        // b) We got exactly 2 hits and no crits (still better to remove the extra die for LWF, and not spend tokens)
+        if (m_attack_setup.accuracy_corrector)
+        {
+            int hits = attack_results[DieResult.Hit];
+            int crits = attack_results[DieResult.Crit];
+            if (((hits + crits) <  2) ||
+                (hits == 2 && crits == 0) ||
+                ((hits + crits) == 2 && m_attack_setup.one_damage_on_hit))
+            {
+                // TODO: This is actually a bit too optimistic/simplistic...
+                // In some cases it's fair to just conclude that we could have foreseen how many hits we
+                // could get via modification and thus decided to use AC *instead*, but in cases of
+                // stuff like spending target locks for rerolls, it's impossible to perfectly predict.
+                // Thus we should really have actual logic that decides the best thing to do
+                // probabilistically, and in some cases "wastes" tokens due to bad rerolls.
+                attack_tokens = initial_attack_tokens;  // Undo any token spending
+
+                foreach (ref r; attack_results) r = 0;  // Cancel all results
+                attack_results[DieResult.Hit] = 2;      // Add two hits to the result
+                // No more modifaction
+
+                // TODO: We probably need to actually change the dice themselves eventually
+                // to properly handle things like lightweight frame.
+            }
+        }
+
+        return attack_results;
+    }
+
+
+
+
+
+    void attacker_modify_defense_dice(int[DieResult.Num] attack_results,
+                                      ref DiceState defense_dice,
+                                      ref TokenState defense_tokens)
+    {
+        // Find one evade and turn it to a focus
+        if (m_attack_setup.juke)
+            defense_dice.change_dice(DieResult.Evade, DieResult.Focus, 1);
+    }
+
+    void defender_modify_defense_dice(int[DieResult.Num] attack_results,
+                                      ref DiceState defense_dice,
+                                      ref TokenState defense_tokens)
+    {
+        // Add free results
+        if (m_attack_setup.finn)
+            ++defense_dice.results[DieResult.Blank];
+
+        // Find one blank and turn it to an evade
+        if (m_defense_setup.autothrusters)
+            defense_dice.change_dice(DieResult.Blank, DieResult.Evade, 1);
+
+        // If we have any focus results and no focus token, reroll our focuses
+        if (defense_tokens.focus == 0 && m_defense_setup.wired)
+        {
+            defense_dice.reroll_defense_dice(DieResult.Focus);
+        }
+
+        // Spend regular focus or evade tokens?
+        if (defense_tokens.focus > 0 || defense_tokens.evade > 0)
+        {
+            int uncanceled_hits = attack_results[DieResult.Hit] + attack_results[DieResult.Crit] - defense_dice.count(DieResult.Evade);
+
+            bool can_spend_focus = defense_tokens.focus > 0 && defense_dice.count(DieResult.Focus) > 0;
+
+            if (uncanceled_hits > 0 && (can_spend_focus || defense_tokens.evade > 0))
+            {
+                // For now simple logic:
+                // Cancel all hits with just a focus? Do it.
+                // Cancel all hits with just evade tokens? Do that.
+                // If attacker has juke, flip this order - it's usually better to hang on to focus tokens vs. juke
+                //   NOTE: Optimal strategy here depends on quite a lot of factors, but this is good enough in most cases
+                //   One improvement to the logic would be to only invoke this behavior if # remaining attacks > # focus tokens
+                // Otherwise both.
+
+                // TODO: Probably makes sense to always prefer spending fewer tokens. i.e. if we can spend one focus vs. two evades
+                // even in the presence of Juke, etc. Certainly should make sense for smallish dice counts. TEST.
+                // Obviously optimal would consider all the effects and how many attacks and what tokens each person has, but 
+                // we should be able to get close enough for our purposes.
+
+                bool can_cancel_all_with_focus = can_spend_focus && (defense_dice.count(DieResult.Focus) >= uncanceled_hits);
+                bool can_cancel_all_with_evade = defense_tokens.evade >= uncanceled_hits;
+
+                bool spent_focus = false;
+                int spent_evade_tokens = 0;
+
+                // Do we need to spend both to cancel all hits?
+                if (!can_cancel_all_with_focus && !can_cancel_all_with_evade)
                 {
-                    spent_focus = can_spend_focus;
-                    uncancelled_hits_after_focus = max(0, uncanceled_hits - defense_dice.count(DieResult.Focus));
+                    int uncancelled_hits_after_focus = uncanceled_hits;
+                    if (can_spend_focus)
+                    {
+                        spent_focus = can_spend_focus;
+                        uncancelled_hits_after_focus = max(0, uncanceled_hits - defense_dice.count(DieResult.Focus));
+                    }
+                    spent_evade_tokens = min(defense_tokens.evade, uncancelled_hits_after_focus);
                 }
-                spent_evade_tokens = min(defense_tokens.evade, uncancelled_hits_after_focus);
-            }
-            else if (!attack_setup.juke)        // No juke - hold onto evade primarily
-            {
-                if (can_cancel_all_with_focus)
-                    spent_focus = true;
-                else
-                    spent_evade_tokens = uncanceled_hits;
-            }
-            else                                // Juke - hold on to focus primarily
-            {
-                if (can_cancel_all_with_evade)
-                    spent_evade_tokens = uncanceled_hits;
-                else
-                    spent_focus = true;
+                else if (!m_attack_setup.juke)        // No juke - hold onto evade primarily
+                {
+                    if (can_cancel_all_with_focus)
+                        spent_focus = true;
+                    else
+                        spent_evade_tokens = uncanceled_hits;
+                }
+                else                                // Juke - hold on to focus primarily
+                {
+                    if (can_cancel_all_with_evade)
+                        spent_evade_tokens = uncanceled_hits;
+                    else
+                        spent_focus = true;
+                }
+
+                if (spent_focus)
+                {
+                    uncanceled_hits -= defense_dice.count(DieResult.Focus);
+                    defense_dice.change_dice(DieResult.Focus, DieResult.Evade);
+                    --defense_tokens.focus;
+                }
+
+                // Evade tokens add defense dice to the pool
+                uncanceled_hits -= spent_evade_tokens;
+                defense_dice.results[DieResult.Evade] += spent_evade_tokens;
+                defense_tokens.evade -= spent_evade_tokens;            
             }
 
-            if (spent_focus)
-            {
-                uncanceled_hits -= defense_dice.count(DieResult.Focus);
-                defense_dice.change_dice(DieResult.Focus, DieResult.Evade);
-                --defense_tokens.focus;
-            }
-
-            // Evade tokens add defense dice to the pool
-            uncanceled_hits -= spent_evade_tokens;
-            defense_dice.results[DieResult.Evade] += spent_evade_tokens;
-            defense_tokens.evade -= spent_evade_tokens;            
+            // Sanity
+            assert(defense_tokens.evade >= 0);
+            assert(defense_tokens.focus >= 0);
+            assert(uncanceled_hits <= 0 || defense_tokens.evade == 0);
         }
-
-        // Sanity
-        assert(defense_tokens.evade >= 0);
-        assert(defense_tokens.focus >= 0);
-        assert(uncanceled_hits <= 0 || defense_tokens.evade == 0);
-    }
-}
-
-int[DieResult.Num] roll_and_modify_defense_dice(ref const(AttackSetup)  attack_setup,
-                                                ref const(DefenseSetup) defense_setup,
-                                                ref TokenState defense_tokens,
-                                                int[DieResult.Num] attack_results)
-{
-    // Roll Defense Dice
-    DiceState defense_dice;
-    foreach (i; 0 .. defense_setup.dice)
-        defense_dice.add_random_defense_die();
-
-    // Modify Defense Dice
-    attacker_modify_defense_dice(attack_setup, defense_setup, attack_results, defense_dice, defense_tokens);
-    defender_modify_defense_dice(attack_setup, defense_setup, attack_results, defense_dice, defense_tokens);
-
-    // Done modifying defense dice - compute final defense results
-    return defense_dice.count_all();
-}
-
-
-
-
-// Modifies input setups to adjust for token spending
-// Also returned as part of simulation result, but convenient to modify in place for multiple attacks
-private int[DieResult.Num] simulate_single_attack(ref const(AttackSetup)  attack_setup,
-                                                  ref TokenState attack_tokens,
-                                                  ref const(DefenseSetup) defense_setup,
-                                                  ref TokenState defense_tokens,
-                                                  bool trigger_after_attack = true)
-{
-    auto attack_results  = roll_and_modify_attack_dice(attack_setup, attack_tokens, defense_setup);
-    auto defense_results = roll_and_modify_defense_dice(attack_setup, defense_setup, defense_tokens, attack_results);
-
-    // Compare results
-
-    // Cancel pairs of hits and evades
-    {
-        int canceled_hits = min(attack_results[DieResult.Hit], defense_results[DieResult.Evade]);
-        attack_results[DieResult.Hit]    -= canceled_hits;
-        defense_results[DieResult.Evade] -= canceled_hits;
-
-        // Cancel pairs of crits and evades
-        int canceled_crits = min(attack_results[DieResult.Crit], defense_results[DieResult.Evade]);
-        attack_results[DieResult.Crit]   -= canceled_crits;
-        defense_results[DieResult.Evade] -= canceled_crits;
     }
 
-    bool attack_hit = (attack_results[DieResult.Hit] + attack_results[DieResult.Crit]) > 0;
+    private int[DieResult.Num] roll_and_modify_defense_dice(ref TokenState defense_tokens,
+                                                            int[DieResult.Num] attack_results)
+    {
+        // Roll Defense Dice
+        DiceState defense_dice;
+        foreach (i; 0 .. m_defense_setup.dice)
+            defense_dice.add_random_defense_die();
 
-    // TLT/ion does one damage if it hits, regardless of the dice results
-    if (attack_setup.one_damage_on_hit && attack_hit)
-    {
-        attack_results[DieResult.Hit] = 1;
-        attack_results[DieResult.Crit] = 0;
+        // Modify Defense Dice
+        attacker_modify_defense_dice(attack_results, defense_dice, defense_tokens);
+        defender_modify_defense_dice(attack_results, defense_dice, defense_tokens);
+
+        // Done modifying defense dice - compute final defense results
+        return defense_dice.count_all();
     }
-    
-    // Trigger any "after attacking" abilities if request
-    if (trigger_after_attack)
+
+
+
+
+    // Modifies input setups to adjust for token spending
+    // Also returned as part of simulation result, but convenient to modify in place for multiple attacks
+    private int[DieResult.Num] simulate_single_attack(ref TokenState attack_tokens,
+                                                      ref TokenState defense_tokens,
+                                                      bool trigger_after_attack = true)
     {
-        // Update any abilities that trigger "after attacking" or "after defending"
-        if (attack_setup.fire_control_system)
+        auto attack_results  = roll_and_modify_attack_dice(attack_tokens);
+        auto defense_results = roll_and_modify_defense_dice(defense_tokens, attack_results);
+
+        // Compare results
+
+        // Cancel pairs of hits and evades
         {
-            // TODO: Handle multi-target-lock stuff... really only an issue with Redline and so on
-            attack_tokens.target_lock = max(attack_tokens.target_lock, 1);
+            int canceled_hits = min(attack_results[DieResult.Hit], defense_results[DieResult.Evade]);
+            attack_results[DieResult.Hit]    -= canceled_hits;
+            defense_results[DieResult.Evade] -= canceled_hits;
+
+            // Cancel pairs of crits and evades
+            int canceled_crits = min(attack_results[DieResult.Crit], defense_results[DieResult.Evade]);
+            attack_results[DieResult.Crit]   -= canceled_crits;
+            defense_results[DieResult.Evade] -= canceled_crits;
         }
+
+        bool attack_hit = (attack_results[DieResult.Hit] + attack_results[DieResult.Crit]) > 0;
+
+        // TLT/ion does one damage if it hits, regardless of the dice results
+        if (m_attack_setup.one_damage_on_hit && attack_hit)
+        {
+            attack_results[DieResult.Hit] = 1;
+            attack_results[DieResult.Crit] = 0;
+        }
+
+        // Trigger any "after attacking" abilities if request
+        if (trigger_after_attack)
+        {
+            // Update any abilities that trigger "after attacking" or "after defending"
+            if (m_attack_setup.fire_control_system)
+            {
+                // TODO: Handle multi-target-lock stuff... really only an issue with Redline and so on
+                attack_tokens.target_lock = max(attack_tokens.target_lock, 1);
+            }
+        }
+
+        return attack_results;
     }
 
-    return attack_results;
-}
-
-
-SimulationResult simulate_attack(ref const(AttackSetup) attack_setup, ref const(DefenseSetup) defense_setup)
-{
-    // TODO: Sanity checks on inputs?
-
-    TokenState attack_tokens;
-    attack_tokens.focus       = attack_setup.initial_focus_token_count;
-    attack_tokens.target_lock = attack_setup.initial_target_lock_count;
-    attack_tokens.stress      = attack_setup.initial_stress_token_count;
-
-    TokenState defense_tokens;
-    defense_tokens.focus  = defense_setup.initial_focus_token_count;
-    defense_tokens.evade  = defense_setup.initial_evade_token_count;
-    defense_tokens.stress = defense_setup.initial_stress_token_count;
-
-    // Simulate first attack
-    // TODO: We'll eventually need to pass some hints into this about the fact that there is a second attack
-    // as it does change the optimal token spend strategies and so on somewhat.
-    // Also upgrades matter here (FCS, etc).
-    // NOTE: Attack/defense setup passed by reference as tokens are modified in place
-
-    int[DieResult.Num] attack_results;
-    bool first_attack_hit = (attack_results[DieResult.Hit] != 0 || attack_results[DieResult.Crit] != 0);
-    
-    if (attack_setup.type == MultiAttackType.Single)
+    public SimulationResult simulate_attack()
     {
-        attack_results = simulate_single_attack(attack_setup, attack_tokens, defense_setup, defense_tokens, true);
+        // TODO: Sanity checks on inputs?
+
+        TokenState attack_tokens;
+        attack_tokens.focus       = m_attack_setup.initial_focus_token_count;
+        attack_tokens.target_lock = m_attack_setup.initial_target_lock_count;
+        attack_tokens.stress      = m_attack_setup.initial_stress_token_count;
+
+        TokenState defense_tokens;
+        defense_tokens.focus  = m_defense_setup.initial_focus_token_count;
+        defense_tokens.evade  = m_defense_setup.initial_evade_token_count;
+        defense_tokens.stress = m_defense_setup.initial_stress_token_count;
+
+        // Simulate first attack
+        // TODO: We'll eventually need to pass some hints into this about the fact that there is a second attack
+        // as it does change the optimal token spend strategies and so on somewhat.
+        // Also upgrades matter here (FCS, etc).
+        // NOTE: Attack/defense setup passed by reference as tokens are modified in place
+
+        int[DieResult.Num] attack_results;
+        bool first_attack_hit = (attack_results[DieResult.Hit] != 0 || attack_results[DieResult.Crit] != 0);
+
+        if (m_attack_setup.type == MultiAttackType.Single)
+        {
+            attack_results = simulate_single_attack(attack_tokens, defense_tokens, true);
+        }
+        else if (m_attack_setup.type == MultiAttackType.SecondaryPerformTwice)
+        {
+            // We DO NOT trigger "after attack" type abilities between two "secondary perfom twice" attacks
+            attack_results    = simulate_single_attack(attack_tokens, defense_tokens, false);
+            attack_results[] += simulate_single_attack(attack_tokens, defense_tokens, true)[];
+        }    
+        else if (m_attack_setup.type == MultiAttackType.AfterAttack)
+        {
+            // After attack abilities trigger after both of these
+            attack_results    = simulate_single_attack(attack_tokens, defense_tokens, true);
+            attack_results[] += simulate_single_attack(attack_tokens, defense_tokens, true)[];
+        }
+        else if (m_attack_setup.type == MultiAttackType.AfterAttackDoesNotHit && !first_attack_hit)
+        {
+            // After attack abilities trigger after both of these
+            attack_results    = simulate_single_attack(attack_tokens, defense_tokens, true);
+            // Only do second attack if the first one missed
+            if (attack_results[DieResult.Hit] == 0 && attack_results[DieResult.Crit] == 0)
+                attack_results[] += simulate_single_attack(attack_tokens, defense_tokens, true)[];
+        }
+        else
+        {
+            assert(false);  // Unknown attack type
+        }
+
+        // Sanity checks on token spending
+        assert(attack_tokens.focus >= 0);
+        assert(attack_tokens.evade >= 0);
+        assert(attack_tokens.target_lock >= 0);        // Possible to gain target locks due to FCS
+        assert(attack_tokens.stress >= 0);
+
+        assert(defense_tokens.focus >= 0);
+        assert(defense_tokens.evade >= 0);
+        assert(defense_tokens.target_lock >= 0);        // Possible to gain target locks due to FCS
+        assert(defense_tokens.stress >= 0);
+
+        // Compute final results of this simulation step
+        SimulationResult result;
+        result.trial_count = 1;
+
+        result.hits  = attack_results[DieResult.Hit];
+        result.crits = attack_results[DieResult.Crit];
+
+        result.attack_delta_focus_tokens  = attack_tokens.focus        - m_attack_setup.initial_focus_token_count  ; 
+        result.attack_delta_target_locks  = attack_tokens.target_lock  - m_attack_setup.initial_target_lock_count  ; 
+        result.attack_delta_stress        = attack_tokens.stress       - m_attack_setup.initial_stress_token_count ;
+        result.defense_delta_focus_tokens = defense_tokens.focus       - m_defense_setup.initial_focus_token_count ;
+        result.defense_delta_evade_tokens = defense_tokens.evade       - m_defense_setup.initial_evade_token_count ;
+        result.defense_delta_stress       = defense_tokens.stress      - m_defense_setup.initial_stress_token_count;
+
+        return result;
     }
-    else if (attack_setup.type == MultiAttackType.SecondaryPerformTwice)
-    {
-        // We DO NOT trigger "after attack" type abilities between two "secondary perfom twice" attacks
-        attack_results    = simulate_single_attack(attack_setup, attack_tokens, defense_setup, defense_tokens, false);
-        attack_results[] += simulate_single_attack(attack_setup, attack_tokens, defense_setup, defense_tokens, true)[];
-    }    
-    else if (attack_setup.type == MultiAttackType.AfterAttack)
-    {
-        // After attack abilities trigger after both of these
-        attack_results    = simulate_single_attack(attack_setup, attack_tokens, defense_setup, defense_tokens, true);
-        attack_results[] += simulate_single_attack(attack_setup, attack_tokens, defense_setup, defense_tokens, true)[];
-    }
-    else if (attack_setup.type == MultiAttackType.AfterAttackDoesNotHit && !first_attack_hit)
-    {
-        // After attack abilities trigger after both of these
-        attack_results    = simulate_single_attack(attack_setup, attack_tokens, defense_setup, defense_tokens, true);
-        // Only do second attack if the first one missed
-        if (attack_results[DieResult.Hit] == 0 && attack_results[DieResult.Crit] == 0)
-            attack_results[] += simulate_single_attack(attack_setup, attack_tokens, defense_setup, defense_tokens, true)[];
-    }
-    else
-    {
-        assert(false);  // Unknown attack type
-    }
 
-    // Sanity checks on token spending
-    assert(attack_tokens.focus >= 0);
-    assert(attack_tokens.evade >= 0);
-    assert(attack_tokens.target_lock >= 0);        // Possible to gain target locks due to FCS
-    assert(attack_tokens.stress >= 0);
 
-    assert(defense_tokens.focus >= 0);
-    assert(defense_tokens.evade >= 0);
-    assert(defense_tokens.target_lock >= 0);        // Possible to gain target locks due to FCS
-    assert(defense_tokens.stress >= 0);
+    private immutable AttackSetup m_attack_setup;
+    private immutable DefenseSetup m_defense_setup;
+};
 
-    // Compute final results of this simulation step
-    SimulationResult result;
-    result.trial_count = 1;
-
-    result.hits  = attack_results[DieResult.Hit];
-    result.crits = attack_results[DieResult.Crit];
-
-    result.attack_delta_focus_tokens  = attack_tokens.focus        - attack_setup.initial_focus_token_count  ; 
-    result.attack_delta_target_locks  = attack_tokens.target_lock  - attack_setup.initial_target_lock_count  ; 
-    result.attack_delta_stress        = attack_tokens.stress       - attack_setup.initial_stress_token_count ;
-    result.defense_delta_focus_tokens = defense_tokens.focus       - defense_setup.initial_focus_token_count ;
-    result.defense_delta_evade_tokens = defense_tokens.evade       - defense_setup.initial_evade_token_count ;
-    result.defense_delta_stress       = defense_tokens.stress      - defense_setup.initial_stress_token_count;
-
-    return result;
-}

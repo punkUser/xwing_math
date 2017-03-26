@@ -134,12 +134,15 @@ public class WWWServer
         // debug
         //rndGen.seed(1337);
 
+        auto simulation = new Simulation(attack_setup, defense_setup);
+
         // We always show at least 0..6 labels on the graph as this looks nice
         SimulationResult[] total_hits_pdf = new SimulationResult[7];
         SimulationResult total_sum;
+
         foreach (i; 0 .. k_trial_count)
         {
-            auto result = simulate_attack(attack_setup, defense_setup);
+            auto result = simulation.simulate_attack();
             total_sum = accumulate_result(total_sum, result);
 
             // Accumulate into the right bin of the total hits PDF
