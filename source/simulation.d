@@ -400,11 +400,11 @@ class Simulation
             attack_dice.add_random_attack_die();
 
         // "Immediately after rolling" events
-        //if (m_attack_setup.heavy_laser_cannon)
-        //    attack_dice.change_dice(DieResult.Crit, DieResult.Hit);
+        if (m_attack_setup.heavy_laser_cannon)
+            attack_dice.change_dice(DieResult.Crit, DieResult.Hit);
 
-        //defender_modify_attack_dice(m_attack_setup, m_defense_setup, attack_dice, attack_tokens);
-        //attacker_modify_attack_dice(m_attack_setup, m_defense_setup, attack_dice, attack_tokens);
+        defender_modify_attack_dice(attack_dice, attack_tokens);
+        attacker_modify_attack_dice(attack_dice, attack_tokens);
 
         // Done modifying attack dice - compute attack results
         auto attack_results = attack_dice.count_all();
@@ -431,10 +431,7 @@ class Simulation
 
                 foreach (ref r; attack_results) r = 0;  // Cancel all results
                 attack_results[DieResult.Hit] = 2;      // Add two hits to the result
-                // No more modifaction
-
-                // TODO: We probably need to actually change the dice themselves eventually
-                // to properly handle things like lightweight frame.
+                // No more modification
             }
         }
 
