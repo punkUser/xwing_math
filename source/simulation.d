@@ -177,13 +177,6 @@ struct DiceState
         return total;
     }
 
-    // Rolling
-    void add_random_defense_die()
-    {
-        auto result = k_defense_die_result[uniform(0, k_die_sides)];
-        ++results[result];
-    }
-
     // Removes dice that we are able to reroll from results and returns the
     // number that were removed. Caller should add rerolled_results based on this.
     int remove_dice_for_reroll(DieResult from, int max_count = -1)
@@ -195,25 +188,6 @@ struct DiceState
 
         int rerolled_count = min(results[from], max_count);
         results[from] -= rerolled_count;
-
-        return rerolled_count;
-    }
-
-    int reroll_defense_dice(DieResult from, int max_count = -1)
-    {
-        if (max_count == 0)
-            return 0;
-        else if (max_count < 0)
-            max_count = int.max;
-
-        int rerolled_count = min(results[from], max_count);
-        results[from] -= rerolled_count;
-
-        foreach (i; 0 .. rerolled_count)
-        {
-            auto new_result = k_defense_die_result[uniform(0, k_die_sides)];
-            ++rerolled_results[new_result];
-        }
 
         return rerolled_count;
     }
@@ -394,14 +368,11 @@ class Simulation
         //defender_modify_attack_dice(attack_dice, attack_tokens);
 
         int dice_to_reroll = attacker_modify_attack_dice_before_reroll(attack_dice, attack_tokens);
-
-        // Reroll dice
         foreach (i; 0 .. dice_to_reroll)
         {
             auto new_result = k_attack_die_result[uniform(0, k_die_sides)];
             ++attack_dice.rerolled_results[new_result];
         }
-
         attacker_modify_attack_dice_after_reroll(attack_dice, attack_tokens);
 
         // Some final sanity checks in debug mode on the logic here as it is not always trivial...
@@ -454,7 +425,7 @@ class Simulation
 
 
 
-    void attacker_modify_defense_dice(int[DieResult.Num] attack_results,
+    void attacker_modify_defense_dice(ref const(int)[DieResult.Num] attack_results,
                                       ref DiceState defense_dice,
                                       ref TokenState defense_tokens)
     {
@@ -463,10 +434,12 @@ class Simulation
             defense_dice.change_dice(DieResult.Evade, DieResult.Focus, 1);
     }
 
-    void defender_modify_defense_dice(int[DieResult.Num] attack_results,
-                                      ref DiceState defense_dice,
-                                      ref TokenState defense_tokens)
+    int defender_modify_defense_dice_before_reroll(ref const(int)[DieResult.Num] attack_results,
+                                                   ref DiceState defense_dice,
+                                                   ref TokenState defense_tokens)
     {
+        int dice_to_reroll = 0;
+
         // Add free results
         if (m_attack_setup.finn)
             ++defense_dice.results[DieResult.Blank];
@@ -478,9 +451,16 @@ class Simulation
         // If we have any focus results and no focus token, reroll our focuses
         if (defense_tokens.focus == 0 && m_defense_setup.wired)
         {
-            defense_dice.reroll_defense_dice(DieResult.Focus);
+            dice_to_reroll += defense_dice.remove_dice_for_reroll(DieResult.Focus);
         }
 
+        return dice_to_reroll;
+    }
+
+    void defender_modify_defense_dice_after_reroll(ref const(int)[DieResult.Num] attack_results,
+                                                    ref DiceState defense_dice,
+                                                    ref TokenState defense_tokens)
+    {
         // Spend regular focus or evade tokens?
         if (defense_tokens.focus > 0 || defense_tokens.evade > 0)
         {
@@ -555,17 +535,27 @@ class Simulation
         }
     }
 
-    private int[DieResult.Num] roll_and_modify_defense_dice(ref TokenState defense_tokens,
-                                                            int[DieResult.Num] attack_results)
+    private int[DieResult.Num] roll_and_modify_defense_dice(ref const(int)[DieResult.Num] attack_results,
+                                                            ref TokenState defense_tokens)
     {
         // Roll Defense Dice
         DiceState defense_dice;
         foreach (i; 0 .. m_defense_setup.dice)
-            defense_dice.add_random_defense_die();
+        {
+            auto new_result = k_defense_die_result[uniform(0, k_die_sides)];
+            ++defense_dice.results[new_result];
+        }
 
         // Modify Defense Dice
         attacker_modify_defense_dice(attack_results, defense_dice, defense_tokens);
-        defender_modify_defense_dice(attack_results, defense_dice, defense_tokens);
+
+        int dice_to_reroll = defender_modify_defense_dice_before_reroll(attack_results, defense_dice, defense_tokens);
+        foreach (i; 0 .. dice_to_reroll)
+        {
+            auto new_result = k_defense_die_result[uniform(0, k_die_sides)];
+            ++defense_dice.rerolled_results[new_result];
+        }
+        defender_modify_defense_dice_after_reroll(attack_results, defense_dice, defense_tokens);
 
         // Done modifying defense dice - compute final defense results
         return defense_dice.count_all();
@@ -581,7 +571,12 @@ class Simulation
                                                       bool trigger_after_attack = true)
     {
         auto attack_results  = roll_and_modify_attack_dice(attack_tokens);
-        auto defense_results = roll_and_modify_defense_dice(defense_tokens, attack_results);
+        auto defense_results = roll_and_modify_defense_dice(attack_results, defense_tokens);
+
+        // Sanity...
+        assert(attack_results[DieResult.Evade] == 0);
+        assert(defense_results[DieResult.Hit] == 0);
+        assert(defense_results[DieResult.Crit] == 0);
 
         // Compare results
 
