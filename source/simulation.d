@@ -178,18 +178,15 @@ struct DiceState
     }
 
     // Rolling
-    void add_random_attack_die()
-    {
-        auto result = k_attack_die_result[uniform(0, k_die_sides)];
-        ++results[result];
-    }
     void add_random_defense_die()
     {
         auto result = k_defense_die_result[uniform(0, k_die_sides)];
         ++results[result];
     }
 
-    int reroll_attack_dice(DieResult from, int max_count = -1)
+    // Removes dice that we are able to reroll from results and returns the
+    // number that were removed. Caller should add rerolled_results based on this.
+    int remove_dice_for_reroll(DieResult from, int max_count = -1)
     {
         if (max_count == 0)
             return 0;
@@ -199,14 +196,9 @@ struct DiceState
         int rerolled_count = min(results[from], max_count);
         results[from] -= rerolled_count;
 
-        foreach (i; 0 .. rerolled_count)
-        {
-            auto new_result = k_attack_die_result[uniform(0, k_die_sides)];
-            ++rerolled_results[new_result];
-        }
-
         return rerolled_count;
     }
+
     int reroll_defense_dice(DieResult from, int max_count = -1)
     {
         if (max_count == 0)
@@ -272,14 +264,12 @@ class Simulation
         m_defense_setup = defense_setup;
     }
 
-    private void defender_modify_attack_dice(ref DiceState attack_dice,
-                                             ref TokenState attack_tokens)
+    // Removes rerolled dice from pool; returns number of dice to reroll
+    private int attacker_modify_attack_dice_before_reroll(ref DiceState attack_dice,
+                                                          ref TokenState attack_tokens)
     {
-    }
+        int dice_to_reroll = 0;
 
-    private void attacker_modify_attack_dice(ref DiceState attack_dice,
-                                             ref TokenState attack_tokens)
-    {
         // Add any free results
         if (m_attack_setup.fearlessness)
             ++attack_dice.results[DieResult.Hit];
@@ -307,7 +297,7 @@ class Simulation
             if (m_attack_setup.wired)
             {
                 int focus_to_reroll = max(0, attack_dice.count(DieResult.Focus) - useful_focus_results);
-                attack_dice.reroll_attack_dice(DieResult.Focus, focus_to_reroll);
+                dice_to_reroll += attack_dice.remove_dice_for_reroll(DieResult.Focus, focus_to_reroll);
             }
         }
 
@@ -323,14 +313,14 @@ class Simulation
         int rerolled_dice_count = 0;
 
         // First, let's reroll any blanks we're allowed to - this is always useful
-        rerolled_dice_count += attack_dice.reroll_attack_dice(DieResult.Blank, total_reroll_count);
+        rerolled_dice_count += attack_dice.remove_dice_for_reroll(DieResult.Blank, total_reroll_count);
 
         // Now reroll focus results that "aren't useful"
         {
             int focus_to_reroll = attack_dice.count(DieResult.Focus) - useful_focus_results;
             focus_to_reroll = clamp(focus_to_reroll, 0, total_reroll_count - rerolled_dice_count);
 
-            rerolled_dice_count += attack_dice.reroll_attack_dice(DieResult.Focus, focus_to_reroll);
+            rerolled_dice_count += attack_dice.remove_dice_for_reroll(DieResult.Focus, focus_to_reroll);
         }
 
         // If we rerolled more than our total number of "free" rerolls, we have to spend a target lock
@@ -340,6 +330,14 @@ class Simulation
             --attack_tokens.target_lock;
         }
 
+        // This is a mess but pending reorg of "free" vs "paid" rerolling logic above
+        return dice_to_reroll + rerolled_dice_count;
+    }
+
+    // Removes rerolled dice from pool; returns number of dice to reroll
+    private void attacker_modify_attack_dice_after_reroll(ref DiceState attack_dice,
+                                                          ref TokenState attack_tokens)
+    {
         // Rerolls are done - deal with focus results
 
         // TODO: Semi-complex logic in the case of abilities where you can spend something to change
@@ -374,19 +372,6 @@ class Simulation
             attack_dice.change_dice(DieResult.Hit, DieResult.Crit, hits_to_crits);
         }
 
-        // Some final sanity checks in debug mode on the logic here as it is not always trivial...
-        debug
-        {
-            // Did we have the ability to reroll more dice than we did?
-            if (total_reroll_count > rerolled_dice_count)
-            {
-                // If so, every focus or blank result that is still around here should have been rerolled
-                assert(attack_dice.results[DieResult.Blank] == 0);
-                assert(attack_dice.results[DieResult.Focus] == 0);
-            }
-        }
-
-
         // TODO: Accuracy corrector should technically go here as it is part of the attacker modify dice section
     }
 
@@ -397,14 +382,41 @@ class Simulation
         // Roll Attack Dice
         DiceState attack_dice;
         foreach (i; 0 .. m_attack_setup.dice)
-            attack_dice.add_random_attack_die();
+        {
+            auto new_result = k_attack_die_result[uniform(0, k_die_sides)];
+            ++attack_dice.results[new_result];
+        }
 
         // "Immediately after rolling" events
         if (m_attack_setup.heavy_laser_cannon)
             attack_dice.change_dice(DieResult.Crit, DieResult.Hit);
 
-        defender_modify_attack_dice(attack_dice, attack_tokens);
-        attacker_modify_attack_dice(attack_dice, attack_tokens);
+        //defender_modify_attack_dice(attack_dice, attack_tokens);
+
+        int dice_to_reroll = attacker_modify_attack_dice_before_reroll(attack_dice, attack_tokens);
+
+        // Reroll dice
+        foreach (i; 0 .. dice_to_reroll)
+        {
+            auto new_result = k_attack_die_result[uniform(0, k_die_sides)];
+            ++attack_dice.rerolled_results[new_result];
+        }
+
+        attacker_modify_attack_dice_after_reroll(attack_dice, attack_tokens);
+
+        // Some final sanity checks in debug mode on the logic here as it is not always trivial...
+        /*
+        debug
+        {
+            // Did we have the ability to reroll more dice than we did?
+            if (total_reroll_count > rerolled_dice_count)
+            {
+                // If so, every focus or blank result that is still around here should have been rerolled
+                assert(attack_dice.results[DieResult.Blank] == 0);
+                assert(attack_dice.results[DieResult.Focus] == 0);
+            }
+        }
+        */
 
         // Done modifying attack dice - compute attack results
         auto attack_results = attack_dice.count_all();
