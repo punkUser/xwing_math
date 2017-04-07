@@ -87,10 +87,15 @@ block content
                                     hr
                                 - switch_control("defense_wired",              "Wired");
 
-                            //-.row
+                            //-.row Only matters once we have some kind of defensive reroll
                                 .small-12.columns
                                     hr
                                 - switch_control("defense_finn",               "Finn");
+
+                            .row
+                                .small-12.columns
+                                    hr
+                                - switch_control("defense_sensor_jammer",      "Sensor Jammer");
 
                             .row
                                 .small-12.columns

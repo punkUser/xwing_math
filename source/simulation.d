@@ -107,6 +107,9 @@ struct DefenseSetup
     // TODO: C-3PO (always guess 0 probably the most relevant)
     // TODO: Latts? Gets a bit weird/complex
 
+    // System upgrades
+    bool sensor_jammer = false;         // Change one attacker hit to evade
+
     // Modifications
     bool autothrusters = false;
     // TODO: Lightweight frame
@@ -200,7 +203,6 @@ struct DiceState
     }
 
     // Prefers changing rerolled dice first where limited as they are more constrained
-    // I don't think there are currently any cases where this matters though
     int change_dice(DieResult from, DieResult to, int max_count = -1)
     {
         if (max_count == 0)
@@ -229,6 +231,40 @@ struct DiceState
 
         return changed_count;
     }
+
+    // Like above, but the changed dice cannot be rerolled
+    // Because this is generally used when modifying *opponents* dice, we prefer
+    // to change non-rerolled dice first to add additional constraints.
+    // Ex. M9G8 forced reroll and sensor jammer can cause two separate dice
+    // to be unable to be rerolled by the attacker.
+    int change_dice_no_reroll(DieResult from, DieResult to, int max_count = -1)
+    {
+        if (max_count == 0)
+            return 0;
+        else if (max_count < 0)
+            max_count = int.max;
+
+        // Change regular dice first
+        int changed_count = 0;
+
+        int delta = min(results[from], max_count - changed_count);
+        if (delta > 0)
+        {
+            results[from]          -= delta;
+            rerolled_results[to]   += delta; // Disallow reroll on the changed result(s)
+            changed_count          += delta;
+        }
+        // Then rerolled ones
+        delta = min(rerolled_results[from], max_count - changed_count);
+        if (delta > 0)
+        {
+            rerolled_results[from] -= delta;
+            rerolled_results[to]   += delta;
+            changed_count          += delta;
+        }
+
+        return changed_count;
+    }
 }
 
 //-----------------------------------------------------------------------------------
@@ -243,6 +279,14 @@ class Simulation
     {
         m_attack_setup = attack_setup;
         m_defense_setup = defense_setup;
+    }
+
+    // TODO: Needs a way to force rerolls eventually as well
+    private void defender_modify_attack_dice(ref DiceState attack_dice,
+                                             ref TokenState attack_tokens)
+    {
+        if (m_defense_setup.sensor_jammer)
+            attack_dice.change_dice_no_reroll(DieResult.Hit, DieResult.Focus, 1);
     }
 
     // Removes rerolled dice from pool; returns number of dice to reroll
@@ -372,7 +416,7 @@ class Simulation
         if (m_attack_setup.heavy_laser_cannon)
             attack_dice.change_dice(DieResult.Crit, DieResult.Hit);
 
-        //defender_modify_attack_dice(attack_dice, attack_tokens);
+        defender_modify_attack_dice(attack_dice, attack_tokens);
 
         int dice_to_reroll = attacker_modify_attack_dice_before_reroll(attack_dice, attack_tokens);
         foreach (i; 0 .. dice_to_reroll)
@@ -476,14 +520,18 @@ class Simulation
                                                     ref DiceState defense_dice,
                                                     ref TokenState defense_tokens)
     {
+        int uncanceled_hits = attack_results[DieResult.Hit] + attack_results[DieResult.Crit] - defense_dice.count(DieResult.Evade);
+        bool can_spend_focus = defense_tokens.focus > 0 && defense_dice.count(DieResult.Focus) > 0;
+
         // Spend regular focus or evade tokens?
-        if (defense_tokens.focus > 0 || defense_tokens.evade > 0)
+        if (can_spend_focus || defense_tokens.evade > 0)
         {
-            int uncanceled_hits = attack_results[DieResult.Hit] + attack_results[DieResult.Crit] - defense_dice.count(DieResult.Evade);
+            int max_damage_canceled = (can_spend_focus ? defense_dice.count(DieResult.Focus) : 0) + defense_tokens.evade;
+            bool can_cancel_all = (max_damage_canceled >= uncanceled_hits);
 
-            bool can_spend_focus = defense_tokens.focus > 0 && defense_dice.count(DieResult.Focus) > 0;
-
-            if (uncanceled_hits > 0 && (can_spend_focus || defense_tokens.evade > 0))
+            // In the presence of "one damage on hit" effects from the attacker, if we can't cancel everything,
+            // it's pointless to spend any tokens at all.
+            if (can_cancel_all || !m_attack_setup.one_damage_on_hit)
             {
                 // For now simple logic:
                 // Cancel all hits with just a focus? Do it.
@@ -538,15 +586,20 @@ class Simulation
                 }
 
                 // Evade tokens add defense dice to the pool
-                uncanceled_hits -= spent_evade_tokens;
-                defense_dice.results[DieResult.Evade] += spent_evade_tokens;
-                defense_tokens.evade -= spent_evade_tokens;            
+                if (spent_evade_tokens > 0)
+                {
+                    uncanceled_hits -= spent_evade_tokens;
+                    defense_dice.results[DieResult.Evade] += spent_evade_tokens;
+                    defense_tokens.evade -= spent_evade_tokens;
+                }
+
+                assert(uncanceled_hits <= 0 || defense_tokens.evade == 0);
             }
 
             // Sanity
             assert(defense_tokens.evade >= 0);
             assert(defense_tokens.focus >= 0);
-            assert(uncanceled_hits <= 0 || defense_tokens.evade == 0);
+            assert(uncanceled_hits <= 0 || !can_cancel_all);
         }
     }
 

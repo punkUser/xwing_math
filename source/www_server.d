@@ -121,6 +121,7 @@ public class WWWServer
 
         defense_setup.wired                     = req.query.get("defense_wired", "")                == "on";
         defense_setup.finn                      = req.query.get("defense_finn", "")                 == "on";
+        defense_setup.sensor_jammer             = req.query.get("defense_sensor_jammer", "")        == "on";
         defense_setup.autothrusters             = req.query.get("defense_autothrusters", "")        == "on";
         
 
