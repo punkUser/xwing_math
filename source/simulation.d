@@ -165,6 +165,13 @@ struct DiceState
     int[DieResult.Num] results;
     int[DieResult.Num] rerolled_results;
 
+    // Cancel all dice/reinitialize
+    void cancel_all()
+    {
+        results[] = 0;
+        rerolled_results[] = 0;
+    }
+
     // Utilities
     int count(DieResult type) const
     {
@@ -373,7 +380,44 @@ class Simulation
             auto new_result = k_attack_die_result[uniform(0, k_die_sides)];
             ++attack_dice.rerolled_results[new_result];
         }
+
+        // Handle accuracy corrector... we cache the token state here before doing other modification -
+        // namely focus spending - because we assume at this point that the player could determine if it's
+        // better to spend tokens to modify, or just trigger accuracy corrector.
+        // Note that human behavior here is not 100% optimal, but for our purposes it's fair to assume
+        // that people will still attempt to modify dice as usual with rerolls until they determine they
+        // can't beat AC.
+        // TODO: As with some other things there are various edge cases that we could handle here... ex.
+        // if there's no possible way to get more than two hits we could just trigger AC right off the bat
+        // and ignore the rolled results entirely. More complex, in some cases with FCS + gunner it might be
+        // better to cancel but not add the two hits back in to intentionally trigger FCS and gunner for a
+        // second attack...
+        TokenState attack_tokens_before_ac = attack_tokens;
+
         attacker_modify_attack_dice_after_reroll(attack_dice, attack_tokens);
+
+        // Use accuracy corrector in the following cases:
+        // a) We ended up with less than 2 hits/crits
+        // b) We got exactly 2 hits/crits but we only care if we "hit the attack" (TLT, Ion, etc)
+        // b) We got exactly 2 hits and no crits (still better to remove the extra die for LWF, and not spend tokens)
+        if (m_attack_setup.accuracy_corrector)
+        {
+            int hits = attack_dice.count(DieResult.Hit);
+            int crits = attack_dice.count(DieResult.Crit);
+            if (((hits + crits) <  2) ||
+                (hits == 2 && crits == 0) ||
+                ((hits + crits) == 2 && m_attack_setup.one_damage_on_hit))
+            {
+                attack_tokens = attack_tokens_before_ac;  // Undo focus token spending (see above notes)
+
+                attack_dice.cancel_all();
+                attack_dice.results[DieResult.Hit] += 2;
+            }
+        }
+        // No more modification after potential AC!
+
+        // Done modifying attack dice - compute attack results
+        auto attack_results = attack_dice.count_all();
 
         // Some final sanity checks in debug mode on the logic here as it is not always trivial...
         /*
@@ -388,35 +432,6 @@ class Simulation
             }
         }
         */
-
-        // Done modifying attack dice - compute attack results
-        auto attack_results = attack_dice.count_all();
-
-        // Use accuracy corrector in the following cases:
-        // a) We ended up with less than 2 hits/crits
-        // b) We got exactly 2 hits/crits but we only care if we "hit the attack" (TLT, Ion, etc)
-        // b) We got exactly 2 hits and no crits (still better to remove the extra die for LWF, and not spend tokens)
-        if (m_attack_setup.accuracy_corrector)
-        {
-            int hits = attack_results[DieResult.Hit];
-            int crits = attack_results[DieResult.Crit];
-            if (((hits + crits) <  2) ||
-                (hits == 2 && crits == 0) ||
-                ((hits + crits) == 2 && m_attack_setup.one_damage_on_hit))
-            {
-                // TODO: This is actually a bit too optimistic/simplistic...
-                // In some cases it's fair to just conclude that we could have foreseen how many hits we
-                // could get via modification and thus decided to use AC *instead*, but in cases of
-                // stuff like spending target locks for rerolls, it's impossible to perfectly predict.
-                // Thus we should really have actual logic that decides the best thing to do
-                // probabilistically, and in some cases "wastes" tokens due to bad rerolls.
-                attack_tokens = initial_attack_tokens;  // Undo any token spending
-
-                foreach (ref r; attack_results) r = 0;  // Cancel all results
-                attack_results[DieResult.Hit] = 2;      // Add two hits to the result
-                // No more modification
-            }
-        }
 
         return attack_results;
     }
@@ -564,8 +579,7 @@ class Simulation
 
 
 
-    // Modifies input setups to adjust for token spending
-    // Also returned as part of simulation result, but convenient to modify in place for multiple attacks
+    // Modifies input token spending
     private int[DieResult.Num] simulate_single_attack(ref TokenState attack_tokens,
                                                       ref TokenState defense_tokens,
                                                       bool trigger_after_attack = true)
