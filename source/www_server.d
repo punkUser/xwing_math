@@ -78,9 +78,9 @@ public class WWWServer
         AttackSetup attack_setup;
         DefenseSetup defense_setup;
 
-        attack_setup.dice                       = to!int(req.query.get("attack_dice",              "3"));
-        attack_setup.initial_focus_token_count  = to!int(req.query.get("attack_focus_token_count", "0"));
-        attack_setup.initial_target_lock_count  = to!int(req.query.get("attack_target_lock_count", "0"));
+        attack_setup.dice                = to!int(req.query.get("attack_dice",              "3"));
+        attack_setup.tokens.focus        = to!int(req.query.get("attack_focus_token_count", "0"));
+        attack_setup.tokens.target_lock  = to!int(req.query.get("attack_target_lock_count", "0"));
                 
         attack_setup.expertise           = req.query.get("attack_expertise", "")            == "on";
         attack_setup.fearlessness        = req.query.get("attack_fearlessness", "")         == "on";
@@ -115,44 +115,41 @@ public class WWWServer
         else
             assert(false);
 
-        defense_setup.dice                      = to!int(req.query.get("defense_dice",              "3"));
-        defense_setup.initial_focus_token_count = to!int(req.query.get("defense_focus_token_count", "0"));
-        defense_setup.initial_evade_token_count = to!int(req.query.get("defense_evade_token_count", "0"));
+        defense_setup.dice            = to!int(req.query.get("defense_dice",              "3"));
+        defense_setup.tokens.focus    = to!int(req.query.get("defense_focus_token_count", "0"));
+        defense_setup.tokens.evade    = to!int(req.query.get("defense_evade_token_count", "0"));
 
-        defense_setup.wired                     = req.query.get("defense_wired", "")                == "on";
-        defense_setup.finn                      = req.query.get("defense_finn", "")                 == "on";
-        defense_setup.sensor_jammer             = req.query.get("defense_sensor_jammer", "")        == "on";
-        defense_setup.autothrusters             = req.query.get("defense_autothrusters", "")        == "on";
+        defense_setup.wired           = req.query.get("defense_wired", "")                == "on";
+        defense_setup.finn            = req.query.get("defense_finn", "")                 == "on";
+        defense_setup.sensor_jammer   = req.query.get("defense_sensor_jammer", "")        == "on";
+        defense_setup.autothrusters   = req.query.get("defense_autothrusters", "")        == "on";
         
 
         //writefln("Attack Setup: %s", attack_setup.serializeToPrettyJson());
         //writefln("Defense Setup: %s", defense_setup.serializeToPrettyJson());
 
-
-        // TODO: Clean this up? Max hits is kind of unpredictable though TBH
-        immutable int k_trial_count = 500000;
-
-        // debug
-        //rndGen.seed(1337);
-
         auto simulation = new Simulation(attack_setup, defense_setup);
 
-        // We always show at least 0..6 labels on the graph as this looks nice
-        SimulationResult[] total_hits_pdf = new SimulationResult[7];
-        SimulationResult total_sum;
 
-        foreach (i; 0 .. k_trial_count)
+        version (none)
         {
-            auto result = simulation.simulate_attack();
-            total_sum = accumulate_result(total_sum, result);
+            // Random sampling
+            //rndGen.seed(1337);    // debug
 
-            // Accumulate into the right bin of the total hits PDF
-            int total_hits = result.hits + result.crits;
-
-            if (total_hits >= total_hits_pdf.length)
-                total_hits_pdf.length = total_hits + 1;
-            total_hits_pdf[total_hits] = accumulate_result(total_hits_pdf[total_hits], result);
+            immutable int k_trial_count = 500000;
+            float probability = 1.0f / cast(float)k_trial_count;
+            foreach (i; 0 .. k_trial_count)
+                simulation.simulate_attack(probability);
         }
+        else
+        {
+            // Exhaustive search
+            simulation.simulate_attack_exhaustive();
+        }
+
+        auto total_hits_pdf = simulation.total_hits_pdf();
+        auto total_sum = simulation.total_sum();
+
         int max_hits = cast(int)total_hits_pdf.length;
 
 
@@ -160,7 +157,7 @@ public class WWWServer
         SimulationContent content;
         
         // Expected values
-        content.expected_total_hits = (total_sum.hits + total_sum.crits) / cast(float)k_trial_count;
+        content.expected_total_hits = (total_sum.hits + total_sum.crits);
 
         // Set up X labels on the total hits graph
         content.pdf_x_labels = new string[max_hits];
@@ -168,17 +165,18 @@ public class WWWServer
             content.pdf_x_labels[i] = to!string(i);
 
         // Compute PDF
+        // TODO: Move some of this to simulation helpers?
         content.hit_pdf     = new float[max_hits];
         content.crit_pdf    = new float[max_hits];
         content.hit_inv_cdf = new float[max_hits];
-        float percent_of_trials_scale = 100.0f / cast(float)k_trial_count;
         foreach (i; 0 .. max_hits)
         {
-            auto bar_height = total_hits_pdf[i].trial_count * percent_of_trials_scale;
-            auto percent_crits = total_hits_pdf[i].crits / max(1.0f, cast(float)(total_hits_pdf[i].hits + total_hits_pdf[i].crits));
-            auto percent_hits  = 1.0f - percent_crits;
-            content.hit_pdf[i]  = bar_height * percent_hits ;
-            content.crit_pdf[i] = bar_height * percent_crits;
+            float total = total_hits_pdf[i].hits + total_hits_pdf[i].crits;
+            float fraction_crits = total > 0.0f ? total_hits_pdf[i].crits / total : 0.0f;
+            float fraction_hits  = 1.0f - fraction_crits;
+
+            content.hit_pdf[i]  = 100.0f * fraction_hits  * total_hits_pdf[i].probability;
+            content.crit_pdf[i] = 100.0f * fraction_crits * total_hits_pdf[i].probability;
         }
 
         // Compute inverse CDF P(at least X hits)
@@ -191,15 +189,15 @@ public class WWWServer
         // Tokens (see labels above)
         content.exp_token_labels = ["Focus", "Target Lock", "Evade", "Stress"];
         content.exp_attack_tokens = [
-            total_sum.attack_delta_focus_tokens / cast(float)k_trial_count,
-            total_sum.attack_delta_target_locks / cast(float)k_trial_count,
+            total_sum.attack_delta_focus_tokens,
+            total_sum.attack_delta_target_locks,
             0.0f,
-            total_sum.attack_delta_stress       / cast(float)k_trial_count];
+            total_sum.attack_delta_stress];
         content.exp_defense_tokens = [
-            total_sum.defense_delta_focus_tokens / cast(float)k_trial_count,
+            total_sum.defense_delta_focus_tokens,
             0.0f,
-            total_sum.defense_delta_evade_tokens / cast(float)k_trial_count,
-            total_sum.defense_delta_stress       / cast(float)k_trial_count];
+            total_sum.defense_delta_evade_tokens,
+            total_sum.defense_delta_stress];
 
         res.writeJsonBody(content);
     }

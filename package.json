@@ -5,8 +5,8 @@
 	"copyright": "Copyright © 2016, Andrew Lauritzen",
 	"authors": ["Andrew Lauritzen"],
 	"dependencies": {
-		"vibe-d": "~>0.7.30",
-		"diet-ng": "~>1.1.1"
+		"vibe-d": "~>0.7.31",
+		"diet-ng": "~>1.2.0"
 	},	
 	"versions": ["VibeDisableCommandLineParsing", "VibeIdleCollect", "UseOpenSSL"],
 	

@@ -35,15 +35,21 @@ enum MultiAttackType : int
     AfterAttack,                  // Ex. Corran    
 };
 
+struct TokenState
+{
+    int focus = 0;
+    int evade = 0;
+    int target_lock = 0;
+    int stress = 0;
+}
+
 struct AttackSetup
 {
     MultiAttackType type = MultiAttackType.Single;
 
     // Tokens
     int dice = 0;
-    int initial_focus_token_count = 0;
-    int initial_target_lock_count = 0;
-    int initial_stress_token_count = 0;
+    TokenState tokens;
 
     // Pilots
 
@@ -91,9 +97,7 @@ struct DefenseSetup
 {
     // Tokens
     int dice = 0;
-    int initial_focus_token_count = 0;
-    int initial_evade_token_count = 0;
-    int initial_stress_token_count = 0;
+    TokenState tokens;
 
     // Pilots
 
@@ -115,26 +119,27 @@ struct DefenseSetup
     // TODO: Lightweight frame
 };
 
+
 struct SimulationResult
 {
-    int trial_count = 0;
+    float probability = 0.0f;
 
-    int hits = 0;
-    int crits = 0;
+    float hits = 0;
+    float crits = 0;
 
     // After - Before for all values here
-    int attack_delta_focus_tokens = 0;
-    int attack_delta_target_locks = 0;
-    int attack_delta_stress       = 0;
+    float attack_delta_focus_tokens = 0;
+    float attack_delta_target_locks = 0;
+    float attack_delta_stress       = 0;
 
-    int defense_delta_focus_tokens = 0;
-    int defense_delta_evade_tokens = 0;
-    int defense_delta_stress       = 0;
+    float defense_delta_focus_tokens = 0;
+    float defense_delta_evade_tokens = 0;
+    float defense_delta_stress       = 0;
 };
 
 SimulationResult accumulate_result(SimulationResult a, SimulationResult b)
 {
-    a.trial_count += b.trial_count;
+    a.probability += b.probability;
 
     a.hits += b.hits;
     a.crits += b.crits;
@@ -151,14 +156,6 @@ SimulationResult accumulate_result(SimulationResult a, SimulationResult b)
 }
 
 //-----------------------------------------------------------------------------------
-
-struct TokenState
-{
-    int focus = 0;
-    int evade = 0;
-    int target_lock = 0;
-    int stress = 0;
-}
 
 // New setup where we only count totals and hash, etc.
 struct DiceState
@@ -279,6 +276,11 @@ class Simulation
     {
         m_attack_setup = attack_setup;
         m_defense_setup = defense_setup;
+
+        // We always show at least 0..6 labels on the graph as this looks nice
+        m_total_hits_pdf = new SimulationResult[7];
+        foreach (ref i; m_total_hits_pdf)
+            i = SimulationResult.init;
     }
 
     // TODO: Needs a way to force rerolls eventually as well
@@ -460,31 +462,14 @@ class Simulation
         }
         // No more modification after potential AC!
 
-        // Done modifying attack dice - compute attack results
-        auto attack_results = attack_dice.count_all();
-
-        // Some final sanity checks in debug mode on the logic here as it is not always trivial...
-        /*
-        debug
-        {
-            // Did we have the ability to reroll more dice than we did?
-            if (total_reroll_count > rerolled_dice_count)
-            {
-                // If so, every focus or blank result that is still around here should have been rerolled
-                assert(attack_dice.results[DieResult.Blank] == 0);
-                assert(attack_dice.results[DieResult.Focus] == 0);
-            }
-        }
-        */
-
-        return attack_results;
+        return attack_dice.count_all();
     }
 
 
 
 
 
-    void attacker_modify_defense_dice(ref const(int)[DieResult.Num] attack_results,
+    void attacker_modify_defense_dice(const(int)[DieResult.Num] attack_results,
                                       ref DiceState defense_dice,
                                       ref TokenState defense_tokens)
     {
@@ -493,7 +478,7 @@ class Simulation
             defense_dice.change_dice(DieResult.Evade, DieResult.Focus, 1);
     }
 
-    int defender_modify_defense_dice_before_reroll(ref const(int)[DieResult.Num] attack_results,
+    int defender_modify_defense_dice_before_reroll(const(int)[DieResult.Num] attack_results,
                                                    ref DiceState defense_dice,
                                                    ref TokenState defense_tokens)
     {
@@ -516,9 +501,9 @@ class Simulation
         return dice_to_reroll;
     }
 
-    void defender_modify_defense_dice_after_reroll(ref const(int)[DieResult.Num] attack_results,
-                                                    ref DiceState defense_dice,
-                                                    ref TokenState defense_tokens)
+    void defender_modify_defense_dice_after_reroll(const(int)[DieResult.Num] attack_results,
+                                                   ref DiceState defense_dice,
+                                                   ref TokenState defense_tokens)
     {
         int uncanceled_hits = attack_results[DieResult.Hit] + attack_results[DieResult.Crit] - defense_dice.count(DieResult.Evade);
         bool can_spend_focus = defense_tokens.focus > 0 && defense_dice.count(DieResult.Focus) > 0;
@@ -603,7 +588,7 @@ class Simulation
         }
     }
 
-    private int[DieResult.Num] roll_and_modify_defense_dice(ref const(int)[DieResult.Num] attack_results,
+    private int[DieResult.Num] roll_and_modify_defense_dice(const(int)[DieResult.Num] attack_results,
                                                             ref TokenState defense_tokens)
     {
         // Roll Defense Dice
@@ -629,17 +614,9 @@ class Simulation
         return defense_dice.count_all();
     }
 
-
-
-
-    // Modifies input token spending
-    private int[DieResult.Num] simulate_single_attack(ref TokenState attack_tokens,
-                                                      ref TokenState defense_tokens,
-                                                      bool trigger_after_attack = true)
+    private int[DieResult.Num] compare_results(int[DieResult.Num] attack_results,
+                                               int[DieResult.Num] defense_results)
     {
-        auto attack_results  = roll_and_modify_attack_dice(attack_tokens);
-        auto defense_results = roll_and_modify_defense_dice(attack_results, defense_tokens);
-
         // Sanity...
         assert(attack_results[DieResult.Evade] == 0);
         assert(defense_results[DieResult.Hit] == 0);
@@ -667,6 +644,20 @@ class Simulation
             attack_results[DieResult.Hit] = 1;
             attack_results[DieResult.Crit] = 0;
         }
+        return attack_results;
+    }
+
+
+
+
+    // Modifies input token spending
+    private int[DieResult.Num] simulate_single_attack(ref TokenState attack_tokens,
+                                                      ref TokenState defense_tokens,
+                                                      bool trigger_after_attack = true)
+    {
+        auto attack_results  = roll_and_modify_attack_dice(attack_tokens);
+        auto defense_results = roll_and_modify_defense_dice(attack_results, defense_tokens);
+        auto final_results = compare_results(attack_results, defense_results);
 
         // Trigger any "after attacking" abilities if request
         if (trigger_after_attack)
@@ -679,31 +670,21 @@ class Simulation
             }
         }
 
-        return attack_results;
+        return final_results;
     }
 
-    public SimulationResult simulate_attack()
+    // NOTE: Generally set probability to 1 / total trials
+    public void simulate_attack(float probability = 1.0f)
     {
         // TODO: Sanity checks on inputs?
 
-        TokenState attack_tokens;
-        attack_tokens.focus       = m_attack_setup.initial_focus_token_count;
-        attack_tokens.target_lock = m_attack_setup.initial_target_lock_count;
-        attack_tokens.stress      = m_attack_setup.initial_stress_token_count;
+        TokenState attack_tokens  = m_attack_setup.tokens;
+        TokenState defense_tokens = m_defense_setup.tokens;
 
-        TokenState defense_tokens;
-        defense_tokens.focus  = m_defense_setup.initial_focus_token_count;
-        defense_tokens.evade  = m_defense_setup.initial_evade_token_count;
-        defense_tokens.stress = m_defense_setup.initial_stress_token_count;
-
-        // Simulate first attack
         // TODO: We'll eventually need to pass some hints into this about the fact that there is a second attack
         // as it does change the optimal token spend strategies and so on somewhat.
-        // Also upgrades matter here (FCS, etc).
-        // NOTE: Attack/defense setup passed by reference as tokens are modified in place
 
         int[DieResult.Num] attack_results;
-        bool first_attack_hit = (attack_results[DieResult.Hit] != 0 || attack_results[DieResult.Crit] != 0);
 
         if (m_attack_setup.type == MultiAttackType.Single)
         {
@@ -721,7 +702,7 @@ class Simulation
             attack_results    = simulate_single_attack(attack_tokens, defense_tokens, true);
             attack_results[] += simulate_single_attack(attack_tokens, defense_tokens, true)[];
         }
-        else if (m_attack_setup.type == MultiAttackType.AfterAttackDoesNotHit && !first_attack_hit)
+        else if (m_attack_setup.type == MultiAttackType.AfterAttackDoesNotHit)
         {
             // After attack abilities trigger after both of these
             attack_results    = simulate_single_attack(attack_tokens, defense_tokens, true);
@@ -734,34 +715,209 @@ class Simulation
             assert(false);  // Unknown attack type
         }
 
+        accumulate(probability, attack_results, attack_tokens, defense_tokens);
+    }
+
+
+
+    // Copied by value
+    struct ExhaustiveState
+    {
+        DiceState attack_dice;
+        TokenState attack_tokens;
+        DiceState defense_dice;
+        TokenState defense_tokens;
+        float probability = 1.0;
+    }
+
+    alias ForkDiceDelegate = void delegate(ExhaustiveState state);
+
+    void exhaustive_fork_attack_dice(bool initial_roll)(ExhaustiveState state, int count, ForkDiceDelegate cb)
+    {
+        // P(blank) = 2/8
+        // P(focus) = 2/8
+        // P(hit)   = 3/8
+        // P(crit)  = 1/8
+
+        float total_fork_probability = 0.0f;
+
+        // TODO: Could probably clean this up a bit but what it does is fairly clear
+        for (int crit = 0; crit <= count; ++crit)
+        {
+            for (int hit = 0; hit <= (count - crit); ++hit)
+            {
+                for (int focus = 0; focus <= (count - crit - hit); ++focus)
+                {
+                    int blank = count - crit - hit - focus;
+                    assert(blank >= 0);
+
+                    // Add dice to the relevant pool
+                    ExhaustiveState new_state = state;
+                    if (initial_roll)
+                    {
+                        new_state.attack_dice.results[DieResult.Crit]  += crit;
+                        new_state.attack_dice.results[DieResult.Hit]   += hit;
+                        new_state.attack_dice.results[DieResult.Focus] += focus;
+                        new_state.attack_dice.results[DieResult.Blank] += blank;
+                    }
+                    else
+                    {
+                        new_state.attack_dice.rerolled_results[DieResult.Crit]  += crit;
+                        new_state.attack_dice.rerolled_results[DieResult.Hit]   += hit;
+                        new_state.attack_dice.rerolled_results[DieResult.Focus] += focus;
+                        new_state.attack_dice.rerolled_results[DieResult.Blank] += blank;
+                    }
+
+                    // TODO: Work out probability of this configuration and accumulate
+                    float roll_probability = 0.0f;
+                    
+
+
+                    cb(new_state);
+                }
+            }
+        }
+    }
+
+    void exhaustive_fork_defense_dice(bool initial_roll)(ExhaustiveState state, int count, ForkDiceDelegate cb)
+    {
+        // P(blank) = 3/8
+        // P(focus) = 2/8
+        // P(evade) = 3/8
+
+        int[DieResult.Num] dice;
+
+        // TODO: Could probably clean this up a bit but what it does is fairly clear
+        for (dice[DieResult.Evade] = 0; dice[DieResult.Evade] <= count; ++dice[DieResult.Evade])
+        {
+            for (dice[DieResult.Focus] = 0; dice[DieResult.Focus] <= (count - dice[DieResult.Evade]); ++dice[DieResult.Focus])
+            {
+                dice[DieResult.Blank] = count - dice[DieResult.Focus] - dice[DieResult.Evade];
+                assert(dice[DieResult.Blank] >= 0);
+
+                // Add dice to the relevant pool
+                ExhaustiveState new_state = state;
+                if (initial_roll)
+                    new_state.defense_dice.results[] += dice[];
+                else
+                    new_state.defense_dice.rerolled_results[] += dice[];
+
+                // TODO: Work out probability of this configuration and accumulate
+
+                cb(new_state);
+            }
+        }
+    }
+
+
+    public void simulate_attack_exhaustive()
+    {
+        ExhaustiveState state;
+        state.attack_tokens = m_attack_setup.tokens;
+        state.defense_tokens = m_defense_setup.tokens;
+
+        // Start the recursion
+        exhaustive_fork_attack_dice!(true)(state, m_attack_setup.dice, &exhaustive_attack_modify_before_reroll);
+    }
+
+    private void exhaustive_attack_modify_before_reroll(ExhaustiveState state)
+    {
+        // "Immediately after rolling" events
+        if (m_attack_setup.heavy_laser_cannon)
+            state.attack_dice.change_dice(DieResult.Crit, DieResult.Hit);
+
+        defender_modify_attack_dice(state.attack_dice, state.attack_tokens);
+
+        int dice_to_reroll = attacker_modify_attack_dice_before_reroll(state.attack_dice, state.attack_tokens);
+
+        exhaustive_fork_attack_dice!(false)(state, dice_to_reroll, &exhaustive_attack_modify_after_reroll);
+    }
+
+    private void exhaustive_attack_modify_after_reroll(ExhaustiveState state)
+    {
+        attacker_modify_attack_dice_after_reroll(state.attack_dice, state.attack_tokens);
+        // Done modifying attack dice
+
+        // Roll defense dice
+        exhaustive_fork_defense_dice!(true)(state, m_defense_setup.dice, &exhaustive_defense_modify_before_reroll);
+    }
+
+    private void exhaustive_defense_modify_before_reroll(ExhaustiveState state)
+    {
+        attacker_modify_defense_dice(state.attack_dice.count_all(), state.defense_dice, state.defense_tokens);
+
+        int dice_to_reroll = defender_modify_defense_dice_before_reroll(state.attack_dice.count_all(), state.defense_dice, state.defense_tokens);
+
+        exhaustive_fork_defense_dice!(false)(state, dice_to_reroll, &exhaustive_defense_modify_after_reroll);
+    }
+
+    private void exhaustive_defense_modify_after_reroll(ExhaustiveState state)
+    {
+        defender_modify_defense_dice_after_reroll(state.attack_dice.count_all(), state.defense_dice, state.defense_tokens);
+        // Done modifying defense dice
+
+        // Compare results
+        auto final_results = compare_results(state.attack_dice.count_all(), state.defense_dice.count_all());
+        accumulate(1.0f, final_results, state.attack_tokens, state.defense_tokens);     // TODO
+    }
+
+    
+
+
+
+
+
+
+    private void accumulate(float probability, int[DieResult.Num] results, TokenState attack_tokens, TokenState defense_tokens)
+    {
         // Sanity checks on token spending
         assert(attack_tokens.focus >= 0);
         assert(attack_tokens.evade >= 0);
-        assert(attack_tokens.target_lock >= 0);        // Possible to gain target locks due to FCS
+        assert(attack_tokens.target_lock >= 0);
         assert(attack_tokens.stress >= 0);
 
         assert(defense_tokens.focus >= 0);
         assert(defense_tokens.evade >= 0);
-        assert(defense_tokens.target_lock >= 0);        // Possible to gain target locks due to FCS
+        assert(defense_tokens.target_lock >= 0);
         assert(defense_tokens.stress >= 0);
 
         // Compute final results of this simulation step
+        // TODO: Can clean this up
         SimulationResult result;
-        result.trial_count = 1;
+        result.probability = probability;
 
-        result.hits  = attack_results[DieResult.Hit];
-        result.crits = attack_results[DieResult.Crit];
+        result.hits  = probability * cast(float)results[DieResult.Hit];
+        result.crits = probability * cast(float)results[DieResult.Crit];
 
-        result.attack_delta_focus_tokens  = attack_tokens.focus        - m_attack_setup.initial_focus_token_count  ; 
-        result.attack_delta_target_locks  = attack_tokens.target_lock  - m_attack_setup.initial_target_lock_count  ; 
-        result.attack_delta_stress        = attack_tokens.stress       - m_attack_setup.initial_stress_token_count ;
-        result.defense_delta_focus_tokens = defense_tokens.focus       - m_defense_setup.initial_focus_token_count ;
-        result.defense_delta_evade_tokens = defense_tokens.evade       - m_defense_setup.initial_evade_token_count ;
-        result.defense_delta_stress       = defense_tokens.stress      - m_defense_setup.initial_stress_token_count;
+        result.attack_delta_focus_tokens  = probability * cast(float)(attack_tokens.focus        - m_attack_setup.tokens.focus      );
+        result.attack_delta_target_locks  = probability * cast(float)(attack_tokens.target_lock  - m_attack_setup.tokens.target_lock);
+        result.attack_delta_stress        = probability * cast(float)(attack_tokens.stress       - m_attack_setup.tokens.stress     );
+        result.defense_delta_focus_tokens = probability * cast(float)(defense_tokens.focus       - m_defense_setup.tokens.focus     );
+        result.defense_delta_evade_tokens = probability * cast(float)(defense_tokens.evade       - m_defense_setup.tokens.evade     );
+        result.defense_delta_stress       = probability * cast(float)(defense_tokens.stress      - m_defense_setup.tokens.stress    );
 
-        return result;
+        m_total_sum = accumulate_result(m_total_sum, result);
+
+        // Accumulate into the right bin of the total hits PDF
+        int total_hits = results[DieResult.Hit] + results[DieResult.Crit];
+        if (total_hits >= m_total_hits_pdf.length)
+            m_total_hits_pdf.length = total_hits + 1;
+        m_total_hits_pdf[total_hits] = accumulate_result(m_total_hits_pdf[total_hits], result);
     }
 
+    public SimulationResult[] total_hits_pdf() const
+    {
+        return m_total_hits_pdf.dup;
+    }
+
+    public SimulationResult total_sum() const
+    {
+        return m_total_sum;
+    }
+
+    // Accumulated results
+    private SimulationResult[] m_total_hits_pdf;
+    private SimulationResult m_total_sum;
 
     private immutable AttackSetup m_attack_setup;
     private immutable DefenseSetup m_defense_setup;
