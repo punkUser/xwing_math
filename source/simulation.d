@@ -3,6 +3,7 @@ module simulation;
 import std.algorithm;
 import std.random;
 import std.stdio;
+import std.math;
 
 public immutable k_die_sides = 8;
 
@@ -721,6 +722,27 @@ class Simulation
 
 
     // Copied by value
+    // TODO: Can generalize this but okay for now
+    // Do it in float since for our purposes we always end up converting immediately anyways
+    static immutable int[] k_factorials_table = [
+        1,                  // 0!
+        1,                  // 1!
+        2,                  // 2!
+        6,                  // 3!
+        24,                 // 4!
+        120,                // 5!
+        720,                // 6!
+        5040,               // 7!
+        40320,              // 8!
+        362880,             // 9!
+        3628800,            // 10!
+    ];
+    static int factorial(int n)
+    {
+        assert(n < k_factorials_table.length);
+        return k_factorials_table[n];
+    }
+
     struct ExhaustiveState
     {
         DiceState attack_dice;
@@ -734,12 +756,7 @@ class Simulation
 
     void exhaustive_fork_attack_dice(bool initial_roll)(ExhaustiveState state, int count, ForkDiceDelegate cb)
     {
-        // P(blank) = 2/8
-        // P(focus) = 2/8
-        // P(hit)   = 3/8
-        // P(crit)  = 1/8
-
-        float total_fork_probability = 0.0f;
+        float total_fork_probability = 0.0f;            // Just for debug
 
         // TODO: Could probably clean this up a bit but what it does is fairly clear
         for (int crit = 0; crit <= count; ++crit)
@@ -768,15 +785,37 @@ class Simulation
                         new_state.attack_dice.rerolled_results[DieResult.Blank] += blank;
                     }
 
-                    // TODO: Work out probability of this configuration and accumulate
-                    float roll_probability = 0.0f;
-                    
+                    // TODO: Work out probability of this configuration and accumulate                    
+                    // Multinomial distribution: https://en.wikipedia.org/wiki/Multinomial_distribution
+                    // n = count
+                    // k = 4 (possible outcomes)
+                    // p_1 = P(blank) = 2/8; x_1 = blank
+                    // p_2 = P(focus) = 2/8; x_2 = focus
+                    // p_3 = P(hit)   = 3/8; x_3 = hit
+                    // p_4 = P(crit)  = 1/8; x_4 = crit
+                    // n! / (x_1! * ... * x_k!) * p_1^x_1 * ... p_k^x_k
 
+                    // Could also do this part in integers/fixed point easily enough actually... revisit
+                    // TODO: Optimize for small integer powers if needed
+                    float nf = cast(float)factorial(count);
+                    float xf = cast(float)(factorial(blank) * factorial(focus) * factorial(hit) * factorial(crit));
+                    float p = pow(0.25f, blank) * pow(0.25f, focus) * pow(0.375f, hit) * pow(0.125f, crit);
+
+                    float roll_probability = (nf / xf) * p;
+                    assert(roll_probability >= 0.0f && roll_probability <= 1.0f);
+
+                    new_state.probability *= roll_probability;
+
+                    total_fork_probability += roll_probability;
+                    assert(total_fork_probability >= 0.0f && total_fork_probability <= 1.0f);
 
                     cb(new_state);
                 }
             }
         }
+
+        // Total probability of our fork loop should be very close to 1, modulo numeric precision
+        assert(abs(total_fork_probability - 1.0f) < 1e-6f);
     }
 
     void exhaustive_fork_defense_dice(bool initial_roll)(ExhaustiveState state, int count, ForkDiceDelegate cb)
@@ -858,7 +897,7 @@ class Simulation
 
         // Compare results
         auto final_results = compare_results(state.attack_dice.count_all(), state.defense_dice.count_all());
-        accumulate(1.0f, final_results, state.attack_tokens, state.defense_tokens);     // TODO
+        accumulate(state.probability, final_results, state.attack_tokens, state.defense_tokens);
     }
 
     
