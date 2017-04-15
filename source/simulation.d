@@ -403,73 +403,6 @@ class Simulation
         // TODO: Accuracy corrector should technically go here as it is part of the attacker modify dice section
     }
 
-    int[DieResult.Num] roll_and_modify_attack_dice(ref TokenState attack_tokens)
-    {
-        TokenState initial_attack_tokens = attack_tokens;
-
-        // Roll Attack Dice
-        DiceState attack_dice;
-        foreach (i; 0 .. m_attack_setup.dice)
-        {
-            auto new_result = k_attack_die_result[uniform(0, k_die_sides)];
-            ++attack_dice.results[new_result];
-        }
-
-        // "Immediately after rolling" events
-        if (m_attack_setup.heavy_laser_cannon)
-            attack_dice.change_dice(DieResult.Crit, DieResult.Hit);
-
-        defender_modify_attack_dice(attack_dice, attack_tokens);
-
-        int dice_to_reroll = attacker_modify_attack_dice_before_reroll(attack_dice, attack_tokens);
-        foreach (i; 0 .. dice_to_reroll)
-        {
-            auto new_result = k_attack_die_result[uniform(0, k_die_sides)];
-            ++attack_dice.rerolled_results[new_result];
-        }
-
-        // Handle accuracy corrector... we cache the token state here before doing other modification -
-        // namely focus spending - because we assume at this point that the player could determine if it's
-        // better to spend tokens to modify, or just trigger accuracy corrector.
-        // Note that human behavior here is not 100% optimal, but for our purposes it's fair to assume
-        // that people will still attempt to modify dice as usual with rerolls until they determine they
-        // can't beat AC.
-        // TODO: As with some other things there are various edge cases that we could handle here... ex.
-        // if there's no possible way to get more than two hits we could just trigger AC right off the bat
-        // and ignore the rolled results entirely. More complex, in some cases with FCS + gunner it might be
-        // better to cancel but not add the two hits back in to intentionally trigger FCS and gunner for a
-        // second attack...
-        TokenState attack_tokens_before_ac = attack_tokens;
-
-        attacker_modify_attack_dice_after_reroll(attack_dice, attack_tokens);
-
-        // Use accuracy corrector in the following cases:
-        // a) We ended up with less than 2 hits/crits
-        // b) We got exactly 2 hits/crits but we only care if we "hit the attack" (TLT, Ion, etc)
-        // b) We got exactly 2 hits and no crits (still better to remove the extra die for LWF, and not spend tokens)
-        if (m_attack_setup.accuracy_corrector)
-        {
-            int hits = attack_dice.count(DieResult.Hit);
-            int crits = attack_dice.count(DieResult.Crit);
-            if (((hits + crits) <  2) ||
-                (hits == 2 && crits == 0) ||
-                ((hits + crits) == 2 && m_attack_setup.one_damage_on_hit))
-            {
-                attack_tokens = attack_tokens_before_ac;  // Undo focus token spending (see above notes)
-
-                attack_dice.cancel_all();
-                attack_dice.results[DieResult.Hit] += 2;
-            }
-        }
-        // No more modification after potential AC!
-
-        return attack_dice.count_all();
-    }
-
-
-
-
-
     void attacker_modify_defense_dice(const(int)[DieResult.Num] attack_results,
                                       ref DiceState defense_dice,
                                       ref TokenState defense_tokens)
@@ -589,32 +522,6 @@ class Simulation
         }
     }
 
-    private int[DieResult.Num] roll_and_modify_defense_dice(const(int)[DieResult.Num] attack_results,
-                                                            ref TokenState defense_tokens)
-    {
-        // Roll Defense Dice
-        DiceState defense_dice;
-        foreach (i; 0 .. m_defense_setup.dice)
-        {
-            auto new_result = k_defense_die_result[uniform(0, k_die_sides)];
-            ++defense_dice.results[new_result];
-        }
-
-        // Modify Defense Dice
-        attacker_modify_defense_dice(attack_results, defense_dice, defense_tokens);
-
-        int dice_to_reroll = defender_modify_defense_dice_before_reroll(attack_results, defense_dice, defense_tokens);
-        foreach (i; 0 .. dice_to_reroll)
-        {
-            auto new_result = k_defense_die_result[uniform(0, k_die_sides)];
-            ++defense_dice.rerolled_results[new_result];
-        }
-        defender_modify_defense_dice_after_reroll(attack_results, defense_dice, defense_tokens);
-
-        // Done modifying defense dice - compute final defense results
-        return defense_dice.count_all();
-    }
-
     private int[DieResult.Num] compare_results(int[DieResult.Num] attack_results,
                                                int[DieResult.Num] defense_results)
     {
@@ -650,6 +557,96 @@ class Simulation
 
 
 
+
+    //************************************** RANDOM SAMPLING *****************************************
+    int[DieResult.Num] roll_and_modify_attack_dice(ref TokenState attack_tokens)
+    {
+        TokenState initial_attack_tokens = attack_tokens;
+
+        // Roll Attack Dice
+        DiceState attack_dice;
+        foreach (i; 0 .. m_attack_setup.dice)
+        {
+            auto new_result = k_attack_die_result[uniform(0, k_die_sides)];
+            ++attack_dice.results[new_result];
+        }
+
+        // "Immediately after rolling" events
+        if (m_attack_setup.heavy_laser_cannon)
+            attack_dice.change_dice(DieResult.Crit, DieResult.Hit);
+
+        defender_modify_attack_dice(attack_dice, attack_tokens);
+
+        int dice_to_reroll = attacker_modify_attack_dice_before_reroll(attack_dice, attack_tokens);
+        foreach (i; 0 .. dice_to_reroll)
+        {
+            auto new_result = k_attack_die_result[uniform(0, k_die_sides)];
+            ++attack_dice.rerolled_results[new_result];
+        }
+
+        // Handle accuracy corrector... we cache the token state here before doing other modification -
+        // namely focus spending - because we assume at this point that the player could determine if it's
+        // better to spend tokens to modify, or just trigger accuracy corrector.
+        // Note that human behavior here is not 100% optimal, but for our purposes it's fair to assume
+        // that people will still attempt to modify dice as usual with rerolls until they determine they
+        // can't beat AC.
+        // TODO: As with some other things there are various edge cases that we could handle here... ex.
+        // if there's no possible way to get more than two hits we could just trigger AC right off the bat
+        // and ignore the rolled results entirely. More complex, in some cases with FCS + gunner it might be
+        // better to cancel but not add the two hits back in to intentionally trigger FCS and gunner for a
+        // second attack...
+        TokenState attack_tokens_before_ac = attack_tokens;
+
+        attacker_modify_attack_dice_after_reroll(attack_dice, attack_tokens);
+
+        // Use accuracy corrector in the following cases:
+        // a) We ended up with less than 2 hits/crits
+        // b) We got exactly 2 hits/crits but we only care if we "hit the attack" (TLT, Ion, etc)
+        // b) We got exactly 2 hits and no crits (still better to remove the extra die for LWF, and not spend tokens)
+        if (m_attack_setup.accuracy_corrector)
+        {
+            int hits = attack_dice.count(DieResult.Hit);
+            int crits = attack_dice.count(DieResult.Crit);
+            if (((hits + crits) <  2) ||
+                (hits == 2 && crits == 0) ||
+                ((hits + crits) == 2 && m_attack_setup.one_damage_on_hit))
+            {
+                attack_tokens = attack_tokens_before_ac;  // Undo focus token spending (see above notes)
+
+                attack_dice.cancel_all();
+                attack_dice.results[DieResult.Hit] += 2;
+            }
+        }
+        // No more modification after potential AC!
+
+        return attack_dice.count_all();
+    }
+
+    private int[DieResult.Num] roll_and_modify_defense_dice(const(int)[DieResult.Num] attack_results,
+                                                            ref TokenState defense_tokens)
+    {
+        // Roll Defense Dice
+        DiceState defense_dice;
+        foreach (i; 0 .. m_defense_setup.dice)
+        {
+            auto new_result = k_defense_die_result[uniform(0, k_die_sides)];
+            ++defense_dice.results[new_result];
+        }
+
+        // Modify Defense Dice
+        attacker_modify_defense_dice(attack_results, defense_dice, defense_tokens);
+
+        int dice_to_reroll = defender_modify_defense_dice_before_reroll(attack_results, defense_dice, defense_tokens);
+        foreach (i; 0 .. dice_to_reroll)
+        {
+            auto new_result = k_defense_die_result[uniform(0, k_die_sides)];
+            ++defense_dice.rerolled_results[new_result];
+        }
+        defender_modify_defense_dice_after_reroll(attack_results, defense_dice, defense_tokens);
+
+        // Done modifying defense dice - compute final defense results
+        return defense_dice.count_all();
+    }
 
     // Modifies input token spending
     private int[DieResult.Num] simulate_single_attack(ref TokenState attack_tokens,
@@ -785,7 +782,7 @@ class Simulation
                         new_state.attack_dice.rerolled_results[DieResult.Blank] += blank;
                     }
 
-                    // TODO: Work out probability of this configuration and accumulate                    
+                    // Work out probability of this configuration and accumulate                    
                     // Multinomial distribution: https://en.wikipedia.org/wiki/Multinomial_distribution
                     // n = count
                     // k = 4 (possible outcomes)
@@ -796,6 +793,7 @@ class Simulation
                     // n! / (x_1! * ... * x_k!) * p_1^x_1 * ... p_k^x_k
 
                     // Could also do this part in integers/fixed point easily enough actually... revisit
+                    // Could probabilty also do this iteratively as we loop easily enough... also revist
                     // TODO: Optimize for small integer powers if needed
                     float nf = cast(float)factorial(count);
                     float xf = cast(float)(factorial(blank) * factorial(focus) * factorial(hit) * factorial(crit));
@@ -804,11 +802,10 @@ class Simulation
                     float roll_probability = (nf / xf) * p;
                     assert(roll_probability >= 0.0f && roll_probability <= 1.0f);
 
-                    new_state.probability *= roll_probability;
-
                     total_fork_probability += roll_probability;
                     assert(total_fork_probability >= 0.0f && total_fork_probability <= 1.0f);
 
+                    new_state.probability *= roll_probability;
                     cb(new_state);
                 }
             }
@@ -820,32 +817,53 @@ class Simulation
 
     void exhaustive_fork_defense_dice(bool initial_roll)(ExhaustiveState state, int count, ForkDiceDelegate cb)
     {
-        // P(blank) = 3/8
-        // P(focus) = 2/8
-        // P(evade) = 3/8
-
-        int[DieResult.Num] dice;
+        float total_fork_probability = 0.0f;            // Just for debug
 
         // TODO: Could probably clean this up a bit but what it does is fairly clear
-        for (dice[DieResult.Evade] = 0; dice[DieResult.Evade] <= count; ++dice[DieResult.Evade])
+        for (int evade = 0; evade <= count; ++evade)
         {
-            for (dice[DieResult.Focus] = 0; dice[DieResult.Focus] <= (count - dice[DieResult.Evade]); ++dice[DieResult.Focus])
+            for (int focus = 0; focus <= (count - evade); ++focus)
             {
-                dice[DieResult.Blank] = count - dice[DieResult.Focus] - dice[DieResult.Evade];
-                assert(dice[DieResult.Blank] >= 0);
+                int blank = count - focus - evade;
+                assert(blank >= 0);
 
                 // Add dice to the relevant pool
                 ExhaustiveState new_state = state;
                 if (initial_roll)
-                    new_state.defense_dice.results[] += dice[];
+                {
+                    new_state.defense_dice.results[DieResult.Evade] += evade;
+                    new_state.defense_dice.results[DieResult.Focus] += focus;
+                    new_state.defense_dice.results[DieResult.Blank] += blank;
+                }
                 else
-                    new_state.defense_dice.rerolled_results[] += dice[];
+                {
+                    new_state.defense_dice.rerolled_results[DieResult.Evade] += evade;
+                    new_state.defense_dice.rerolled_results[DieResult.Focus] += focus;
+                    new_state.defense_dice.rerolled_results[DieResult.Blank] += blank;
+                }                
 
-                // TODO: Work out probability of this configuration and accumulate
+                // Work out probability of this configuration and accumulate (see attack dice)
+                // P(blank) = 3/8
+                // P(focus) = 2/8
+                // P(evade) = 3/8
+                float nf = cast(float)factorial(count);
+                float xf = cast(float)(factorial(blank) * factorial(focus) * factorial(evade));
+                float p = pow(0.375f, blank) * pow(0.25f, focus) * pow(0.375f, evade);
+
+                float roll_probability = (nf / xf) * p;
+                assert(roll_probability >= 0.0f && roll_probability <= 1.0f);
+
+                total_fork_probability += roll_probability;
+                assert(total_fork_probability >= 0.0f && total_fork_probability <= 1.0f);
+
+                new_state.probability *= roll_probability;
 
                 cb(new_state);
             }
         }
+
+        // Total probability of our fork loop should be very close to 1, modulo numeric precision
+        assert(abs(total_fork_probability - 1.0f) < 1e-6f);
     }
 
 
