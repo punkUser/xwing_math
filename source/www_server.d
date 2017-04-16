@@ -144,7 +144,12 @@ public class WWWServer
         else
         {
             // Exhaustive search
+            auto sw = StopWatch(AutoStart.yes);
+
             simulation.simulate_attack_exhaustive();
+
+            writefln("Exhaustive simulation: %d evaluations in %s msec",
+                     simulation.total_sum().evaluation_count, sw.peek().msecs());
         }
 
         auto total_hits_pdf = simulation.total_hits_pdf();

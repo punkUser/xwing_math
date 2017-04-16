@@ -123,6 +123,9 @@ struct DefenseSetup
 
 struct SimulationResult
 {
+    // Performance/debug metadata
+    int evaluation_count = 1;
+
     float probability = 0.0f;
 
     float hits = 0;
@@ -140,6 +143,7 @@ struct SimulationResult
 
 SimulationResult accumulate_result(SimulationResult a, SimulationResult b)
 {
+    a.evaluation_count += b.evaluation_count;
     a.probability += b.probability;
 
     a.hits += b.hits;
@@ -366,6 +370,19 @@ class Simulation
     private void attacker_modify_attack_dice_after_reroll(ref DiceState attack_dice,
                                                           ref TokenState attack_tokens)
     {
+        // Handle accuracy corrector... we cache the token state here before doing other modification -
+        // namely focus spending - because we assume at this point that the player could determine if it's
+        // better to spend tokens to modify, or just trigger accuracy corrector.
+        // Note that human behavior here is not 100% optimal, but for our purposes it's fair to assume
+        // that people will still attempt to modify dice as usual with rerolls until they determine they
+        // can't beat AC.
+        // TODO: As with some other things there are various edge cases that we could handle here... ex.
+        // if there's no possible way to get more than two hits we could just trigger AC right off the bat
+        // and ignore the rolled results entirely. More complex, in some cases with FCS + gunner it might be
+        // better to cancel but not add the two hits back in to intentionally trigger FCS and gunner for a
+        // second attack...
+        TokenState attack_tokens_before_ac = attack_tokens;
+
         // Rerolls are done - deal with focus results
 
         // TODO: Semi-complex logic in the case of abilities where you can spend something to change
@@ -400,7 +417,25 @@ class Simulation
             attack_dice.change_dice(DieResult.Hit, DieResult.Crit, hits_to_crits);
         }
 
-        // TODO: Accuracy corrector should technically go here as it is part of the attacker modify dice section
+        // Use accuracy corrector in the following cases:
+        // a) We ended up with less than 2 hits/crits
+        // b) We got exactly 2 hits/crits but we only care if we "hit the attack" (TLT, Ion, etc)
+        // b) We got exactly 2 hits and no crits (still better to remove the extra die for LWF, and not spend tokens)
+        if (m_attack_setup.accuracy_corrector)
+        {
+            int hits = attack_dice.count(DieResult.Hit);
+            int crits = attack_dice.count(DieResult.Crit);
+            if (((hits + crits) <  2) ||
+                (hits == 2 && crits == 0) ||
+                ((hits + crits) == 2 && m_attack_setup.one_damage_on_hit))
+            {
+                attack_tokens = attack_tokens_before_ac;  // Undo focus token spending (see above notes)
+
+                attack_dice.cancel_all();
+                attack_dice.results[DieResult.Hit] += 2;
+            }
+        }
+        // No more modification after AC!
     }
 
     void attacker_modify_defense_dice(const(int)[DieResult.Num] attack_results,
@@ -584,40 +619,7 @@ class Simulation
             ++attack_dice.rerolled_results[new_result];
         }
 
-        // Handle accuracy corrector... we cache the token state here before doing other modification -
-        // namely focus spending - because we assume at this point that the player could determine if it's
-        // better to spend tokens to modify, or just trigger accuracy corrector.
-        // Note that human behavior here is not 100% optimal, but for our purposes it's fair to assume
-        // that people will still attempt to modify dice as usual with rerolls until they determine they
-        // can't beat AC.
-        // TODO: As with some other things there are various edge cases that we could handle here... ex.
-        // if there's no possible way to get more than two hits we could just trigger AC right off the bat
-        // and ignore the rolled results entirely. More complex, in some cases with FCS + gunner it might be
-        // better to cancel but not add the two hits back in to intentionally trigger FCS and gunner for a
-        // second attack...
-        TokenState attack_tokens_before_ac = attack_tokens;
-
         attacker_modify_attack_dice_after_reroll(attack_dice, attack_tokens);
-
-        // Use accuracy corrector in the following cases:
-        // a) We ended up with less than 2 hits/crits
-        // b) We got exactly 2 hits/crits but we only care if we "hit the attack" (TLT, Ion, etc)
-        // b) We got exactly 2 hits and no crits (still better to remove the extra die for LWF, and not spend tokens)
-        if (m_attack_setup.accuracy_corrector)
-        {
-            int hits = attack_dice.count(DieResult.Hit);
-            int crits = attack_dice.count(DieResult.Crit);
-            if (((hits + crits) <  2) ||
-                (hits == 2 && crits == 0) ||
-                ((hits + crits) == 2 && m_attack_setup.one_damage_on_hit))
-            {
-                attack_tokens = attack_tokens_before_ac;  // Undo focus token spending (see above notes)
-
-                attack_dice.cancel_all();
-                attack_dice.results[DieResult.Hit] += 2;
-            }
-        }
-        // No more modification after potential AC!
 
         return attack_dice.count_all();
     }
@@ -644,7 +646,6 @@ class Simulation
         }
         defender_modify_defense_dice_after_reroll(attack_results, defense_dice, defense_tokens);
 
-        // Done modifying defense dice - compute final defense results
         return defense_dice.count_all();
     }
 
