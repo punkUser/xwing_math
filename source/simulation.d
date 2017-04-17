@@ -596,15 +596,9 @@ class Simulation
     //************************************** RANDOM SAMPLING *****************************************
     int[DieResult.Num] roll_and_modify_attack_dice(ref TokenState attack_tokens)
     {
-        TokenState initial_attack_tokens = attack_tokens;
-
-        // Roll Attack Dice
         DiceState attack_dice;
         foreach (i; 0 .. m_attack_setup.dice)
-        {
-            auto new_result = k_attack_die_result[uniform(0, k_die_sides)];
-            ++attack_dice.results[new_result];
-        }
+            ++attack_dice.results[k_attack_die_result[uniform(0, k_die_sides)]];
 
         // "Immediately after rolling" events
         if (m_attack_setup.heavy_laser_cannon)
@@ -614,10 +608,7 @@ class Simulation
 
         int dice_to_reroll = attacker_modify_attack_dice_before_reroll(attack_dice, attack_tokens);
         foreach (i; 0 .. dice_to_reroll)
-        {
-            auto new_result = k_attack_die_result[uniform(0, k_die_sides)];
-            ++attack_dice.rerolled_results[new_result];
-        }
+            ++attack_dice.rerolled_results[k_attack_die_result[uniform(0, k_die_sides)]];
 
         attacker_modify_attack_dice_after_reroll(attack_dice, attack_tokens);
 
@@ -627,23 +618,16 @@ class Simulation
     private int[DieResult.Num] roll_and_modify_defense_dice(const(int)[DieResult.Num] attack_results,
                                                             ref TokenState defense_tokens)
     {
-        // Roll Defense Dice
         DiceState defense_dice;
         foreach (i; 0 .. m_defense_setup.dice)
-        {
-            auto new_result = k_defense_die_result[uniform(0, k_die_sides)];
-            ++defense_dice.results[new_result];
-        }
+            ++defense_dice.results[k_defense_die_result[uniform(0, k_die_sides)]];
 
-        // Modify Defense Dice
         attacker_modify_defense_dice(attack_results, defense_dice, defense_tokens);
 
         int dice_to_reroll = defender_modify_defense_dice_before_reroll(attack_results, defense_dice, defense_tokens);
         foreach (i; 0 .. dice_to_reroll)
-        {
-            auto new_result = k_defense_die_result[uniform(0, k_die_sides)];
-            ++defense_dice.rerolled_results[new_result];
-        }
+            ++defense_dice.rerolled_results[k_defense_die_result[uniform(0, k_die_sides)]];
+
         defender_modify_defense_dice_after_reroll(attack_results, defense_dice, defense_tokens);
 
         return defense_dice.count_all();
