@@ -6,7 +6,7 @@
 	"authors": ["Andrew Lauritzen"],
 	"dependencies": {
 		"vibe-d": "~>0.7.31",
-		"diet-ng": "~>1.2.0"
+		"diet-ng": "~>1.2.1"
 	},	
 	"versions": ["VibeDisableCommandLineParsing", "VibeIdleCollect", "UseOpenSSL"],
 	

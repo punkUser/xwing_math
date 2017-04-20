@@ -590,6 +590,16 @@ class Simulation
         return attack_results;
     }
 
+    private void after_attack(ref TokenState attack_tokens, ref TokenState defense_tokens)
+    {
+        // Update any abilities that trigger "after attacking" or "after defending"
+        if (m_attack_setup.fire_control_system)
+        {
+            // TODO: Handle multi-target-lock stuff... really only an issue with Redline and so on
+            attack_tokens.target_lock = max(attack_tokens.target_lock, 1);
+        }
+    }
+
 
 
 
@@ -635,23 +645,11 @@ class Simulation
 
     // Modifies input token spending
     private int[DieResult.Num] simulate_single_attack(ref TokenState attack_tokens,
-                                                      ref TokenState defense_tokens,
-                                                      bool trigger_after_attack = true)
+                                                      ref TokenState defense_tokens)
     {
         auto attack_results  = roll_and_modify_attack_dice(attack_tokens);
         auto defense_results = roll_and_modify_defense_dice(attack_results, defense_tokens);
         auto final_results = compare_results(attack_results, defense_results);
-
-        // Trigger any "after attacking" abilities if request
-        if (trigger_after_attack)
-        {
-            // Update any abilities that trigger "after attacking" or "after defending"
-            if (m_attack_setup.fire_control_system)
-            {
-                // TODO: Handle multi-target-lock stuff... really only an issue with Redline and so on
-                attack_tokens.target_lock = max(attack_tokens.target_lock, 1);
-            }
-        }
 
         return final_results;
     }
@@ -671,27 +669,36 @@ class Simulation
 
         if (m_attack_setup.type == MultiAttackType.Single)
         {
-            attack_results = simulate_single_attack(attack_tokens, defense_tokens, true);
+            attack_results = simulate_single_attack(attack_tokens, defense_tokens);
+            after_attack(attack_tokens, defense_tokens);
         }
         else if (m_attack_setup.type == MultiAttackType.SecondaryPerformTwice)
         {
             // We DO NOT trigger "after attack" type abilities between two "secondary perfom twice" attacks
-            attack_results    = simulate_single_attack(attack_tokens, defense_tokens, false);
-            attack_results[] += simulate_single_attack(attack_tokens, defense_tokens, true)[];
+            attack_results    = simulate_single_attack(attack_tokens, defense_tokens);
+            attack_results[] += simulate_single_attack(attack_tokens, defense_tokens)[];
+            after_attack(attack_tokens, defense_tokens);
         }    
         else if (m_attack_setup.type == MultiAttackType.AfterAttack)
         {
             // After attack abilities trigger after both of these
-            attack_results    = simulate_single_attack(attack_tokens, defense_tokens, true);
-            attack_results[] += simulate_single_attack(attack_tokens, defense_tokens, true)[];
+            attack_results    = simulate_single_attack(attack_tokens, defense_tokens);
+            after_attack(attack_tokens, defense_tokens);
+            attack_results[] += simulate_single_attack(attack_tokens, defense_tokens)[];
+            after_attack(attack_tokens, defense_tokens);
         }
         else if (m_attack_setup.type == MultiAttackType.AfterAttackDoesNotHit)
         {
             // After attack abilities trigger after both of these
-            attack_results    = simulate_single_attack(attack_tokens, defense_tokens, true);
+            attack_results    = simulate_single_attack(attack_tokens, defense_tokens);
+            after_attack(attack_tokens, defense_tokens);
+
             // Only do second attack if the first one missed
             if (attack_results[DieResult.Hit] == 0 && attack_results[DieResult.Crit] == 0)
-                attack_results[] += simulate_single_attack(attack_tokens, defense_tokens, true)[];
+            {
+                attack_results[] += simulate_single_attack(attack_tokens, defense_tokens)[];
+                after_attack(attack_tokens, defense_tokens);
+            }
         }
         else
         {
@@ -703,7 +710,8 @@ class Simulation
 
 
 
-    // Copied by value
+
+    //************************************** EXHAUSTIVE SEARCH *****************************************
     // TODO: Can generalize this but okay for now
     // Do it in float since for our purposes we always end up converting immediately anyways
     static immutable int[] k_factorials_table = [
@@ -732,6 +740,10 @@ class Simulation
         DiceState defense_dice;
         TokenState defense_tokens;
         float probability = 1.0;
+
+        // Multi-attack
+        int[DieResult.Num] final_results;
+        int attack_count = 0;
     }
 
     alias ForkDiceDelegate = void delegate(ExhaustiveState state);
@@ -858,6 +870,16 @@ class Simulation
         state.attack_tokens = m_attack_setup.tokens;
         state.defense_tokens = m_defense_setup.tokens;
 
+        simulate_attack_exhaustive(state);
+    }
+
+    // NOTE: Clears out the relevant state for a new attack (dice) but maintains tokens,
+    // cumulative probability and multi-attack results
+    private void simulate_attack_exhaustive(ExhaustiveState state)
+    {
+        state.attack_dice = DiceState.init;
+        state.defense_dice = DiceState.init;
+
         // Start the recursion
         exhaustive_fork_attack_dice!(true)(state, m_attack_setup.dice, &exhaustive_attack_modify_before_reroll);
     }
@@ -899,8 +921,49 @@ class Simulation
         // Done modifying defense dice
 
         // Compare results
-        auto final_results = compare_results(state.attack_dice.count_all(), state.defense_dice.count_all());
-        accumulate(state.probability, final_results, state.attack_tokens, state.defense_tokens);
+        auto attack_results = compare_results(state.attack_dice.count_all(), state.defense_dice.count_all());
+
+        state.final_results[] += attack_results[];
+        ++state.attack_count;
+
+        // Handle multi-attack (MOAR recursion!)
+        if (m_attack_setup.type == MultiAttackType.Single || state.attack_count == 2)
+        {
+            // This is the final attack. Trigger any after attacking abilities and accumulate results.
+            after_attack(state.attack_tokens, state.defense_tokens);
+            accumulate(state.probability, state.final_results, state.attack_tokens, state.defense_tokens);
+        }
+        else if (m_attack_setup.type == MultiAttackType.SecondaryPerformTwice)
+        {
+            // First of two "secondary perform twice" attacks.
+            // NOTE: We DO NOT trigger "after attack" type abilities between two "secondary perfom twice" attacks
+            simulate_attack_exhaustive(state);
+        }    
+        else if (m_attack_setup.type == MultiAttackType.AfterAttack)
+        {
+            // After attack abilities trigger after both of these
+            after_attack(state.attack_tokens, state.defense_tokens);
+            simulate_attack_exhaustive(state);
+        }
+        else if (m_attack_setup.type == MultiAttackType.AfterAttackDoesNotHit)
+        {
+            // After attack abilities trigger after both of these
+            after_attack(state.attack_tokens, state.defense_tokens);
+
+            // Only do second attack if the first one missed; otherwise accumulate
+            if (attack_results[DieResult.Hit] == 0 && attack_results[DieResult.Crit] == 0)
+            {
+                simulate_attack_exhaustive(state);
+            }
+            else
+            {
+                accumulate(state.probability, state.final_results, state.attack_tokens, state.defense_tokens);
+            }
+        }
+        else
+        {
+            assert(false);  // Unknown attack type
+        }
     }
 
     
