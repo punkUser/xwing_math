@@ -478,7 +478,7 @@ class Simulation
         bool can_spend_focus = defense_tokens.focus > 0 && defense_dice.count(DieResult.Focus) > 0;
 
         // Spend regular focus or evade tokens?
-        if (can_spend_focus || defense_tokens.evade > 0)
+        if (uncanceled_hits > 0 && (can_spend_focus || defense_tokens.evade > 0))
         {
             int max_damage_canceled = (can_spend_focus ? defense_dice.count(DieResult.Focus) : 0) + defense_tokens.evade;
             bool can_cancel_all = (max_damage_canceled >= uncanceled_hits);
@@ -705,7 +705,7 @@ class Simulation
             assert(false);  // Unknown attack type
         }
 
-        accumulate(probability, attack_results, attack_tokens, defense_tokens);
+        accumulate(probability, attack_results[DieResult.Hit], attack_results[DieResult.Crit], attack_tokens, defense_tokens);
     }
 
 
@@ -739,231 +739,290 @@ class Simulation
         TokenState attack_tokens;
         DiceState defense_dice;
         TokenState defense_tokens;
-        float probability = 1.0;
 
         // Multi-attack
-        int[DieResult.Num] final_results;
+        int final_hits = 0;
+		int final_crits = 0;
         int attack_count = 0;
+
+		// Information for next stage of iteration
+		int dice_to_reroll = 0;
     }
 
-    alias ForkDiceDelegate = void delegate(ExhaustiveState state);
+	// Maps state -> probability
+	alias ExhaustiveStateMap = float[ExhaustiveState];
+	ExhaustiveStateMap m_prev_state;
+	ExhaustiveStateMap m_next_state;
 
-    void exhaustive_fork_attack_dice(bool initial_roll)(ExhaustiveState state, int count, ForkDiceDelegate cb)
+    alias ForkDiceDelegate = ExhaustiveState delegate(ExhaustiveState state);
+
+	// Utility to either insert a new state into the map, or accumualte probability if already present
+	void append_state(ref ExhaustiveStateMap map, ExhaustiveState state, float probability)
+	{
+		auto i = (state in map);
+		if (i)
+		{
+			//writefln("Append state: %s", state);
+			*i += probability;
+		}
+		else
+		{
+			//writefln("New state: %s", state);
+			map[state] = probability;
+		}
+	}
+
+	// Take all previous states, roll state.dice_roll attack dice, call "cb" delegate on each of them,
+	// accumulate into new states depending on uniqueness of the key and return the new map.
+	// TODO: Probably makes sense to have a cleaner division between initial roll and rerolls at this point
+	// considering it complicates the calling code a bit too (having to put things into state.dice_to_roll)
+    ExhaustiveStateMap exhaustive_roll_attack_dice(bool initial_roll)(ExhaustiveStateMap prev_states,
+																	  ForkDiceDelegate cb,
+																	  int initial_roll_dice = 0)
+    {
+		ExhaustiveStateMap next_states;
+		foreach (state, state_probability; prev_states)
+		{
+			int count = initial_roll ? initial_roll_dice : state.dice_to_reroll;
+			assert(!initial_roll || state.dice_to_reroll == 0);
+
+			// TODO: Could probably clean this up a bit but what it does is fairly clear
+			float total_fork_probability = 0.0f;            // Just for debug
+			for (int crit = 0; crit <= count; ++crit)
+			{
+				for (int hit = 0; hit <= (count - crit); ++hit)
+				{
+					for (int focus = 0; focus <= (count - crit - hit); ++focus)
+					{
+						int blank = count - crit - hit - focus;
+						assert(blank >= 0);
+
+						// Add dice to the relevant pool
+						ExhaustiveState new_state = state;
+						if (initial_roll)
+						{
+							new_state.attack_dice.results[DieResult.Crit]  += crit;
+							new_state.attack_dice.results[DieResult.Hit]   += hit;
+							new_state.attack_dice.results[DieResult.Focus] += focus;
+							new_state.attack_dice.results[DieResult.Blank] += blank;
+						}
+						else
+						{
+							new_state.attack_dice.rerolled_results[DieResult.Crit]  += crit;
+							new_state.attack_dice.rerolled_results[DieResult.Hit]   += hit;
+							new_state.attack_dice.rerolled_results[DieResult.Focus] += focus;
+							new_state.attack_dice.rerolled_results[DieResult.Blank] += blank;
+						}
+
+						// Work out probability of this configuration and accumulate                    
+						// Multinomial distribution: https://en.wikipedia.org/wiki/Multinomial_distribution
+						// n = count
+						// k = 4 (possible outcomes)
+						// p_1 = P(blank) = 2/8; x_1 = blank
+						// p_2 = P(focus) = 2/8; x_2 = focus
+						// p_3 = P(hit)   = 3/8; x_3 = hit
+						// p_4 = P(crit)  = 1/8; x_4 = crit
+						// n! / (x_1! * ... * x_k!) * p_1^x_1 * ... p_k^x_k
+
+						// Could also do this part in integers/fixed point easily enough actually... revisit
+						// Could probabilty also do this iteratively as we loop easily enough... also revist
+						// TODO: Optimize for small integer powers if needed
+						float nf = cast(float)factorial(count);
+						float xf = cast(float)(factorial(blank) * factorial(focus) * factorial(hit) * factorial(crit));
+						float p = pow(0.25f, blank) * pow(0.25f, focus) * pow(0.375f, hit) * pow(0.125f, crit);
+
+						float roll_probability = (nf / xf) * p;
+						assert(roll_probability >= 0.0f && roll_probability <= 1.0f);
+						total_fork_probability += roll_probability;
+						assert(total_fork_probability >= 0.0f && total_fork_probability <= 1.0f);
+
+						float next_state_probability = roll_probability * state_probability;
+						append_state(next_states, cb(new_state), next_state_probability);
+					}
+				}
+			}
+
+			// Total probability of our fork loop should be very close to 1, modulo numeric precision
+			assert(abs(total_fork_probability - 1.0f) < 1e-6f);
+		}
+
+		//writeln(next_states.length);
+		return next_states;
+    }
+
+    ExhaustiveStateMap exhaustive_roll_defense_dice(bool initial_roll)(ExhaustiveStateMap prev_states,
+																	   ForkDiceDelegate cb, 
+																	   int initial_roll_dice = 0)
     {
         float total_fork_probability = 0.0f;            // Just for debug
 
-        // TODO: Could probably clean this up a bit but what it does is fairly clear
-        for (int crit = 0; crit <= count; ++crit)
-        {
-            for (int hit = 0; hit <= (count - crit); ++hit)
-            {
-                for (int focus = 0; focus <= (count - crit - hit); ++focus)
-                {
-                    int blank = count - crit - hit - focus;
-                    assert(blank >= 0);
+		ExhaustiveStateMap next_states;
+		foreach (state, state_probability; prev_states)
+		{
+			int count = initial_roll ? initial_roll_dice : state.dice_to_reroll;
 
-                    // Add dice to the relevant pool
-                    ExhaustiveState new_state = state;
-                    if (initial_roll)
-                    {
-                        new_state.attack_dice.results[DieResult.Crit]  += crit;
-                        new_state.attack_dice.results[DieResult.Hit]   += hit;
-                        new_state.attack_dice.results[DieResult.Focus] += focus;
-                        new_state.attack_dice.results[DieResult.Blank] += blank;
-                    }
-                    else
-                    {
-                        new_state.attack_dice.rerolled_results[DieResult.Crit]  += crit;
-                        new_state.attack_dice.rerolled_results[DieResult.Hit]   += hit;
-                        new_state.attack_dice.rerolled_results[DieResult.Focus] += focus;
-                        new_state.attack_dice.rerolled_results[DieResult.Blank] += blank;
-                    }
+			// TODO: Could probably clean this up a bit but what it does is fairly clear
+			float total_fork_probability = 0.0f;            // Just for debug
+			for (int evade = 0; evade <= count; ++evade)
+			{
+				for (int focus = 0; focus <= (count - evade); ++focus)
+				{
+					int blank = count - focus - evade;
+					assert(blank >= 0);
 
-                    // Work out probability of this configuration and accumulate                    
-                    // Multinomial distribution: https://en.wikipedia.org/wiki/Multinomial_distribution
-                    // n = count
-                    // k = 4 (possible outcomes)
-                    // p_1 = P(blank) = 2/8; x_1 = blank
-                    // p_2 = P(focus) = 2/8; x_2 = focus
-                    // p_3 = P(hit)   = 3/8; x_3 = hit
-                    // p_4 = P(crit)  = 1/8; x_4 = crit
-                    // n! / (x_1! * ... * x_k!) * p_1^x_1 * ... p_k^x_k
+					// Add dice to the relevant pool
+					ExhaustiveState new_state = state;
+					new_state.dice_to_reroll = 0;		// Reset
+					if (initial_roll)
+					{
+						new_state.defense_dice.results[DieResult.Evade] += evade;
+						new_state.defense_dice.results[DieResult.Focus] += focus;
+						new_state.defense_dice.results[DieResult.Blank] += blank;
+					}
+					else
+					{
+						new_state.defense_dice.rerolled_results[DieResult.Evade] += evade;
+						new_state.defense_dice.rerolled_results[DieResult.Focus] += focus;
+						new_state.defense_dice.rerolled_results[DieResult.Blank] += blank;
+					}                
 
-                    // Could also do this part in integers/fixed point easily enough actually... revisit
-                    // Could probabilty also do this iteratively as we loop easily enough... also revist
-                    // TODO: Optimize for small integer powers if needed
-                    float nf = cast(float)factorial(count);
-                    float xf = cast(float)(factorial(blank) * factorial(focus) * factorial(hit) * factorial(crit));
-                    float p = pow(0.25f, blank) * pow(0.25f, focus) * pow(0.375f, hit) * pow(0.125f, crit);
+					// Work out probability of this configuration and accumulate (see attack dice)
+					// P(blank) = 3/8
+					// P(focus) = 2/8
+					// P(evade) = 3/8
+					float nf = cast(float)factorial(count);
+					float xf = cast(float)(factorial(blank) * factorial(focus) * factorial(evade));
+					float p = pow(0.375f, blank) * pow(0.25f, focus) * pow(0.375f, evade);
 
-                    float roll_probability = (nf / xf) * p;
-                    assert(roll_probability >= 0.0f && roll_probability <= 1.0f);
+					float roll_probability = (nf / xf) * p;
+					assert(roll_probability >= 0.0f && roll_probability <= 1.0f);
+					total_fork_probability += roll_probability;
+					assert(total_fork_probability >= 0.0f && total_fork_probability <= 1.0f);
 
-                    total_fork_probability += roll_probability;
-                    assert(total_fork_probability >= 0.0f && total_fork_probability <= 1.0f);
+					float next_state_probability = roll_probability * state_probability;
+					append_state(next_states, cb(new_state), next_state_probability);
+				}
+			}
 
-                    new_state.probability *= roll_probability;
-                    cb(new_state);
-                }
-            }
-        }
-
-        // Total probability of our fork loop should be very close to 1, modulo numeric precision
-        assert(abs(total_fork_probability - 1.0f) < 1e-6f);
-    }
-
-    void exhaustive_fork_defense_dice(bool initial_roll)(ExhaustiveState state, int count, ForkDiceDelegate cb)
-    {
-        float total_fork_probability = 0.0f;            // Just for debug
-
-        // TODO: Could probably clean this up a bit but what it does is fairly clear
-        for (int evade = 0; evade <= count; ++evade)
-        {
-            for (int focus = 0; focus <= (count - evade); ++focus)
-            {
-                int blank = count - focus - evade;
-                assert(blank >= 0);
-
-                // Add dice to the relevant pool
-                ExhaustiveState new_state = state;
-                if (initial_roll)
-                {
-                    new_state.defense_dice.results[DieResult.Evade] += evade;
-                    new_state.defense_dice.results[DieResult.Focus] += focus;
-                    new_state.defense_dice.results[DieResult.Blank] += blank;
-                }
-                else
-                {
-                    new_state.defense_dice.rerolled_results[DieResult.Evade] += evade;
-                    new_state.defense_dice.rerolled_results[DieResult.Focus] += focus;
-                    new_state.defense_dice.rerolled_results[DieResult.Blank] += blank;
-                }                
-
-                // Work out probability of this configuration and accumulate (see attack dice)
-                // P(blank) = 3/8
-                // P(focus) = 2/8
-                // P(evade) = 3/8
-                float nf = cast(float)factorial(count);
-                float xf = cast(float)(factorial(blank) * factorial(focus) * factorial(evade));
-                float p = pow(0.375f, blank) * pow(0.25f, focus) * pow(0.375f, evade);
-
-                float roll_probability = (nf / xf) * p;
-                assert(roll_probability >= 0.0f && roll_probability <= 1.0f);
-
-                total_fork_probability += roll_probability;
-                assert(total_fork_probability >= 0.0f && total_fork_probability <= 1.0f);
-
-                new_state.probability *= roll_probability;
-
-                cb(new_state);
-            }
-        }
-
-        // Total probability of our fork loop should be very close to 1, modulo numeric precision
-        assert(abs(total_fork_probability - 1.0f) < 1e-6f);
+			// Total probability of our fork loop should be very close to 1, modulo numeric precision
+			assert(abs(total_fork_probability - 1.0f) < 1e-6f);
+		}
+        
+		//writeln(next_states.length);
+		return next_states;
     }
 
 
     public void simulate_attack_exhaustive()
     {
-        ExhaustiveState state;
-        state.attack_tokens = m_attack_setup.tokens;
-        state.defense_tokens = m_defense_setup.tokens;
+        ExhaustiveState initial_state;
+        initial_state.attack_tokens  = m_attack_setup.tokens;
+        initial_state.defense_tokens = m_defense_setup.tokens;
 
-        simulate_attack_exhaustive(state);
+		ExhaustiveStateMap states;
+		states[initial_state] = 1.0f;
+		
+		// Roll and modify attack dice
+		states = exhaustive_roll_attack_dice!(true)(states, &exhaustive_attack_modify_before_reroll, m_attack_setup.dice);
+		states = exhaustive_roll_attack_dice!(false)(states, &exhaustive_attack_modify_after_reroll);
+
+		// Roll and modify defense dice
+        states = exhaustive_roll_defense_dice!(true)(states, &exhaustive_defense_modify_before_reroll, m_defense_setup.dice);
+		states = exhaustive_roll_defense_dice!(false)(states, &exhaustive_defense_modify_after_reroll);
+
+		// Compare results
+		foreach (ref state, state_probability; states)
+		{
+			auto attack_results = compare_results(state.attack_dice.count_all(), state.defense_dice.count_all());
+
+			// TODO: Handle multi-attack
+
+			int final_hits  = attack_results[DieResult.Hit];
+			int final_crits = attack_results[DieResult.Crit];
+
+			if (m_attack_setup.type == MultiAttackType.Single)
+			{
+				ExhaustiveState next_state = state;
+				after_attack(next_state.attack_tokens, next_state.defense_tokens);
+				accumulate(state_probability, final_hits, final_crits, next_state.attack_tokens, next_state.defense_tokens);
+			}
+			else
+			{
+				assert(false);  // Unknown attack type
+			}
+
+			/*
+			if (m_attack_setup.type == MultiAttackType.Single || state.attack_count == 2)
+			{
+				// This is the final attack. Trigger any after attacking abilities and accumulate results.
+				after_attack(state.attack_tokens, state.defense_tokens);
+				accumulate(state.probability, state.final_hits, state.final_crits, state.attack_tokens, state.defense_tokens);
+			}
+			else if (m_attack_setup.type == MultiAttackType.SecondaryPerformTwice)
+			{
+				// First of two "secondary perform twice" attacks.
+				// NOTE: We DO NOT trigger "after attack" type abilities between two "secondary perfom twice" attacks
+				simulate_attack_exhaustive(state);
+			}    
+			else if (m_attack_setup.type == MultiAttackType.AfterAttack)
+			{
+				// After attack abilities trigger after both of these
+				after_attack(state.attack_tokens, state.defense_tokens);
+				simulate_attack_exhaustive(state);
+			}
+			else if (m_attack_setup.type == MultiAttackType.AfterAttackDoesNotHit)
+			{
+				// After attack abilities trigger after both of these
+				after_attack(state.attack_tokens, state.defense_tokens);
+
+				// Only do second attack if the first one missed; otherwise accumulate
+				if (attack_results[DieResult.Hit] == 0 && attack_results[DieResult.Crit] == 0)
+				{
+					simulate_attack_exhaustive(state);
+				}
+				else
+				{
+					accumulate(state.probability, state.final_hits, state.final_crits, state.attack_tokens, state.defense_tokens);
+				}
+			}
+			else
+			{
+				assert(false);  // Unknown attack type
+			}
+			*/
+		}
     }
 
-    // NOTE: Clears out the relevant state for a new attack (dice) but maintains tokens,
-    // cumulative probability and multi-attack results
-    private void simulate_attack_exhaustive(ExhaustiveState state)
-    {
-        state.attack_dice = DiceState.init;
-        state.defense_dice = DiceState.init;
-
-        // Start the recursion
-        exhaustive_fork_attack_dice!(true)(state, m_attack_setup.dice, &exhaustive_attack_modify_before_reroll);
-    }
-
-    private void exhaustive_attack_modify_before_reroll(ExhaustiveState state)
+    private ExhaustiveState exhaustive_attack_modify_before_reroll(ExhaustiveState state)
     {
         // "Immediately after rolling" events
         if (m_attack_setup.heavy_laser_cannon)
             state.attack_dice.change_dice(DieResult.Crit, DieResult.Hit);
 
         defender_modify_attack_dice(state.attack_dice, state.attack_tokens);
+        state.dice_to_reroll = attacker_modify_attack_dice_before_reroll(state.attack_dice, state.attack_tokens);
+		return state;
+	}
 
-        int dice_to_reroll = attacker_modify_attack_dice_before_reroll(state.attack_dice, state.attack_tokens);
-
-        exhaustive_fork_attack_dice!(false)(state, dice_to_reroll, &exhaustive_attack_modify_after_reroll);
-    }
-
-    private void exhaustive_attack_modify_after_reroll(ExhaustiveState state)
+    private ExhaustiveState exhaustive_attack_modify_after_reroll(ExhaustiveState state)
     {
-        attacker_modify_attack_dice_after_reroll(state.attack_dice, state.attack_tokens);
+        attacker_modify_attack_dice_after_reroll(state.attack_dice, state.attack_tokens);		
         // Done modifying attack dice
-
-        // Roll defense dice
-        exhaustive_fork_defense_dice!(true)(state, m_defense_setup.dice, &exhaustive_defense_modify_before_reroll);
+		return state;
     }
 
-    private void exhaustive_defense_modify_before_reroll(ExhaustiveState state)
+    private ExhaustiveState exhaustive_defense_modify_before_reroll(ExhaustiveState state)
     {
         attacker_modify_defense_dice(state.attack_dice.count_all(), state.defense_dice, state.defense_tokens);
-
-        int dice_to_reroll = defender_modify_defense_dice_before_reroll(state.attack_dice.count_all(), state.defense_dice, state.defense_tokens);
-
-        exhaustive_fork_defense_dice!(false)(state, dice_to_reroll, &exhaustive_defense_modify_after_reroll);
+        state.dice_to_reroll = defender_modify_defense_dice_before_reroll(state.attack_dice.count_all(), state.defense_dice, state.defense_tokens);
+		return state;
     }
 
-    private void exhaustive_defense_modify_after_reroll(ExhaustiveState state)
+    private ExhaustiveState exhaustive_defense_modify_after_reroll(ExhaustiveState state)
     {
         defender_modify_defense_dice_after_reroll(state.attack_dice.count_all(), state.defense_dice, state.defense_tokens);
         // Done modifying defense dice
-
-        // Compare results
-        auto attack_results = compare_results(state.attack_dice.count_all(), state.defense_dice.count_all());
-
-        state.final_results[] += attack_results[];
-        ++state.attack_count;
-
-        // Handle multi-attack (MOAR recursion!)
-        if (m_attack_setup.type == MultiAttackType.Single || state.attack_count == 2)
-        {
-            // This is the final attack. Trigger any after attacking abilities and accumulate results.
-            after_attack(state.attack_tokens, state.defense_tokens);
-            accumulate(state.probability, state.final_results, state.attack_tokens, state.defense_tokens);
-        }
-        else if (m_attack_setup.type == MultiAttackType.SecondaryPerformTwice)
-        {
-            // First of two "secondary perform twice" attacks.
-            // NOTE: We DO NOT trigger "after attack" type abilities between two "secondary perfom twice" attacks
-            simulate_attack_exhaustive(state);
-        }    
-        else if (m_attack_setup.type == MultiAttackType.AfterAttack)
-        {
-            // After attack abilities trigger after both of these
-            after_attack(state.attack_tokens, state.defense_tokens);
-            simulate_attack_exhaustive(state);
-        }
-        else if (m_attack_setup.type == MultiAttackType.AfterAttackDoesNotHit)
-        {
-            // After attack abilities trigger after both of these
-            after_attack(state.attack_tokens, state.defense_tokens);
-
-            // Only do second attack if the first one missed; otherwise accumulate
-            if (attack_results[DieResult.Hit] == 0 && attack_results[DieResult.Crit] == 0)
-            {
-                simulate_attack_exhaustive(state);
-            }
-            else
-            {
-                accumulate(state.probability, state.final_results, state.attack_tokens, state.defense_tokens);
-            }
-        }
-        else
-        {
-            assert(false);  // Unknown attack type
-        }
+		return state;
     }
 
     
@@ -973,7 +1032,7 @@ class Simulation
 
 
 
-    private void accumulate(float probability, int[DieResult.Num] results, TokenState attack_tokens, TokenState defense_tokens)
+    private void accumulate(float probability, int hits, int crits, TokenState attack_tokens, TokenState defense_tokens)
     {
         // Sanity checks on token spending
         assert(attack_tokens.focus >= 0);
@@ -991,8 +1050,8 @@ class Simulation
         SimulationResult result;
         result.probability = probability;
 
-        result.hits  = probability * cast(float)results[DieResult.Hit];
-        result.crits = probability * cast(float)results[DieResult.Crit];
+        result.hits  = probability * cast(float)hits;
+        result.crits = probability * cast(float)crits;
 
         result.attack_delta_focus_tokens  = probability * cast(float)(attack_tokens.focus        - m_attack_setup.tokens.focus      );
         result.attack_delta_target_locks  = probability * cast(float)(attack_tokens.target_lock  - m_attack_setup.tokens.target_lock);
@@ -1004,7 +1063,7 @@ class Simulation
         m_total_sum = accumulate_result(m_total_sum, result);
 
         // Accumulate into the right bin of the total hits PDF
-        int total_hits = results[DieResult.Hit] + results[DieResult.Crit];
+        int total_hits = hits + crits;
         if (total_hits >= m_total_hits_pdf.length)
             m_total_hits_pdf.length = total_hits + 1;
         m_total_hits_pdf[total_hits] = accumulate_result(m_total_hits_pdf[total_hits], result);
