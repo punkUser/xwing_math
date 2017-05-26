@@ -177,17 +177,33 @@ struct DiceState
         rerolled_results[] = 0;
     }
 
+	// "Simplifies" dice state into only states that matter for comparing results after all modification
+	// NOTE: There are a few special cases in which the total number of dice matter (example: lightweight frame)
+	// and in those cases it's important that the caller record the necessary metadata before
+	// simplifying the dice state.
+	void simplify()
+	{
+		results = count_all();
+		rerolled_results[] = 0;
+		results[DieResult.Blank] = 0;
+		results[DieResult.Focus] = 0;
+	}
+
     // Utilities
-    int count(DieResult type) const
-    {
-        return results[type] + rerolled_results[type];
-    }
     int[DieResult.Num] count_all() const
     {
         int[DieResult.Num] total = results[];
         total[] += rerolled_results[];
         return total;
     }
+	int count(DieResult type) const
+    {
+        return results[type] + rerolled_results[type];
+    }
+	int count() const	// Count *all* dice
+	{
+		return sum(count_all()[]);
+	}
 
     // Removes dice that we are able to reroll from results and returns the
     // number that were removed. Caller should add rerolled_results based on this.
@@ -740,11 +756,6 @@ class Simulation
         DiceState defense_dice;
         TokenState defense_tokens;
 
-        // Multi-attack
-        int final_hits = 0;
-		int final_crits = 0;
-        int attack_count = 0;
-
 		// Information for next stage of iteration
 		int dice_to_reroll = 0;
     }
@@ -1008,6 +1019,11 @@ class Simulation
     {
         attacker_modify_attack_dice_after_reroll(state.attack_dice, state.attack_tokens);		
         // Done modifying attack dice
+
+		// State simplification
+		// TODO: Store total dice count somewhere if lightweight frame or other effects are present for defender
+		state.attack_dice.simplify();
+
 		return state;
     }
 
@@ -1022,6 +1038,10 @@ class Simulation
     {
         defender_modify_defense_dice_after_reroll(state.attack_dice.count_all(), state.defense_dice, state.defense_tokens);
         // Done modifying defense dice
+
+		// State simplification
+		state.defense_dice.simplify();
+
 		return state;
     }
 
