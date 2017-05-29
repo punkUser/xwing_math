@@ -760,6 +760,7 @@ class Simulation
 		int dice_to_reroll = 0;
 
 		// Final results (multi-attack, etc)
+		int completed_attack_count = 0;
 		int final_hits = 0;
 		int final_crits = 0;
     }
@@ -861,7 +862,7 @@ class Simulation
 			assert(abs(total_fork_probability - 1.0f) < 1e-6f);
 		}
 
-		//writeln(next_states.length);
+		writeln(next_states.length);
 		return next_states;
     }
 
@@ -923,7 +924,7 @@ class Simulation
 			assert(abs(total_fork_probability - 1.0f) < 1e-6f);
 		}
         
-		//writeln(next_states.length);
+		writeln(next_states.length);
 		return next_states;
     }
 
@@ -935,29 +936,11 @@ class Simulation
 		states = exhaustive_roll_attack_dice!(true)(states, &exhaustive_attack_modify_before_reroll, m_attack_setup.dice);
 		states = exhaustive_roll_attack_dice!(false)(states, &exhaustive_attack_modify_after_reroll);
 
-		// Roll and modify defense dice
+		// Roll and modify defense dice, and compare results
         states = exhaustive_roll_defense_dice!(true)(states, &exhaustive_defense_modify_before_reroll, m_defense_setup.dice);
 		states = exhaustive_roll_defense_dice!(false)(states, &exhaustive_defense_modify_after_reroll);
 
-		// Compare results
-		ExhaustiveStateMap next_states;
-		foreach (state, state_probability; states)
-		{
-			auto attack_results = compare_results(state.attack_dice.count_all(), state.defense_dice.count_all());
-
-			ExhaustiveState next_state = state;
-			next_state.final_hits  = attack_results[DieResult.Hit];
-			next_state.final_crits = attack_results[DieResult.Crit];
-
-			// Simplify state in case of further iteration
-			// Keep tokens and final results, discard the rest
-			next_state.attack_dice.cancel_all();
-			next_state.defense_dice.cancel_all();
-
-			append_state(next_states, next_state, state_probability);
-		}
-
-		return next_states;
+		return states;
 	}
 
     public void simulate_attack_exhaustive()
@@ -972,48 +955,44 @@ class Simulation
 		// First attack
 		states = simulate_single_attack_exhaustive(states);
 
-		// TODO: Multi-attack
+		writefln("Attack complete with %s states.", states.length);
+
+		if (m_attack_setup.type == MultiAttackType.SecondaryPerformTwice ||
+			m_attack_setup.type == MultiAttackType.AfterAttack)
+		{
+			// Unconditional second attacks
+			states = simulate_single_attack_exhaustive(states);
+		}
+		else if (m_attack_setup.type == MultiAttackType.AfterAttackDoesNotHit)
+		{
+			// Only attack again for the states that didn't hit anything
+			ExhaustiveStateMap second_attack_states;
+			foreach (ref state, state_probability; states)
+			{
+				if (state.final_hits == 0 && state.final_crits == 0)
+				{
+					second_attack_states[state] = state_probability;
+					states.remove(state);
+				}
+			}
+
+			writefln("Second attack for %s states.", second_attack_states.length);
+
+			// Do the next attack for those states, then merge them into the other list
+			second_attack_states = simulate_single_attack_exhaustive(second_attack_states);
+
+			foreach (ref state, state_probability; second_attack_states)
+			{
+				assert(!(state in states));		// Should not be possible since attack index will be incremented
+				states[state] = state_probability;
+			}
+		}
+
+		// Record final results
 		foreach (ref state, state_probability; states)
 		{
 			accumulate(state_probability, state.final_hits, state.final_crits, state.attack_tokens, state.defense_tokens);
 		}
-
-		// Work out if we need to trigger "after attack" abilities and/or a second attack
-		/*
-		if (m_attack_setup.type == MultiAttackType.Single)
-		{
-			//after_attack(state.attack_tokens, state.defense_tokens);
-			//accumulate(state.probability, state.final_hits, state.final_crits, state.attack_tokens, state.defense_tokens);
-		}
-		else if (m_attack_setup.type == MultiAttackType.SecondaryPerformTwice)
-		{
-			// First of two "secondary perform twice" attacks.
-			// NOTE: We DO NOT trigger "after attack" type abilities between two "secondary perfom twice" attacks
-			//simulate_attack_exhaustive(state);
-		}    
-		else if (m_attack_setup.type == MultiAttackType.AfterAttack)
-		{
-			//after_attack(state.attack_tokens, state.defense_tokens);
-			//simulate_attack_exhaustive(state);
-		}
-		else if (m_attack_setup.type == MultiAttackType.AfterAttackDoesNotHit)
-		{
-			// Only do second attack if the first one missed
-			if (attack_results[DieResult.Hit] == 0 && attack_results[DieResult.Crit] == 0)
-			{
-				simulate_attack_exhaustive(state);
-			}
-			else
-			{
-				accumulate(state.probability, state.final_hits, state.final_crits, state.attack_tokens, state.defense_tokens);
-			}
-		}
-		else
-		{
-			assert(false);  // Unknown attack type
-		}
-				
-		*/
     }
 
     private ExhaustiveState exhaustive_attack_modify_before_reroll(ExhaustiveState state)
@@ -1051,8 +1030,23 @@ class Simulation
         defender_modify_defense_dice_after_reroll(state.attack_dice.count_all(), state.defense_dice, state.defense_tokens);
         // Done modifying defense dice
 
-		// State simplification
-		state.defense_dice.simplify();
+		// Compare results
+		auto attack_results = compare_results(state.attack_dice.count_all(), state.defense_dice.count_all());
+
+		// "After attack" abilities do not trigger on the first of a "secondary perform twice" attack
+		if (state.completed_attack_count > 0 || m_attack_setup.type != MultiAttackType.SecondaryPerformTwice)
+		{
+			after_attack(state.attack_tokens, state.defense_tokens);
+		}
+
+		state.final_hits  += attack_results[DieResult.Hit];
+		state.final_crits += attack_results[DieResult.Crit];
+		++state.completed_attack_count;
+
+		// Simplify state in case of further iteration
+		// Keep tokens and final results, discard the rest
+		state.attack_dice.cancel_all();
+		state.defense_dice.cancel_all();
 
 		return state;
     }
