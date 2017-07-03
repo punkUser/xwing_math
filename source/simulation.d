@@ -617,116 +617,6 @@ class Simulation
     }
 
 
-
-
-    //************************************** RANDOM SAMPLING *****************************************
-    int[DieResult.Num] roll_and_modify_attack_dice(ref TokenState attack_tokens)
-    {
-        DiceState attack_dice;
-        foreach (i; 0 .. m_attack_setup.dice)
-            ++attack_dice.results[k_attack_die_result[uniform(0, k_die_sides)]];
-
-        // "Immediately after rolling" events
-        if (m_attack_setup.heavy_laser_cannon)
-            attack_dice.change_dice(DieResult.Crit, DieResult.Hit);
-
-        defender_modify_attack_dice(attack_dice, attack_tokens);
-
-        int dice_to_reroll = attacker_modify_attack_dice_before_reroll(attack_dice, attack_tokens);
-        foreach (i; 0 .. dice_to_reroll)
-            ++attack_dice.rerolled_results[k_attack_die_result[uniform(0, k_die_sides)]];
-
-        attacker_modify_attack_dice_after_reroll(attack_dice, attack_tokens);
-
-        return attack_dice.count_all();
-    }
-
-    private int[DieResult.Num] roll_and_modify_defense_dice(const(int)[DieResult.Num] attack_results,
-                                                            ref TokenState defense_tokens)
-    {
-        DiceState defense_dice;
-        foreach (i; 0 .. m_defense_setup.dice)
-            ++defense_dice.results[k_defense_die_result[uniform(0, k_die_sides)]];
-
-        attacker_modify_defense_dice(attack_results, defense_dice, defense_tokens);
-
-        int dice_to_reroll = defender_modify_defense_dice_before_reroll(attack_results, defense_dice, defense_tokens);
-        foreach (i; 0 .. dice_to_reroll)
-            ++defense_dice.rerolled_results[k_defense_die_result[uniform(0, k_die_sides)]];
-
-        defender_modify_defense_dice_after_reroll(attack_results, defense_dice, defense_tokens);
-
-        return defense_dice.count_all();
-    }
-
-    // Modifies input token spending
-    private int[DieResult.Num] simulate_single_attack(ref TokenState attack_tokens,
-                                                      ref TokenState defense_tokens)
-    {
-        auto attack_results  = roll_and_modify_attack_dice(attack_tokens);
-        auto defense_results = roll_and_modify_defense_dice(attack_results, defense_tokens);
-        auto final_results = compare_results(attack_results, defense_results);
-
-        return final_results;
-    }
-
-    // NOTE: Generally set probability to 1 / total trials
-    public void simulate_attack(float probability = 1.0f)
-    {
-        // TODO: Sanity checks on inputs?
-
-        TokenState attack_tokens  = m_attack_setup.tokens;
-        TokenState defense_tokens = m_defense_setup.tokens;
-
-        // TODO: We'll eventually need to pass some hints into this about the fact that there is a second attack
-        // as it does change the optimal token spend strategies and so on somewhat.
-
-        int[DieResult.Num] attack_results;
-
-        if (m_attack_setup.type == MultiAttackType.Single)
-        {
-            attack_results = simulate_single_attack(attack_tokens, defense_tokens);
-            after_attack(attack_tokens, defense_tokens);
-        }
-        else if (m_attack_setup.type == MultiAttackType.SecondaryPerformTwice)
-        {
-            // We DO NOT trigger "after attack" type abilities between two "secondary perfom twice" attacks
-            attack_results    = simulate_single_attack(attack_tokens, defense_tokens);
-            attack_results[] += simulate_single_attack(attack_tokens, defense_tokens)[];
-            after_attack(attack_tokens, defense_tokens);
-        }    
-        else if (m_attack_setup.type == MultiAttackType.AfterAttack)
-        {
-            // After attack abilities trigger after both of these
-            attack_results    = simulate_single_attack(attack_tokens, defense_tokens);
-            after_attack(attack_tokens, defense_tokens);
-            attack_results[] += simulate_single_attack(attack_tokens, defense_tokens)[];
-            after_attack(attack_tokens, defense_tokens);
-        }
-        else if (m_attack_setup.type == MultiAttackType.AfterAttackDoesNotHit)
-        {
-            // After attack abilities trigger after both of these
-            attack_results    = simulate_single_attack(attack_tokens, defense_tokens);
-            after_attack(attack_tokens, defense_tokens);
-
-            // Only do second attack if the first one missed
-            if (attack_results[DieResult.Hit] == 0 && attack_results[DieResult.Crit] == 0)
-            {
-                attack_results[] += simulate_single_attack(attack_tokens, defense_tokens)[];
-                after_attack(attack_tokens, defense_tokens);
-            }
-        }
-        else
-        {
-            assert(false);  // Unknown attack type
-        }
-
-        accumulate(probability, attack_results[DieResult.Hit], attack_results[DieResult.Crit], attack_tokens, defense_tokens);
-    }
-
-
-
-
     //************************************** EXHAUSTIVE SEARCH *****************************************
     // TODO: Can generalize this but okay for now
     // Do it in float since for our purposes we always end up converting immediately anyways
@@ -800,7 +690,6 @@ class Simulation
 		foreach (state, state_probability; prev_states)
 		{
 			int count = initial_roll ? initial_roll_dice : state.dice_to_reroll;
-			assert(!initial_roll || state.dice_to_reroll == 0);
 
 			// TODO: Could probably clean this up a bit but what it does is fairly clear
 			float total_fork_probability = 0.0f;            // Just for debug
@@ -815,6 +704,7 @@ class Simulation
 
 						// Add dice to the relevant pool
 						ExhaustiveState new_state = state;
+						new_state.dice_to_reroll = 0;
 						if (initial_roll)
 						{
 							new_state.attack_dice.results[DieResult.Crit]  += crit;
@@ -888,7 +778,7 @@ class Simulation
 
 					// Add dice to the relevant pool
 					ExhaustiveState new_state = state;
-					new_state.dice_to_reroll = 0;		// Reset
+					new_state.dice_to_reroll = 0;
 					if (initial_roll)
 					{
 						new_state.defense_dice.results[DieResult.Evade] += evade;
@@ -932,6 +822,12 @@ class Simulation
 	// Does not directly accumulate as this may be part of a multi-attack sequence.
 	public ExhaustiveStateMap simulate_single_attack_exhaustive(ExhaustiveStateMap states)
 	{
+		// TODO: first optimize the state set into the things that matter for this attack: tokens
+		// We can't completely drop the rest of state because it matters in the composite results - i.e. we have to
+		// accumulate the "final" results appropriately with the states they came from still.
+		// This does require keeping a map from input token state -> [all output states] and then composing the
+		// two for each input state after simulation.
+
 		// Roll and modify attack dice
 		states = exhaustive_roll_attack_dice!(true)(states, &exhaustive_attack_modify_before_reroll, m_attack_setup.dice);
 		states = exhaustive_roll_attack_dice!(false)(states, &exhaustive_attack_modify_after_reroll);
@@ -997,7 +893,7 @@ class Simulation
 
     private ExhaustiveState exhaustive_attack_modify_before_reroll(ExhaustiveState state)
     {
-        // "Immediately after rolling" events
+        // "After rolling" events
         if (m_attack_setup.heavy_laser_cannon)
             state.attack_dice.change_dice(DieResult.Crit, DieResult.Hit);
 
@@ -1013,6 +909,7 @@ class Simulation
 
 		// State simplification
 		// TODO: Store total dice count somewhere if lightweight frame or other effects are present for defender
+		state.dice_to_reroll = 0;
 		state.attack_dice.simplify();
 
 		return state;
@@ -1045,6 +942,7 @@ class Simulation
 
 		// Simplify state in case of further iteration
 		// Keep tokens and final results, discard the rest
+		state.dice_to_reroll = 0;
 		state.attack_dice.cancel_all();
 		state.defense_dice.cancel_all();
 
