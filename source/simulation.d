@@ -731,11 +731,10 @@ class Simulation
 						// n! / (x_1! * ... * x_k!) * p_1^x_1 * ... p_k^x_k
 
 						// Could also do this part in integers/fixed point easily enough actually... revisit
-						// Could probabilty also do this iteratively as we loop easily enough... also revist
 						// TODO: Optimize for small integer powers if needed
 						float nf = cast(float)factorial(count);
 						float xf = cast(float)(factorial(blank) * factorial(focus) * factorial(hit) * factorial(crit));
-						float p = pow(0.25f, blank) * pow(0.25f, focus) * pow(0.375f, hit) * pow(0.125f, crit);
+						float p = pow(0.25f, blank + focus) * pow(0.375f, hit) * pow(0.125f, crit);
 
 						float roll_probability = (nf / xf) * p;
 						assert(roll_probability >= 0.0f && roll_probability <= 1.0f);
@@ -752,7 +751,7 @@ class Simulation
 			assert(abs(total_fork_probability - 1.0f) < 1e-6f);
 		}
 
-		writeln(next_states.length);
+		writefln("After %s attack states: %s", initial_roll ? "initial" : "reroll", next_states.length);
 		return next_states;
     }
 
@@ -798,7 +797,7 @@ class Simulation
 					// P(evade) = 3/8
 					float nf = cast(float)factorial(count);
 					float xf = cast(float)(factorial(blank) * factorial(focus) * factorial(evade));
-					float p = pow(0.375f, blank) * pow(0.25f, focus) * pow(0.375f, evade);
+					float p = pow(0.375f, blank + evade) * pow(0.25f, focus);
 
 					float roll_probability = (nf / xf) * p;
 					assert(roll_probability >= 0.0f && roll_probability <= 1.0f);
@@ -814,7 +813,7 @@ class Simulation
 			assert(abs(total_fork_probability - 1.0f) < 1e-6f);
 		}
         
-		writeln(next_states.length);
+		writefln("After %s defense states: %s", initial_roll ? "initial" : "reroll", next_states.length);
 		return next_states;
     }
 
