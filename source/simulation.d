@@ -653,6 +653,9 @@ class Simulation
 		int completed_attack_count = 0;
 		int final_hits = 0;
 		int final_crits = 0;
+
+		// TODO: Since this is such an important part of the simulation process now, we should compress
+		// the size of this structure and implement (and test!) a proper custom hash function.
     }
 
 	// Maps state -> probability
@@ -751,7 +754,7 @@ class Simulation
 			assert(abs(total_fork_probability - 1.0f) < 1e-6f);
 		}
 
-		writefln("After %s attack states: %s", initial_roll ? "initial" : "reroll", next_states.length);
+		//writefln("After %s attack states: %s", initial_roll ? "initial" : "reroll", next_states.length);
 		return next_states;
     }
 
@@ -813,14 +816,22 @@ class Simulation
 			assert(abs(total_fork_probability - 1.0f) < 1e-6f);
 		}
         
-		writefln("After %s defense states: %s", initial_roll ? "initial" : "reroll", next_states.length);
+		//writefln("After %s defense states: %s", initial_roll ? "initial" : "reroll", next_states.length);
 		return next_states;
     }
 
 	// Returns full set of states after result comparison (results put into state.final_hits, etc)
 	// Does not directly accumulate as this may be part of a multi-attack sequence.
-	public ExhaustiveStateMap simulate_single_attack_exhaustive(ExhaustiveStateMap states)
+	public ExhaustiveStateMap simulate_single_attack_exhaustive(TokenState attack_tokens,
+																TokenState defense_tokens)
 	{
+		ExhaustiveState initial_state;
+        initial_state.attack_tokens  = attack_tokens;
+        initial_state.defense_tokens = defense_tokens;
+
+		ExhaustiveStateMap states;
+		states[initial_state] = 1.0f;
+
 		// TODO: first optimize the state set into the things that matter for this attack: tokens
 		// We can't completely drop the rest of state because it matters in the composite results - i.e. we have to
 		// accumulate the "final" results appropriately with the states they came from still.
@@ -838,19 +849,78 @@ class Simulation
 		return states;
 	}
 
+
+	// Returns full set of states after result comparison (results put into state.final_hits, etc)
+	// Does not directly accumulate as this may be part of a multi-attack sequence.
+	public ExhaustiveStateMap simulate_single_attack_exhaustive(ExhaustiveStateMap initial_states)
+	{
+		// NOTE: It would be "correct" here to just immediately fork all of our states set into another attack,
+		// but that is relatively inefficient. Since the core thing that affects how the next attack plays out is
+		// our *tokens*, we want to only simulate additional attacks with unique token sets, then apply
+		// the results to any input states with that token set.
+
+		// For now we'll do that in the simplest way possible: simply iterate the states and perform second
+		// attack simulations for any unique token sets that we run into. Then we'll apply the results with all
+		// input states to use that token set.
+		//
+		// NOTE: This is all assuming that an "attack" logic only depends on the "setup" and "tokens", and never
+		// on anything like the number of hits that happened in the previous attack. This is a safe assumption for
+		// now. We could technically split our state set into two parts to represent this more formally, but that
+		// would make it a lot more wordy - and potentially less efficient - to pass it around everywhere.
+		//
+		// TODO: Lots of this can be optimized, but it culls so much work compared to the brute force thing that
+		// it's already really "fast enough" to be honest.
+
+		ExhaustiveStateMap new_states;
+		while (initial_states.length > 0)
+		{
+			// Simulate an attack with the tokens from the first state
+			TokenState attack_tokens = initial_states.keys[0].attack_tokens;
+			TokenState defense_tokens = initial_states.keys[0].defense_tokens;
+
+			auto second_attack_states = simulate_single_attack_exhaustive(attack_tokens, defense_tokens);
+
+			// Now find all attacks in our initial state list that ended with the same tokens
+			// Since it's illegal to delete elements from the AA as we go, we'll add ones that we didn't delete to
+			// a separate AA instead...
+			ExhaustiveStateMap kept_states;
+			foreach (ref initial_state, initial_probability; initial_states)
+			{
+				if (initial_state.attack_tokens == attack_tokens && initial_state.defense_tokens == defense_tokens)
+				{
+					// Compose all of the results from the second attack set with this one
+					foreach (ref second_attack_state, second_probability; second_attack_states)
+					{
+						// NOTE: Important to keep the token state and such from after the second attack, not initial one
+						// We basically just want to add each of the combinations of "final hits/crits" together for the
+						// combined attack.
+						ExhaustiveState new_state = second_attack_state;
+						new_state.final_hits			 += initial_state.final_hits;
+						new_state.final_crits		     += initial_state.final_crits;
+						new_state.completed_attack_count += initial_state.completed_attack_count;
+						append_state(new_states, new_state, initial_probability * second_probability);
+					}
+				}
+				else
+				{
+					kept_states[initial_state] = initial_probability;
+				}
+			}
+
+			// Should always consume at least the one input we had...
+			assert(kept_states.length < initial_states.length);
+			initial_states = kept_states;
+		}
+
+		return new_states;
+	}
+
     public void simulate_attack_exhaustive()
-    {
-        ExhaustiveState initial_state;
-        initial_state.attack_tokens  = m_attack_setup.tokens;
-        initial_state.defense_tokens = m_defense_setup.tokens;
-
-		ExhaustiveStateMap states;
-		states[initial_state] = 1.0f;
-		
+    {		
 		// First attack
-		states = simulate_single_attack_exhaustive(states);
+		auto states = simulate_single_attack_exhaustive(m_attack_setup.tokens, m_defense_setup.tokens);
 
-		writefln("Attack complete with %s states.", states.length);
+		//writefln("Attack complete with %s states.", states.length);
 
 		if (m_attack_setup.type == MultiAttackType.SecondaryPerformTwice ||
 			m_attack_setup.type == MultiAttackType.AfterAttack)
@@ -862,20 +932,25 @@ class Simulation
 		{
 			// Only attack again for the states that didn't hit anything
 			ExhaustiveStateMap second_attack_states;
+			ExhaustiveStateMap no_second_attack_states;
 			foreach (ref state, state_probability; states)
 			{
 				if (state.final_hits == 0 && state.final_crits == 0)
 				{
 					second_attack_states[state] = state_probability;
-					states.remove(state);
+				}
+				else
+				{
+					no_second_attack_states[state] = state_probability;
 				}
 			}
 
-			writefln("Second attack for %s states.", second_attack_states.length);
+			//writefln("Second attack for %s states.", second_attack_states.length);
 
 			// Do the next attack for those states, then merge them into the other list
 			second_attack_states = simulate_single_attack_exhaustive(second_attack_states);
 
+			states = no_second_attack_states;
 			foreach (ref state, state_probability; second_attack_states)
 			{
 				assert(!(state in states));		// Should not be possible since attack index will be incremented
@@ -944,6 +1019,8 @@ class Simulation
 		state.dice_to_reroll = 0;
 		state.attack_dice.cancel_all();
 		state.defense_dice.cancel_all();
+
+		// TODO: Maybe assert only the relevant states are set on output here
 
 		return state;
     }
