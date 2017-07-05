@@ -131,19 +131,8 @@ public class WWWServer
         auto simulation = new Simulation(attack_setup, defense_setup);
 
 
-        version (none)
-        {
-            // Random sampling
-            //rndGen.seed(1337);    // debug
-
-            immutable int k_trial_count = 500000;
-            float probability = 1.0f / cast(float)k_trial_count;
-            foreach (i; 0 .. k_trial_count)
-                simulation.simulate_attack(probability);
-        }
-        else
-        {
-            // Exhaustive search
+		// Exhaustive search
+        {            
             auto sw = StopWatch(AutoStart.yes);
 
             simulation.simulate_attack_exhaustive();
