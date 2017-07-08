@@ -53,6 +53,7 @@ struct AttackSetup
     TokenState tokens;
 
     // Pilots
+	bool rey = false;					// Reroll up to 2 blanks
 
     // EPT
     bool juke = false;                  // Setting this to true implies evade token present as well
@@ -101,6 +102,7 @@ struct DefenseSetup
     TokenState tokens;
 
     // Pilots
+	bool rey = false;					// Reroll up to 2 blanks
 
     // EPTs
     bool wired = false;
@@ -349,7 +351,11 @@ class Simulation
             }
         }
 
-        // TODO: Any effects that modify blank dice into something useful here
+        // Free reroll of any blank results before using our more "general" rerolls
+		if (m_attack_setup.rey)
+		{
+			dice_to_reroll += attack_dice.remove_dice_for_reroll(DieResult.Blank, 2);
+		}
 
         // How many free, unrestricted rerolls do we have?
         immutable int free_reroll_count =
@@ -473,9 +479,11 @@ class Simulation
         if (m_attack_setup.finn)
             ++defense_dice.results[DieResult.Blank];
 
-        // Find one blank and turn it to an evade
-        if (m_defense_setup.autothrusters)
-            defense_dice.change_dice(DieResult.Blank, DieResult.Evade, 1);
+		// Reroll any blanks that we can (always useful)
+		if (m_defense_setup.rey)
+		{
+			dice_to_reroll += defense_dice.remove_dice_for_reroll(DieResult.Blank, 2);
+		}
 
         // If we have any focus results and no focus token, reroll our focuses
         if (defense_tokens.focus == 0 && m_defense_setup.wired)
@@ -490,8 +498,14 @@ class Simulation
                                                    ref DiceState defense_dice,
                                                    ref TokenState defense_tokens)
     {
+		// Find one blank and turn it to an evade
+        if (m_defense_setup.autothrusters)
+            defense_dice.change_dice(DieResult.Blank, DieResult.Evade, 1);
+
         int uncanceled_hits = attack_results[DieResult.Hit] + attack_results[DieResult.Crit] - defense_dice.count(DieResult.Evade);
         bool can_spend_focus = defense_tokens.focus > 0 && defense_dice.count(DieResult.Focus) > 0;
+
+		// TODO: Update for FAQ change: can only spend one evade token per attack!
 
         // Spend regular focus or evade tokens?
         if (uncanceled_hits > 0 && (can_spend_focus || defense_tokens.evade > 0))

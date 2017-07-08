@@ -43,7 +43,12 @@ block content
                                 - slider_control("attack_dice",                "Attack Dice",        1, 8, 3);
                                 - slider_control("attack_focus_token_count",   "Focus Tokens",       0, 2, 0);
                                 - slider_control("attack_target_lock_count",   "Target Locks",       0, 2, 0);
-                                
+                            
+                            .row
+                                .small-12.columns
+                                    hr
+                                - switch_control("attack_rey",                 "Rey");
+
                             .row
                                 .small-12.columns
                                     hr
@@ -81,13 +86,18 @@ block content
                                 - slider_control("defense_dice",              "Defense Dice", 0, 6, 3);
                                 - slider_control("defense_focus_token_count", "Focus Tokens", 0, 2, 0);
                                 - slider_control("defense_evade_token_count", "Evade Tokens", 0, 2, 0);
-                                
+                               
+                            .row
+                                .small-12.columns
+                                    hr
+                                - switch_control("defense_rey",                "Rey");
+
                             .row
                                 .small-12.columns
                                     hr
                                 - switch_control("defense_wired",              "Wired");
 
-                            //-.row Only matters once we have some kind of defensive reroll
+                            .row
                                 .small-12.columns
                                     hr
                                 - switch_control("defense_finn",               "Finn");

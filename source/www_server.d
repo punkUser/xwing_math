@@ -81,7 +81,9 @@ public class WWWServer
         attack_setup.dice                = to!int(req.query.get("attack_dice",              "3"));
         attack_setup.tokens.focus        = to!int(req.query.get("attack_focus_token_count", "0"));
         attack_setup.tokens.target_lock  = to!int(req.query.get("attack_target_lock_count", "0"));
-                
+        
+		attack_setup.rey                 = req.query.get("attack_rey", "")					== "on";
+
         attack_setup.expertise           = req.query.get("attack_expertise", "")            == "on";
         attack_setup.fearlessness        = req.query.get("attack_fearlessness", "")         == "on";
         attack_setup.juke                = req.query.get("attack_juke", "")                 == "on";
@@ -119,6 +121,7 @@ public class WWWServer
         defense_setup.tokens.focus    = to!int(req.query.get("defense_focus_token_count", "0"));
         defense_setup.tokens.evade    = to!int(req.query.get("defense_evade_token_count", "0"));
 
+		defense_setup.rey             = req.query.get("defense_rey", "")				  == "on";
         defense_setup.wired           = req.query.get("defense_wired", "")                == "on";
         defense_setup.finn            = req.query.get("defense_finn", "")                 == "on";
         defense_setup.sensor_jammer   = req.query.get("defense_sensor_jammer", "")        == "on";
