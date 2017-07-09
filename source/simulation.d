@@ -904,6 +904,10 @@ class Simulation
 			TokenState attack_tokens = initial_states.keys[0].attack_tokens;
 			TokenState defense_tokens = initial_states.keys[0].defense_tokens;
 
+			// TODO: Consider the use of completed attack count here...
+			// It should be fine since any calls to second attacks, etc. are done in lock step with the relevant
+			// states being carried forward, but there may be some simple ways to make this somewhat more robust
+			// to theoretical cases of mixed state sets.
 			auto second_attack_states = simulate_single_attack_exhaustive(attack_tokens, defense_tokens, initial_states.keys[0].completed_attack_count);
 
 			// Now find all attacks in our initial state list that ended with the same tokens
