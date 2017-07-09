@@ -75,13 +75,44 @@ public class WWWServer
     {
         //writeln(req.query.serializeToPrettyJson());
 
-        AttackSetup attack_setup;
-        DefenseSetup defense_setup;
+        
+
+		/*************************************************************************************************/
+		AttackSetup attack_setup;
 
         attack_setup.dice                = to!int(req.query.get("attack_dice",              "3"));
         attack_setup.tokens.focus        = to!int(req.query.get("attack_focus_token_count", "0"));
         attack_setup.tokens.target_lock  = to!int(req.query.get("attack_target_lock_count", "0"));
         
+		// Add results
+		attack_setup.add_hit_count       += (req.query.get("attack_fearlessness", "")       == "on") ? 1 : 0;
+		attack_setup.add_blank_count     += (req.query.get("attack_finn", "")               == "on") ? 1 : 0;
+
+		// Rerolls
+		attack_setup.any_reroll_count    += (req.query.get("attack_predator_1", "")         == "on") ? 1 : 0;
+		attack_setup.any_reroll_count    += (req.query.get("attack_predator_2", "")         == "on") ? 2 : 0;
+		attack_setup.any_reroll_count    += (req.query.get("attack_rage", "")               == "on") ? 3 : 0;
+		attack_setup.blank_reroll_count  += (req.query.get("attack_rey", "")				== "on") ? 2 : 0;
+		attack_setup.focus_reroll_count  += (req.query.get("attack_wired", "")				== "on") ? attack_setup.dice : 0;
+
+
+		// Change results
+		// TODO: Verify this is always correct for marksmanship... in practice the entire effect must be applied at once
+		attack_setup.focus_to_crit_count += (req.query.get("attack_marksmanship", "")       == "on") ? 1 : 0;
+		attack_setup.focus_to_hit_count  += (req.query.get("attack_marksmanship", "")       == "on") ? attack_setup.dice : 0;
+		attack_setup.focus_to_hit_count  += (req.query.get("attack_expertise", "")          == "on") ? attack_setup.dice : 0;
+		attack_setup.hit_to_crit_count   += (req.query.get("attack_mercenary_copilot", "")  == "on") ? 1 : 0;
+		attack_setup.hit_to_crit_count   += (req.query.get("attack_mangler_cannon", "")     == "on") ? 1 : 0;
+        
+		attack_setup.heavy_laser_cannon  = req.query.get("attack_heavy_laser_cannon", "")   == "on";        
+		attack_setup.juke                = req.query.get("attack_juke", "")                 == "on";
+        attack_setup.accuracy_corrector  = req.query.get("attack_accuracy_corrector", "")   == "on";
+        attack_setup.fire_control_system = req.query.get("attack_fire_control_system", "")  == "on";
+		attack_setup.one_damage_on_hit   = req.query.get("attack_one_damage_on_hit", "")    == "on";
+
+
+
+		/*
 		attack_setup.rey                 = req.query.get("attack_rey", "")					== "on";
 
         attack_setup.expertise           = req.query.get("attack_expertise", "")            == "on";
@@ -103,8 +134,24 @@ public class WWWServer
 
         attack_setup.accuracy_corrector  = req.query.get("attack_accuracy_corrector", "")   == "on";
         attack_setup.fire_control_system = req.query.get("attack_fire_control_system", "")  == "on";
+		*/
 
-        // Bit awkward but good enough for now...
+		/*************************************************************************************************/
+        DefenseSetup defense_setup;
+
+        defense_setup.dice            = to!int(req.query.get("defense_dice",              "3"));
+        defense_setup.tokens.focus    = to!int(req.query.get("defense_focus_token_count", "0"));
+        defense_setup.tokens.evade    = to!int(req.query.get("defense_evade_token_count", "0"));
+
+		defense_setup.rey             = req.query.get("defense_rey", "")				  == "on";
+        defense_setup.wired           = req.query.get("defense_wired", "")                == "on";
+        defense_setup.finn            = req.query.get("defense_finn", "")                 == "on";
+        defense_setup.sensor_jammer   = req.query.get("defense_sensor_jammer", "")        == "on";
+        defense_setup.autothrusters   = req.query.get("defense_autothrusters", "")        == "on";
+        
+
+		/*************************************************************************************************/
+		// Bit awkward but good enough for now...
         string attack_type = req.query.get("attack_type", "single");
         if (attack_type == "single")
             attack_setup.type = MultiAttackType.Single;
@@ -117,16 +164,7 @@ public class WWWServer
         else
             assert(false);
 
-        defense_setup.dice            = to!int(req.query.get("defense_dice",              "3"));
-        defense_setup.tokens.focus    = to!int(req.query.get("defense_focus_token_count", "0"));
-        defense_setup.tokens.evade    = to!int(req.query.get("defense_evade_token_count", "0"));
-
-		defense_setup.rey             = req.query.get("defense_rey", "")				  == "on";
-        defense_setup.wired           = req.query.get("defense_wired", "")                == "on";
-        defense_setup.finn            = req.query.get("defense_finn", "")                 == "on";
-        defense_setup.sensor_jammer   = req.query.get("defense_sensor_jammer", "")        == "on";
-        defense_setup.autothrusters   = req.query.get("defense_autothrusters", "")        == "on";
-        
+		/*************************************************************************************************/
 
         //writefln("Attack Setup: %s", attack_setup.serializeToPrettyJson());
         //writefln("Defense Setup: %s", defense_setup.serializeToPrettyJson());
