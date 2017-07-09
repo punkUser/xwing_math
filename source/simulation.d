@@ -847,11 +847,13 @@ class Simulation
 	// Returns full set of states after result comparison (results put into state.final_hits, etc)
 	// Does not directly accumulate as this may be part of a multi-attack sequence.
 	public ExhaustiveStateMap simulate_single_attack_exhaustive(TokenState attack_tokens,
-																TokenState defense_tokens)
+																TokenState defense_tokens,
+																int completed_attack_count = 0)
 	{
 		ExhaustiveState initial_state;
         initial_state.attack_tokens  = attack_tokens;
         initial_state.defense_tokens = defense_tokens;
+		initial_state.completed_attack_count = completed_attack_count;
 
 		ExhaustiveStateMap states;
 		states[initial_state] = 1.0f;
@@ -902,7 +904,7 @@ class Simulation
 			TokenState attack_tokens = initial_states.keys[0].attack_tokens;
 			TokenState defense_tokens = initial_states.keys[0].defense_tokens;
 
-			auto second_attack_states = simulate_single_attack_exhaustive(attack_tokens, defense_tokens);
+			auto second_attack_states = simulate_single_attack_exhaustive(attack_tokens, defense_tokens, initial_states.keys[0].completed_attack_count);
 
 			// Now find all attacks in our initial state list that ended with the same tokens
 			// Since it's illegal to delete elements from the AA as we go, we'll add ones that we didn't delete to
