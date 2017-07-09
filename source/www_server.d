@@ -14,7 +14,7 @@ public class WWWServer
     {
         auto settings = new HTTPServerSettings;
         settings.errorPageHandler = toDelegate(&error_page);
-        settings.port = 8080;
+        settings.port = 80;
 
         //settings.sessionStore = new MemorySessionStore();
         //settings.accessLogFile = m_config.http_server_log_file;

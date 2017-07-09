@@ -55,3 +55,6 @@ dub.selections.json
 xwing_math.exe
 xwing_math.sln
 xwing_math
+deploy.sh
+xwing_math_daemon
+update.sh
