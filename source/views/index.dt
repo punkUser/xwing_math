@@ -16,7 +16,7 @@ block content
                         .large-6.medium-4.small-4.columns
                             .slider(data-slider, data-initial-start="#{init}", data-start="#{min}", data-end="#{max}")
                                 span.slider-handle(data-slider-handle, role="slider", tabindex="1", aria-controls="#{name}_output")
-                                span(data-slider-fill)
+                                span.slider-fill(data-slider-fill)
 
                 - void switch_control(string name, string label, string type="checkbox")
                     .row
