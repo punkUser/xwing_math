@@ -11,12 +11,17 @@ canvas {
 .switch {
 	margin-bottom: 0.3rem;
 }
+
 .input-group {
-	margin-bottom: 0.5rem;
+	margin-bottom: 0.2rem;
 }
+.input-group-field {
+	height: 2.0rem;
+}
+
 .slider {
-	margin-top: 1.0rem;
-	margin-bottom: 1.0rem;
+	margin-top: 0.8rem;
+	margin-bottom: 0.8rem;
 }
 
 .simulate-button {
@@ -24,8 +29,19 @@ canvas {
 	margin-bottom: 0.5rem;
 }
 
-hr {
-	margin: 0.75rem auto;
+.fieldset {
+	margin: 0.5rem 0;
+    padding: 0.1rem 0.7rem;
+}
+
+.fieldset legend {
+	text-align: left;
+	text-transform: uppercase;
+	font-weight: bold;
+}
+
+body {
+	line-height: 1.0;
 }
 
 label {

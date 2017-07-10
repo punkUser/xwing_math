@@ -23,7 +23,7 @@ block content
                         .large-9.medium-9.small-9.columns
                             label(for="#{name}") #{label}
                         .large-3.medium-3.small-3.columns.text-right
-                            .switch.small
+                            .switch.tiny
                                 input.switch-input(id="#{name}", name="#{name}", type="#{type}")
                                 label.switch-paddle(for="#{name}")
 
@@ -32,7 +32,7 @@ block content
                         .large-9.medium-9.small-9.columns
                             label(for="#{value}") #{label}
                         .large-3.medium-3.small-3.columns.text-right
-                            .switch.small
+                            .switch.tiny
                                 - if (checked)
                                     input.switch-input(id="#{value}", name="#{name}", value="#{value}", type="radio", checked)
                                 - else
@@ -46,41 +46,36 @@ block content
                             - slider_control("attack_focus_token_count",   "Focus Tokens",       0, 2, 0);
                             - slider_control("attack_target_lock_count",   "Target Locks",       0, 2, 0);
                             
-                            .row
-                                .small-12.columns
-                                    hr
-                            - switch_control("attack_rey",                 "Rey");
+                            fieldset.fieldset
+                                legend Pilots
+                                - switch_control("attack_rey",                 "Rey");
 
-                            .row
-                                .small-12.columns
-                                    hr
-                            - switch_control("attack_expertise",           "Expertise");
-                            - switch_control("attack_fearlessness",        "Fearlessness");
-                            - switch_control("attack_juke",                "Juke");
-                            - switch_control("attack_marksmanship",        "Marksmanship");
-                            - switch_control("attack_predator_1",          "Predator (1 reroll)");
-                            - switch_control("attack_predator_2",          "Predator (2 rerolls)");
-                            - switch_control("attack_rage",                "Rage (3 rerolls)");
-                            - switch_control("attack_wired",               "Wired");
+                            fieldset.fieldset
+                                legend Elite Pilot Talents
+                                - switch_control("attack_expertise",           "Expertise");
+                                - switch_control("attack_fearlessness",        "Fearlessness");
+                                - switch_control("attack_juke",                "Juke");
+                                - switch_control("attack_marksmanship",        "Marksmanship");
+                                - switch_control("attack_predator_1",          "Predator (1 reroll)");
+                                - switch_control("attack_predator_2",          "Predator (2 rerolls)");
+                                - switch_control("attack_rage",                "Rage (3 rerolls)");
+                                - switch_control("attack_wired",               "Wired");
                                 
-                            .row
-                                .small-12.columns
-                                    hr
-                            - switch_control("attack_finn",                "Finn");
-                            - switch_control("attack_mercenary_copilot",   "Mercenary Copilot");
+                            fieldset.fieldset
+                                legend Crew
+                                - switch_control("attack_finn",                "Finn");
+                                - switch_control("attack_mercenary_copilot",   "Mercenary Copilot");
                                 
-                            .row
-                                .small-12.columns
-                                    hr
-                            - switch_control("attack_heavy_laser_cannon",  "Heavy Laser Cannon");
-                            - switch_control("attack_mangler_cannon",      "Mangler Cannon");
-                            - switch_control("attack_one_damage_on_hit",   "One Damage on Hit (TLT, Ion)");
+                            fieldset.fieldset
+                                legend Cannons and Turrets
+                                - switch_control("attack_heavy_laser_cannon",  "Heavy Laser Cannon");
+                                - switch_control("attack_mangler_cannon",      "Mangler Cannon");
+                                - switch_control("attack_one_damage_on_hit",   "One Damage on Hit (TLT, Ion)");
                                 
-                            .row
-                                .small-12.columns
-                                    hr
-                            - switch_control("attack_accuracy_corrector",  "Accuracy Corrector");
-                            - switch_control("attack_fire_control_system", "Fire Control System");
+                            fieldset.fieldset
+                                legend System Upgrades
+                                - switch_control("attack_accuracy_corrector",  "Accuracy Corrector");
+                                - switch_control("attack_fire_control_system", "Fire Control System");
 
                     .medium-6.columns
                         .callout.small.success
@@ -88,30 +83,25 @@ block content
                             - slider_control("defense_focus_token_count", "Focus Tokens", 0, 2, 0);
                             - slider_control("defense_evade_token_count", "Evade Tokens", 0, 2, 0);
                                
-                            .row
-                                .small-12.columns
-                                    hr
-                            - switch_control("defense_rey",                "Rey");
+                            fieldset.fieldset
+                                legend Pilots
+                                - switch_control("defense_rey",                "Rey");
 
-                            .row
-                                .small-12.columns
-                                    hr
-                            - switch_control("defense_wired",              "Wired");
+                            fieldset.fieldset
+                                legend Elite Pilot Talents
+                                - switch_control("defense_wired",              "Wired");
 
-                            .row
-                                .small-12.columns
-                                    hr
-                            - switch_control("defense_finn",               "Finn");
+                            fieldset.fieldset
+                                legend Crew
+                                - switch_control("defense_finn",               "Finn");
 
-                            .row
-                                .small-12.columns
-                                    hr
-                            - switch_control("defense_sensor_jammer",      "Sensor Jammer");
+                            fieldset.fieldset
+                                legend System Upgrades
+                                - switch_control("defense_sensor_jammer",      "Sensor Jammer");
 
-                            .row
-                                .small-12.columns
-                                    hr
-                            - switch_control("defense_autothrusters",     "Autothrusters");
+                            fieldset.fieldset
+                                legend Modifications
+                                - switch_control("defense_autothrusters",     "Autothrusters");
                                                     
                         .callout.small.primary
                             - radio_switch_control("attack_type", "Single Attack",             "single", true);
