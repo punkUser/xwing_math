@@ -16,7 +16,6 @@ canvas {
 	margin-bottom: 0.2rem;
 }
 .input-group-field {
-	height: 2.0rem;
 }
 
 .slider {
@@ -30,10 +29,9 @@ canvas {
 }
 
 .fieldset {
-	margin: 0.5rem 0;
+	margin: 0.6rem 0;
     padding: 0.1rem 0.7rem;
 }
-
 .fieldset legend {
 	text-align: left;
 	text-transform: uppercase;

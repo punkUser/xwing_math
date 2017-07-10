@@ -23,7 +23,7 @@ block content
                         .large-9.medium-9.small-9.columns
                             label(for="#{name}") #{label}
                         .large-3.medium-3.small-3.columns.text-right
-                            .switch.tiny
+                            .switch.small
                                 input.switch-input(id="#{name}", name="#{name}", type="#{type}")
                                 label.switch-paddle(for="#{name}")
 
@@ -32,7 +32,7 @@ block content
                         .large-9.medium-9.small-9.columns
                             label(for="#{value}") #{label}
                         .large-3.medium-3.small-3.columns.text-right
-                            .switch.tiny
+                            .switch.small
                                 - if (checked)
                                     input.switch-input(id="#{value}", name="#{name}", value="#{value}", type="radio", checked)
                                 - else

@@ -1,14 +1,20 @@
 doctype html
 html(class="no-js", lang="en")
     head
+        //- Simple auto-versioning for CSS files - just hash the date/time @ compile time
+        //- Works well enough for our uses here
+        - import std.digest.md;
+        - string css_version = toHexString(md5Of(__TIMESTAMP__));
+
+
         meta(charset="utf-8")
         meta(http-equiv="x-ua-compatible", content="ie=edge")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
         
         title X-Wing Math Simulator
         
-        link(rel="stylesheet", href="/css/foundation.css")
-        link(rel="stylesheet", href="/css/app.css")
+        link(rel="stylesheet", href="/css/foundation.css?version=#{css_version}")
+        link(rel="stylesheet", href="/css/app.css?version=#{css_version}")
 
     body
         #content
