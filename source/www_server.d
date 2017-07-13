@@ -22,6 +22,7 @@ public class WWWServer
 	    auto router = new URLRouter;
     
         router.get("/", &index);
+		router.get("/advanced/", &advanced);
         router.get("/simulate.json", &simulate);
 	
         debug
@@ -241,6 +242,11 @@ public class WWWServer
     private void index(HTTPServerRequest req, HTTPServerResponse res)
     {
         res.render!("index.dt");
+    }
+
+	private void advanced(HTTPServerRequest req, HTTPServerResponse res)
+    {
+        res.render!("advanced.dt");
     }
 
     // *************************************** ERROR ************************************************

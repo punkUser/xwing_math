@@ -151,10 +151,10 @@ function simulateUpdateChart(data)
 
 $(document).ready(function()
 {
-	$('#simulate').click(function(event) {
+	$('#simulate-form').submit(function(event) {
 		event.preventDefault();
 		var data = $("#simulate-form").serializeArray();
-		$.getJSON('simulate.json', data, simulateUpdateChart);
+		$.getJSON('/simulate.json', data, simulateUpdateChart);
 	});
 
 	// Predator selectors are mutually exclusive
@@ -166,5 +166,18 @@ $(document).ready(function()
 		if (this.checked)
 			$('#attack_predator_1').prop("checked", false);
 	});
+	
+	
+	$('.input-number-increment').click(function() {
+		var $input = $(this).parents('.input-number-group').find('.input-number');
+		var val = parseInt($input.val(), 10);
+		$input.val(val + 1);
+	});
+
+	$('.input-number-decrement').click(function() {
+		var $input = $(this).parents('.input-number-group').find('.input-number');
+		var val = parseInt($input.val(), 10);
+		$input.val(val - 1);
+	})
 
 });

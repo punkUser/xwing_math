@@ -5,8 +5,6 @@ import std.random;
 import std.stdio;
 import std.math;
 
-public immutable k_die_sides = 8;
-
 enum DieResult : int
 {
     Blank = 0,
@@ -16,17 +14,6 @@ enum DieResult : int
     Evade,
     Num
 };
-immutable DieResult[k_die_sides] k_attack_die_result = [
-    DieResult.Blank, DieResult.Blank,
-    DieResult.Focus, DieResult.Focus,
-    DieResult.Hit, DieResult.Hit, DieResult.Hit,
-    DieResult.Crit
-];
-immutable DieResult[k_die_sides] k_defense_die_result = [
-    DieResult.Blank, DieResult.Blank, DieResult.Blank,
-    DieResult.Focus, DieResult.Focus,
-    DieResult.Evade, DieResult.Evade, DieResult.Evade
-];
 
 enum MultiAttackType : int
 {
