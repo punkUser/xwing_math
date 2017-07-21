@@ -58,16 +58,18 @@ block content
                             - stepper_control("attack_dice",              "Attack Dice",  1, 8, 3);
                             - stepper_control("attack_focus_token_count", "Focus Tokens", 0, 2, 0);
                             - stepper_control("attack_target_lock_count", "Target Locks", 0, 2, 0);
+
+                            fieldset.fieldset
+                                legend Special Effects
+                                - switch_control("attack_one_damage_on_hit",   "One Damage on Hit (TLT, Ion)");
+                                - switch_control("attack_heavy_laser_cannon",  "Heavy Laser Cannon");
+                                - switch_control("attack_fire_control_system", "Fire Control System");
                         
                         .callout.small.success
                             h3 Defender Modify Attack Dice
-                            //- fieldset.fieldset
-                                legend Free Rerolls
-                                //- stepper_control("dmad_reroll_any_count", "Any", 0, 20, 0);
                             fieldset.fieldset
                                 legend Change Results
-                                - stepper_control("dmad_hit_to_focus_count",  "Hit to Focus",  0, 20, 0);
-                                - stepper_control("dmad_crit_to_focus_count", "Crit to Focus", 0, 20, 0);
+                                - stepper_control("dmad_hit_to_focus_no_reroll_count",  "Hit to Focus (No Reroll)",  0, 20, 0);
 
                         .callout.small.alert
                             h3 Attacker Modify Attack Dice
@@ -89,9 +91,7 @@ block content
                                 - stepper_control("amad_focus_to_hit_count",  "Focus to Hit",  0, 20, 0);
                                 - stepper_control("amad_focus_to_crit_count", "Focus to Crit", 0, 20, 0);
                                 - stepper_control("amad_hit_to_crit_count",   "Hit to Crit",   0, 20, 0);
-                                //- stepper_control("amad_any_to_hit_count",  "Any to Hit",  0, 20, 0);
-                                //- stepper_control("amad_any_to_crit_count", "Any to Crit", 0, 20, 0);
-                                
+                                - switch_control("attack_accuracy_corrector",  "Accuracy Corrector");
 
                     .medium-6.columns
                         .callout.small.success
@@ -102,9 +102,6 @@ block content
 
                         .callout.small.alert
                             h3 Attacker Modify Defense Dice
-                            fieldset.fieldset
-                                legend Free Rerolls
-                                - stepper_control("amdd_reroll_any_count", "Any",   0, 20, 0);
                             fieldset.fieldset
                                 legend Change Results
                                 - stepper_control("amdd_evade_to_focus_count", "Evade to Focus",  0, 20, 0);

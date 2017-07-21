@@ -102,12 +102,13 @@ public class WWWServer
 		attack_setup.AMAD.focus_to_hit_count  += (req.query.get("attack_expertise", "")          == "on") ? int.max : 0;
 		attack_setup.AMAD.hit_to_crit_count   += (req.query.get("attack_mercenary_copilot", "")  == "on") ? 1 : 0;
 		attack_setup.AMAD.hit_to_crit_count   += (req.query.get("attack_mangler_cannon", "")     == "on") ? 1 : 0;
+		attack_setup.AMAD.accuracy_corrector  = req.query.get("attack_accuracy_corrector", "")   == "on";
 
+		// Modify defense dice
 		attack_setup.AMDD.evade_to_focus_count += (req.query.get("attack_juke", "")              == "on") ? 1 : 0;
         
 		// Special effects...
 		attack_setup.heavy_laser_cannon  = req.query.get("attack_heavy_laser_cannon", "")   == "on";
-        attack_setup.accuracy_corrector  = req.query.get("attack_accuracy_corrector", "")   == "on";
         attack_setup.fire_control_system = req.query.get("attack_fire_control_system", "")  == "on";
 		attack_setup.one_damage_on_hit   = req.query.get("attack_one_damage_on_hit", "")    == "on";
 
@@ -118,11 +119,20 @@ public class WWWServer
         defense_setup.tokens.focus    = to!int(req.query.get("defense_focus_token_count", "0"));
         defense_setup.tokens.evade    = to!int(req.query.get("defense_evade_token_count", "0"));
 
-		defense_setup.rey             = req.query.get("defense_rey", "")				  == "on";
-        defense_setup.wired           = req.query.get("defense_wired", "")                == "on";
-        defense_setup.finn            = req.query.get("defense_finn", "")                 == "on";
-        defense_setup.sensor_jammer   = req.query.get("defense_sensor_jammer", "")        == "on";
-        defense_setup.autothrusters   = req.query.get("defense_autothrusters", "")        == "on";
+		// Add results
+		defense_setup.DMDD.add_blank_count        += (req.query.get("defense_finn", "")          == "on") ? 1 : 0;
+
+		// Rerolls
+		defense_setup.DMDD.reroll_blank_count     += (req.query.get("defense_rey", "")		     == "on") ? 2 : 0;
+        defense_setup.DMDD.reroll_focus_count     += (req.query.get("defense_wired", "")         == "on") ? int.max : 0;
+
+		// Change results
+		defense_setup.DMDD.blank_to_evade_count   += (req.query.get("defense_autothrusters", "") == "on") ? 1 : 0;
+        
+		// Modify attack dice
+		defense_setup.DMAD.hit_to_focus_no_reroll_count += (req.query.get("defense_sensor_jammer", "") == "on") ? 1 : 0;
+        
+        
         
 
 		/*************************************************************************************************/
@@ -146,7 +156,7 @@ public class WWWServer
 
 	private void simulate_advanced(HTTPServerRequest req, HTTPServerResponse res)
     {
-        //writeln(req.query.serializeToPrettyJson());        
+        writeln(req.query.serializeToPrettyJson());        
 
 		// TODO: CTFE this glue gode a bit, perhaps via JSON serialize/deserialize
 
@@ -159,7 +169,6 @@ public class WWWServer
 
 		// Special effects...
 		attack_setup.heavy_laser_cannon  = req.query.get("attack_heavy_laser_cannon", "")   == "on";
-        attack_setup.accuracy_corrector  = req.query.get("attack_accuracy_corrector", "")   == "on";
         attack_setup.fire_control_system = req.query.get("attack_fire_control_system", "")  == "on";
 		attack_setup.one_damage_on_hit   = req.query.get("attack_one_damage_on_hit", "")    == "on";
 		
@@ -168,15 +177,17 @@ public class WWWServer
 		attack_setup.AMAD.add_crit_count      = to!int(req.query.get("amad_add_crit_count",     "0"));
 		attack_setup.AMAD.add_blank_count     = to!int(req.query.get("amad_add_blank_count",    "0"));
 		attack_setup.AMAD.add_focus_count     = to!int(req.query.get("amad_add_focus_count",    "0"));
-		attack_setup.AMAD.reroll_any_count    = to!int(req.query.get("amad_reroll_any_count",   "0"));
 		attack_setup.AMAD.reroll_blank_count  = to!int(req.query.get("amad_reroll_blank_count", "0"));
 		attack_setup.AMAD.reroll_focus_count  = to!int(req.query.get("amad_reroll_focus_count", "0"));
+		attack_setup.AMAD.reroll_any_count    = to!int(req.query.get("amad_reroll_any_count",   "0"));
 
 		attack_setup.AMAD.focus_to_crit_count = to!int(req.query.get("amad_focus_to_crit_count", "0"));
 		attack_setup.AMAD.focus_to_hit_count  = to!int(req.query.get("amad_focus_to_hit_count",  "0"));
 		attack_setup.AMAD.blank_to_crit_count = to!int(req.query.get("amad_blank_to_crit_count", "0"));
 		attack_setup.AMAD.blank_to_hit_count  = to!int(req.query.get("amad_blank_to_hit_count",  "0"));
 		attack_setup.AMAD.hit_to_crit_count   = to!int(req.query.get("amad_hit_to_crit_count",   "0"));
+
+		attack_setup.AMAD.accuracy_corrector  = req.query.get("attack_accuracy_corrector", "") == "on";
 		
 		// Modify defense dice
 		attack_setup.AMDD.evade_to_focus_count = to!int(req.query.get("amdd_evade_to_focus_count", "0"));
@@ -189,13 +200,20 @@ public class WWWServer
         defense_setup.tokens.focus    = to!int(req.query.get("defense_focus_token_count", "0"));
         defense_setup.tokens.evade    = to!int(req.query.get("defense_evade_token_count", "0"));
 
-		defense_setup.rey             = req.query.get("defense_rey", "")				  == "on";
-        defense_setup.wired           = req.query.get("defense_wired", "")                == "on";
-        defense_setup.finn            = req.query.get("defense_finn", "")                 == "on";
-        defense_setup.sensor_jammer   = req.query.get("defense_sensor_jammer", "")        == "on";
-        defense_setup.autothrusters   = req.query.get("defense_autothrusters", "")        == "on";
+		// Modify defense dice
+		defense_setup.DMDD.add_blank_count     = to!int(req.query.get("dmdd_add_blank_count",    "0"));
+		defense_setup.DMDD.add_focus_count     = to!int(req.query.get("dmdd_add_focus_count",    "0"));
+		defense_setup.DMDD.add_evade_count     = to!int(req.query.get("dmdd_add_evade_count",    "0"));
+		defense_setup.DMDD.reroll_blank_count  = to!int(req.query.get("dmdd_reroll_blank_count", "0"));
+		defense_setup.DMDD.reroll_focus_count  = to!int(req.query.get("dmdd_reroll_focus_count", "0"));
+		defense_setup.DMDD.reroll_any_count    = to!int(req.query.get("dmdd_reroll_any_count",   "0"));
 
+		defense_setup.DMDD.blank_to_evade_count  = to!int(req.query.get("dmdd_blank_to_evade_count",  "0"));
+		defense_setup.DMDD.focus_to_evade_count  = to!int(req.query.get("dmdd_focus_to_evade_count",  "0"));
 
+		// Modify attack dice
+		defense_setup.DMAD.hit_to_focus_no_reroll_count = to!int(req.query.get("dmad_hit_to_focus_no_reroll_count", "0"));
+		
 		/*************************************************************************************************/
 		// Bit awkward but good enough for now...
         string attack_type = req.query.get("attack_type", "single");

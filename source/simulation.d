@@ -53,47 +53,34 @@ struct AttackSetup
 		int reroll_focus_count = 0;
 
 		// Change results
-		//int any_to_crit_count = 0;
-		//int any_to_hit_count = 0;
 		int focus_to_crit_count = 0;
 		int focus_to_hit_count = 0;
 		int blank_to_crit_count = 0;
 		int blank_to_hit_count = 0;
 		int hit_to_crit_count = 0;
+
+		// Can cancel all results and replace with 2 hits
+		bool accuracy_corrector = false;
 	};
 	ModifyAttackDice AMAD;		// "attacker modify attack dice"
 
-
-	// Mod defense dice abilities
 	struct ModifyDefenseDice
 	{
-		// Rerolls
-		//int reroll_any_count = 0;
-
 		// Change results
 		int evade_to_focus_count = 0;
 	};
 	ModifyDefenseDice AMDD;		// "attacker modify defense dice"
 
+	// Special effects    
+    bool fire_control_system = false;   // Get a target lock after attack (only affects multi-attack)
+    bool heavy_laser_cannon = false;    // After initial roll, change all crits->hits
+    bool one_damage_on_hit = false;     // If attack hits, 1 damage (TLT, Ion, etc)
+    // TODO: Autoblaster (hit results cannot be canceled)
 
-
-    // Pilots
-	//bool rey = false;					// Reroll up to 2 blanks
-
-    // EPT
-    //bool juke = false;                  // Setting this to true implies evade token present as well
-    //bool marksmanship = false;          // One focus->crit, rest focus->hit
-    //int  predator_rerolls = 0;          // 0-2 rerolls
-    //bool rage = false;                  // 3 rerolls
-    //bool wired = false;                 // reroll any/all focus
-    //bool expertise = false;             // all focus -> hits
-    //bool fearlessness = false;          // add 1 hit result
     // TODO: Lone wolf (1 blank reroll)
     // TODO: Crack shot? (gets a little bit complex as presence affects defender logic and as well)
 
     // Crew
-    //bool mercenary_copilot = false;     // One hit->crit
-    //bool finn = false;                  // Add one blank result to roll
     // TODO: Ezra Crew (one focus->crit)
     // TODO: Zuckuss Crew
     // TODO: 4-LOM Crew
@@ -104,16 +91,6 @@ struct AttackSetup
     // TODO: Operations specialist? Again only multi-attack
     // TODO: Bistain (hit -> crit, like merc copilot)
 
-    // System upgrades
-    bool accuracy_corrector = false;    // Can cancel all results and replace with 2 hits    
-    bool fire_control_system = false;   // Get a target lock after attack (only affects multi-attack)
-    
-    // Secondary weapons
-    bool heavy_laser_cannon = false;    // After initial roll, change all crits->hits
-    //bool mangler_cannon = false;        // One hit->crit
-    bool one_damage_on_hit = false;     // If attack hits, 1 damage (TLT, Ion, etc)
-    // TODO: Autoblaster (hit results cannot be canceled)
-    
     // Ones that require spending tokens (more complex generally)
     // TODO: Calculation (pay focus: one focus->crit)
     // TODO: Han Solo Crew (spend TL: all hits->crits)
@@ -126,25 +103,38 @@ struct DefenseSetup
     int dice = 0;
     TokenState tokens;
 
-    // Pilots
-	bool rey = false;					// Reroll up to 2 blanks
 
-    // EPTs
-    bool wired = false;
-    // TODO: Lone wolf (1 blank reroll)
+	struct ModifyAttackDice
+	{
+		int hit_to_focus_no_reroll_count = 0;
+	};
+	ModifyAttackDice DMAD;		// "defender modify attack dice"
+
+	struct ModifyDefenseDice
+	{
+		// Add results
+		int add_blank_count = 0;
+		int add_focus_count = 0;
+		int add_evade_count = 0;
+
+		// Rerolls
+		int reroll_blank_count = 0;
+		int reroll_focus_count = 0;
+		int reroll_any_count = 0;
+
+		// Change results
+		int blank_to_evade_count = 0;
+		int focus_to_evade_count = 0;
+	};
+	ModifyDefenseDice DMDD;		// "defender modify defense dice"
+
+	/*
+	// TODO: Lone wolf (1 blank reroll)
     // TODO: Elusiveness
-
-    // Crew
-    bool finn = false;                  // Add one blank result to roll
     // TODO: C-3PO (always guess 0 probably the most relevant)
     // TODO: Latts? Gets a bit weird/complex
-
-    // System upgrades
-    bool sensor_jammer = false;         // Change one attacker hit to evade
-
-    // Modifications
-    bool autothrusters = false;
-    // TODO: Lightweight frame
+	// TODO: Lightweight frame
+	*/
 };
 
 
@@ -335,8 +325,7 @@ class Simulation
     private void defender_modify_attack_dice(ref DiceState attack_dice,
                                              ref TokenState attack_tokens)
     {
-        if (m_defense_setup.sensor_jammer)
-            attack_dice.change_dice_no_reroll(DieResult.Hit, DieResult.Focus, 1);
+        attack_dice.change_dice_no_reroll(DieResult.Hit, DieResult.Focus, m_defense_setup.DMAD.hit_to_focus_no_reroll_count);
     }
 
     // Removes rerolled dice from pool; returns number of dice to reroll
@@ -391,7 +380,6 @@ class Simulation
 		{
 			int focus_to_reroll = attack_dice.count(DieResult.Focus) - useful_focus_results;
 			focus_to_reroll = clamp(focus_to_reroll, 0, total_reroll_count - reroll_any_count);
-
 			reroll_any_count += attack_dice.remove_dice_for_reroll(DieResult.Focus, focus_to_reroll);
 		}
 
@@ -401,9 +389,11 @@ class Simulation
 			assert(attack_tokens.target_lock > 0);
 			--attack_tokens.target_lock;
 		}
+		
+		// Add any general rerolls we did back into the reroll pool
+		dice_to_reroll += reroll_any_count;
 
-        // This is a mess but pending reorg of "free" vs "paid" rerolling logic above
-        return dice_to_reroll + reroll_any_count;
+        return dice_to_reroll;
     }
 
     // Removes rerolled dice from pool; returns number of dice to reroll
@@ -452,7 +442,7 @@ class Simulation
         // a) We ended up with less than 2 hits/crits
         // b) We got exactly 2 hits/crits but we only care if we "hit the attack" (TLT, Ion, etc)
         // b) We got exactly 2 hits and no crits (still better to remove the extra die for LWF, and not spend tokens)
-        if (m_attack_setup.accuracy_corrector)
+        if (m_attack_setup.AMAD.accuracy_corrector)
         {
             int hits = attack_dice.count(DieResult.Hit);
             int crits = attack_dice.count(DieResult.Crit);
@@ -484,20 +474,44 @@ class Simulation
         int dice_to_reroll = 0;
 
         // Add free results
-        if (m_defense_setup.finn)
-            ++defense_dice.results[DieResult.Blank];
+		defense_dice.results[DieResult.Blank] += m_defense_setup.DMDD.add_blank_count;
+		defense_dice.results[DieResult.Focus] += m_defense_setup.DMDD.add_focus_count;
+		defense_dice.results[DieResult.Evade] += m_defense_setup.DMDD.add_evade_count;
 
-		// Reroll any blanks that we can (always useful)
-		if (m_defense_setup.rey)
+		// "Useful" focus results are ones we can turn into hits or crits
+		int useful_focus_results = m_defense_setup.DMDD.focus_to_evade_count;
+		if (defense_tokens.focus > 0)
+			useful_focus_results = int.max;
+
+		// Free rerolls of specific results first
 		{
-			dice_to_reroll += defense_dice.remove_dice_for_reroll(DieResult.Blank, 2);
+			{
+				int focus_to_reroll = min(m_defense_setup.DMDD.reroll_focus_count, max(0, defense_dice.count(DieResult.Focus) - useful_focus_results));
+				dice_to_reroll += defense_dice.remove_dice_for_reroll(DieResult.Focus, focus_to_reroll);
+			}
+
+			// Free reroll of any blank results before using our more "general" rerolls
+			{
+				dice_to_reroll += defense_dice.remove_dice_for_reroll(DieResult.Blank, m_defense_setup.DMDD.reroll_blank_count);
+			}
 		}
 
-        // If we have any focus results and no focus token, reroll our focuses
-        if (defense_tokens.focus == 0 && m_defense_setup.wired)
-        {
-            dice_to_reroll += defense_dice.remove_dice_for_reroll(DieResult.Focus);
-        }
+		// Free general rerolls
+		int remaining_reroll_any_count = m_defense_setup.DMDD.reroll_any_count;
+		assert(remaining_reroll_any_count >= 0);		// Otherwise this logic gets a bit funky below... could handle but don't need to for now
+
+		// First, let's reroll any blanks we're allowed to - this is always useful
+		remaining_reroll_any_count -= defense_dice.remove_dice_for_reroll(DieResult.Blank, remaining_reroll_any_count);
+
+		// Now reroll focus results that "aren't useful"
+		{
+			int focus_to_reroll = defense_dice.count(DieResult.Focus) - useful_focus_results;
+			focus_to_reroll = clamp(focus_to_reroll, 0, remaining_reroll_any_count);
+			remaining_reroll_any_count -= defense_dice.remove_dice_for_reroll(DieResult.Focus, focus_to_reroll);
+		}
+
+		// Add any general rerolls we did into our dice to reroll pool
+		dice_to_reroll += (m_defense_setup.DMDD.reroll_any_count - remaining_reroll_any_count);
 
         return dice_to_reroll;
     }
@@ -506,10 +520,12 @@ class Simulation
                                                    ref DiceState defense_dice,
                                                    ref TokenState defense_tokens)
     {
-		// Find one blank and turn it to an evade
-        if (m_defense_setup.autothrusters)
-            defense_dice.change_dice(DieResult.Blank, DieResult.Evade, 1);
+		// Change results
+		// NOTE: Order matters here - do the most useful changes first
+		defense_dice.change_dice(DieResult.Blank, DieResult.Evade, m_defense_setup.DMDD.blank_to_evade_count);
+		defense_dice.change_dice(DieResult.Focus, DieResult.Evade, m_defense_setup.DMDD.focus_to_evade_count);
 
+        // Figure out if we should spend focus or evade tokens (regular effect)
         int uncanceled_hits = attack_results[DieResult.Hit] + attack_results[DieResult.Crit] - defense_dice.count(DieResult.Evade);
 		int focus_results = defense_dice.count(DieResult.Focus);
 
@@ -541,8 +557,6 @@ class Simulation
 
                 bool spent_focus = false;
                 bool spent_evade = false;
-
-				
 
                 // Do we need to spend both to cancel all hits?
                 if (!can_cancel_all_with_focus && !can_cancel_all_with_evade)
