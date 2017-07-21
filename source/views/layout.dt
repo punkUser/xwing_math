@@ -17,6 +17,16 @@ html(class="no-js", lang="en")
         link(rel="stylesheet", href="/css/app.css?version=#{css_version}")
 
     body
+        nav.top-bar
+            .top-bar-left
+                ul(class="dropdown menu", data-dropdown-menu)
+                    li
+                        a(href="/") Basic
+                    li.divider
+                    li
+                        a(href="/advanced/") Advanced
+                    li.divider
+
         #content
             block content
         

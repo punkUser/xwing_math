@@ -39,32 +39,41 @@ struct AttackSetup
     int dice = 0;
     TokenState tokens;
 
-	// Mod attack dice abilities
+	struct ModifyAttackDice
+	{
+		// Add results
+		int add_hit_count = 0;
+		int add_crit_count = 0;
+		int add_blank_count = 0;
+		int add_focus_count = 0;
 
-	// Add results
-	int add_hit_count = 0;
-	int add_crit_count = 0;
-	int add_blank_count = 0;
-	int add_focus_count = 0;
+		// Rerolls
+		int reroll_any_count = 0;
+		int reroll_blank_count = 0;
+		int reroll_focus_count = 0;
 
-	// Rerolls
-	int any_reroll_count = 0;
-	int blank_reroll_count = 0;
-	int focus_reroll_count = 0;
-
-	// Change results
-	//int any_to_crit_count = 0;
-	//int any_to_hit_count = 0;
-	int focus_to_crit_count = 0;
-	int focus_to_hit_count = 0;
-	int blank_to_crit_count = 0;
-	int blank_to_hit_count = 0;
-	int hit_to_crit_count = 0;
-	
-
+		// Change results
+		//int any_to_crit_count = 0;
+		//int any_to_hit_count = 0;
+		int focus_to_crit_count = 0;
+		int focus_to_hit_count = 0;
+		int blank_to_crit_count = 0;
+		int blank_to_hit_count = 0;
+		int hit_to_crit_count = 0;
+	};
+	ModifyAttackDice AMAD;		// "attacker modify attack dice"
 
 
 	// Mod defense dice abilities
+	struct ModifyDefenseDice
+	{
+		// Rerolls
+		//int reroll_any_count = 0;
+
+		// Change results
+		int evade_to_focus_count = 0;
+	};
+	ModifyDefenseDice AMDD;		// "attacker modify defense dice"
 
 
 
@@ -72,7 +81,7 @@ struct AttackSetup
 	//bool rey = false;					// Reroll up to 2 blanks
 
     // EPT
-    bool juke = false;                  // Setting this to true implies evade token present as well
+    //bool juke = false;                  // Setting this to true implies evade token present as well
     //bool marksmanship = false;          // One focus->crit, rest focus->hit
     //int  predator_rerolls = 0;          // 0-2 rerolls
     //bool rage = false;                  // 3 rerolls
@@ -337,10 +346,10 @@ class Simulation
         int dice_to_reroll = 0;
 
         // Add free results
-		attack_dice.results[DieResult.Hit]   += m_attack_setup.add_hit_count;
-		attack_dice.results[DieResult.Crit]  += m_attack_setup.add_crit_count;
-		attack_dice.results[DieResult.Blank] += m_attack_setup.add_blank_count;
-		attack_dice.results[DieResult.Focus] += m_attack_setup.add_focus_count;
+		attack_dice.results[DieResult.Hit]   += m_attack_setup.AMAD.add_hit_count;
+		attack_dice.results[DieResult.Crit]  += m_attack_setup.AMAD.add_crit_count;
+		attack_dice.results[DieResult.Blank] += m_attack_setup.AMAD.add_blank_count;
+		attack_dice.results[DieResult.Focus] += m_attack_setup.AMAD.add_focus_count;
 
         // TODO: There are a few effects that should technically change our token spending behavior here...
         // Ex. One Damage on Hit (TLT, Ion) vs. enemies that can only ever get a maximum # of evade results
@@ -353,48 +362,48 @@ class Simulation
 		// free reroll vs. paid reroll logic.
 
 		// "Useful" focus results are ones we can turn into hits or crits
-		int useful_focus_results = (m_attack_setup.focus_to_hit_count + m_attack_setup.focus_to_crit_count);
+		int useful_focus_results = (m_attack_setup.AMAD.focus_to_hit_count + m_attack_setup.AMAD.focus_to_crit_count);
 		if (attack_tokens.focus > 0)
 			useful_focus_results = int.max;
 
 		// Free rerolls of specific results first
 		{
 			{
-				int focus_to_reroll = min(m_attack_setup.focus_reroll_count, max(0, attack_dice.count(DieResult.Focus) - useful_focus_results));
+				int focus_to_reroll = min(m_attack_setup.AMAD.reroll_focus_count, max(0, attack_dice.count(DieResult.Focus) - useful_focus_results));
 				dice_to_reroll += attack_dice.remove_dice_for_reroll(DieResult.Focus, focus_to_reroll);
 			}
 
 			// Free reroll of any blank results before using our more "general" rerolls
 			{
-				dice_to_reroll += attack_dice.remove_dice_for_reroll(DieResult.Blank, m_attack_setup.blank_reroll_count);
+				dice_to_reroll += attack_dice.remove_dice_for_reroll(DieResult.Blank, m_attack_setup.AMAD.reroll_blank_count);
 			}
 		}
 
 		// Free general rerolls
 		// If we have a target lock, we can reroll everything if we want to
-		immutable int total_reroll_count = attack_tokens.target_lock > 0 ? int.max : m_attack_setup.any_reroll_count;
-		int any_reroll_count = 0;
+		immutable int total_reroll_count = attack_tokens.target_lock > 0 ? int.max : m_attack_setup.AMAD.reroll_any_count;
+		int reroll_any_count = 0;
 
 		// First, let's reroll any blanks we're allowed to - this is always useful
-		any_reroll_count += attack_dice.remove_dice_for_reroll(DieResult.Blank, total_reroll_count);
+		reroll_any_count += attack_dice.remove_dice_for_reroll(DieResult.Blank, total_reroll_count);
 
 		// Now reroll focus results that "aren't useful"
 		{
 			int focus_to_reroll = attack_dice.count(DieResult.Focus) - useful_focus_results;
-			focus_to_reroll = clamp(focus_to_reroll, 0, total_reroll_count - any_reroll_count);
+			focus_to_reroll = clamp(focus_to_reroll, 0, total_reroll_count - reroll_any_count);
 
-			any_reroll_count += attack_dice.remove_dice_for_reroll(DieResult.Focus, focus_to_reroll);
+			reroll_any_count += attack_dice.remove_dice_for_reroll(DieResult.Focus, focus_to_reroll);
 		}
 
 		// If we rerolled more than our total number of "free" rerolls, we have to spend a target lock
-		if (any_reroll_count > m_attack_setup.any_reroll_count)
+		if (reroll_any_count > m_attack_setup.AMAD.reroll_any_count)
 		{
 			assert(attack_tokens.target_lock > 0);
 			--attack_tokens.target_lock;
 		}
 
         // This is a mess but pending reorg of "free" vs "paid" rerolling logic above
-        return dice_to_reroll + any_reroll_count;
+        return dice_to_reroll + reroll_any_count;
     }
 
     // Removes rerolled dice from pool; returns number of dice to reroll
@@ -423,10 +432,10 @@ class Simulation
 		// NOTE: Order matters here - do the most useful changes first
 		// TODO: There are some cards that do multiple things at once... ex. Marksmanship
 		// Ensure that the timing of separating them into multiple effects here is always consistent/correct
-		attack_dice.change_dice(DieResult.Blank, DieResult.Crit, m_attack_setup.blank_to_crit_count);
-		attack_dice.change_dice(DieResult.Blank, DieResult.Hit,  m_attack_setup.blank_to_hit_count);
-		attack_dice.change_dice(DieResult.Focus, DieResult.Crit, m_attack_setup.focus_to_crit_count);
-		attack_dice.change_dice(DieResult.Focus, DieResult.Hit,  m_attack_setup.focus_to_hit_count);
+		attack_dice.change_dice(DieResult.Blank, DieResult.Crit, m_attack_setup.AMAD.blank_to_crit_count);
+		attack_dice.change_dice(DieResult.Blank, DieResult.Hit,  m_attack_setup.AMAD.blank_to_hit_count);
+		attack_dice.change_dice(DieResult.Focus, DieResult.Crit, m_attack_setup.AMAD.focus_to_crit_count);
+		attack_dice.change_dice(DieResult.Focus, DieResult.Hit,  m_attack_setup.AMAD.focus_to_hit_count);
 
         // Spend regular focus?
         if (attack_tokens.focus > 0)
@@ -437,7 +446,7 @@ class Simulation
         }
 
 		// Modify any hit results (including those generated above) as appropriate
-		attack_dice.change_dice(DieResult.Hit, DieResult.Crit, m_attack_setup.hit_to_crit_count);
+		attack_dice.change_dice(DieResult.Hit, DieResult.Crit, m_attack_setup.AMAD.hit_to_crit_count);
 
         // Use accuracy corrector in the following cases:
         // a) We ended up with less than 2 hits/crits
@@ -464,9 +473,8 @@ class Simulation
                                       ref DiceState defense_dice,
                                       ref TokenState defense_tokens)
     {
-        // Find one evade and turn it to a focus
-        if (m_attack_setup.juke)
-            defense_dice.change_dice(DieResult.Evade, DieResult.Focus, 1);
+		// Change results
+        defense_dice.change_dice(DieResult.Evade, DieResult.Focus, m_attack_setup.AMDD.evade_to_focus_count);
     }
 
     int defender_modify_defense_dice_before_reroll(const(int)[DieResult.Num] attack_results,
@@ -522,15 +530,19 @@ class Simulation
                 // For now simple logic:
                 // Cancel all hits with just a focus? Do it.
                 // Cancel all hits with just evade tokens? Do that.
-                // If attacker has juke, flip this order - it's usually better to hang on to focus tokens vs. juke
+                // If attacker can modify evades into focus (ex. juke), flip this order as it's usually better to hang on to focus tokens
                 //   NOTE: Optimal strategy here depends on quite a lot of factors, but this is good enough in most cases
                 // Otherwise both.
 
                 bool can_cancel_all_with_focus = can_spend_focus && (focus_results >= uncanceled_hits);
                 bool can_cancel_all_with_evade = can_spend_evade && (1 >= uncanceled_hits);
 
+				bool prefer_spend_focus = (m_attack_setup.AMDD.evade_to_focus_count == 0);
+
                 bool spent_focus = false;
                 bool spent_evade = false;
+
+				
 
                 // Do we need to spend both to cancel all hits?
                 if (!can_cancel_all_with_focus && !can_cancel_all_with_evade)
@@ -538,7 +550,7 @@ class Simulation
                     spent_focus = can_spend_focus;
 					spent_evade = can_spend_evade;
                 }
-                else if (!m_attack_setup.juke)      // No juke - hold onto evade primarily
+                else if (prefer_spend_focus)      // Hold onto evade primarily
                 {
                     if (can_cancel_all_with_focus)
                         spent_focus = can_spend_focus;
@@ -548,7 +560,7 @@ class Simulation
                         spent_evade = can_spend_evade;
 					}
                 }
-                else                                // Juke - hold on to focus primarily
+                else                              // Hold on to focus primarily
                 {
                     if (can_cancel_all_with_evade)
                         spent_evade = can_spend_evade;

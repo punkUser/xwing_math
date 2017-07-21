@@ -3,9 +3,7 @@ extends layout
 block content    
     .row
         .large-12.columns
-            h1 X-Wing Math Simulator
-
-            form#simulate-form(id="simulate-form", action="#", method="GET")
+            form#simulate-basic-form(action="#", method="GET")
 
                 - void slider_control(string name, string label, int min, int max, int init)
                     .row

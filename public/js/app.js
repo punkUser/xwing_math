@@ -151,10 +151,17 @@ function simulateUpdateChart(data)
 
 $(document).ready(function()
 {
-	$('#simulate-form').submit(function(event) {
+	// TODO: Clean this all up
+	$('#simulate-basic-form').submit(function(event) {
 		event.preventDefault();
-		var data = $("#simulate-form").serializeArray();
-		$.getJSON('/simulate.json', data, simulateUpdateChart);
+		var data = $("#simulate-basic-form").serializeArray();
+		$.getJSON('/simulate_basic.json', data, simulateUpdateChart);
+	});
+	
+	$('#simulate-advanced-form').submit(function(event) {
+		event.preventDefault();
+		var data = $("#simulate-advanced-form").serializeArray();
+		$.getJSON('/simulate_advanced.json', data, simulateUpdateChart);
 	});
 
 	// Predator selectors are mutually exclusive

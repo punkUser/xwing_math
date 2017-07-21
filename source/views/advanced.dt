@@ -3,9 +3,7 @@ extends layout
 block content    
     .row
         .large-12.columns
-            h1 X-Wing Math Simulator (Advanced)
-
-            form#simulate-form(id="simulate-form", action="#", method="GET")
+            form#simulate-advanced-form(action="#", method="GET")
 
                 - void slider_control(string name, string label, int min, int max, int init)
                     .row
@@ -23,11 +21,11 @@ block content
                         .small-9.columns
                             label(for="#{name}") #{label}
                         .small-3.columns.text-right
-                            .switch
+                            .switch.small
                                 input.switch-input(id="#{name}", name="#{name}", type="#{type}")
                                 label.switch-paddle(for="#{name}")
-                                    span.switch-active(aria-hidden="true") All
-                                    span.switch-inactive(aria-hidden="true") #
+                                    //- span.switch-active(aria-hidden="true") All
+                                    //- span.switch-inactive(aria-hidden="true") #
 
                 - void radio_switch_control(string name, string label, string value, bool checked = false)
                     .row
@@ -56,26 +54,81 @@ block content
                 .row
                     .medium-6.columns
                         .callout.small.alert
-                            - slider_control("attack_dice",                "Attack Dice",        1, 8, 3);
-                            - slider_control("attack_focus_token_count",   "Focus Tokens",       0, 2, 0);
-                            - slider_control("attack_target_lock_count",   "Target Locks",       0, 2, 0);
-                            
+                            h3 Attack Dice and Tokens
+                            - stepper_control("attack_dice",              "Attack Dice",  1, 8, 3);
+                            - stepper_control("attack_focus_token_count", "Focus Tokens", 0, 2, 0);
+                            - stepper_control("attack_target_lock_count", "Target Locks", 0, 2, 0);
+                        
+                        .callout.small.success
+                            h3 Defender Modify Attack Dice
+                            //- fieldset.fieldset
+                                legend Free Rerolls
+                                //- stepper_control("dmad_reroll_any_count", "Any", 0, 20, 0);
                             fieldset.fieldset
-                                legend Testing Stuff!
-                                - stepper_control("test_1", "Test 1", 0, 5, 1);
-                                - stepper_control("test_2", "Test 2", 0, 3, 1);
-                                - switch_control("test_3", "Test 3");
+                                legend Change Results
+                                - stepper_control("dmad_hit_to_focus_count",  "Hit to Focus",  0, 20, 0);
+                                - stepper_control("dmad_crit_to_focus_count", "Crit to Focus", 0, 20, 0);
 
-                            
+                        .callout.small.alert
+                            h3 Attacker Modify Attack Dice
+                            fieldset.fieldset
+                                legend Add Results
+                                - stepper_control("amad_add_blank_count", "Blank", 0, 5, 0);
+                                - stepper_control("amad_add_focus_count", "Focus", 0, 5, 0);
+                                - stepper_control("amad_add_hit_count",   "Hit",   0, 5, 0);
+                                - stepper_control("amad_add_crit_count",  "Crit",  0, 5, 0);
+                            fieldset.fieldset
+                                legend Free Rerolls
+                                - stepper_control("amad_reroll_blank_count", "Blank", 0, 20, 0);
+                                - stepper_control("amad_reroll_focus_count", "Focus", 0, 20, 0);
+                                - stepper_control("amad_reroll_any_count",   "Any",   0, 20, 0);
+                            fieldset.fieldset
+                                legend Change Results
+                                - stepper_control("amad_blank_to_hit_count",  "Blank to Hit",  0, 20, 0);
+                                - stepper_control("amad_blank_to_crit_count", "Blank to Crit", 0, 20, 0);
+                                - stepper_control("amad_focus_to_hit_count",  "Focus to Hit",  0, 20, 0);
+                                - stepper_control("amad_focus_to_crit_count", "Focus to Crit", 0, 20, 0);
+                                - stepper_control("amad_hit_to_crit_count",   "Hit to Crit",   0, 20, 0);
+                                //- stepper_control("amad_any_to_hit_count",  "Any to Hit",  0, 20, 0);
+                                //- stepper_control("amad_any_to_crit_count", "Any to Crit", 0, 20, 0);
+                                
 
                     .medium-6.columns
                         .callout.small.success
-                            - slider_control("defense_dice",              "Defense Dice", 0, 6, 3);
-                            - slider_control("defense_focus_token_count", "Focus Tokens", 0, 2, 0);
-                            - slider_control("defense_evade_token_count", "Evade Tokens", 0, 2, 0);
-                               
+                            h3 Defense Dice and Tokens
+                            - stepper_control("defense_dice",              "Attack Dice",  0, 6, 3);
+                            - stepper_control("defense_focus_token_count", "Focus Tokens", 0, 2, 0);
+                            - stepper_control("defense_evade_token_count", "Evade Tokens", 0, 2, 0);
+
+                        .callout.small.alert
+                            h3 Attacker Modify Defense Dice
+                            fieldset.fieldset
+                                legend Free Rerolls
+                                - stepper_control("amdd_reroll_any_count", "Any",   0, 20, 0);
+                            fieldset.fieldset
+                                legend Change Results
+                                - stepper_control("amdd_evade_to_focus_count", "Evade to Focus",  0, 20, 0);
+
+                        .callout.small.success
+                            h3 Defender Modify Defense Dice
+                            fieldset.fieldset
+                                legend Add Results
+                                - stepper_control("dmdd_add_blank_count", "Blank", 0, 5, 0);
+                                - stepper_control("dmdd_add_focus_count", "Focus", 0, 5, 0);
+                                - stepper_control("dmdd_add_evade_count", "Evade", 0, 5, 0);
+                            fieldset.fieldset
+                                legend Free Rerolls
+                                - stepper_control("dmdd_reroll_blank_count", "Blank", 0, 20, 0);
+                                - stepper_control("dmdd_reroll_focus_count", "Focus", 0, 20, 0);
+                                - stepper_control("dmdd_reroll_any_count",   "Any",   0, 20, 0);
+                            fieldset.fieldset
+                                legend Change Results
+                                - stepper_control("dmdd_blank_to_evade_count", "Blank to Evade",  0, 20, 0);
+                                - stepper_control("dmdd_focus_to_evade_count", "Focus to Evade",  0, 20, 0);
+
+                        
+
                             
-                                                    
                         .callout.small.primary
                             - radio_switch_control("attack_type", "Single Attack",             "single", true);
                             - radio_switch_control("attack_type", "Secondary Perform Twice",   "secondary_perform_twice");

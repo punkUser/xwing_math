@@ -23,7 +23,8 @@ public class WWWServer
     
         router.get("/", &index);
 		router.get("/advanced/", &advanced);
-        router.get("/simulate.json", &simulate);
+        router.get("/simulate_basic.json", &simulate_basic);
+		router.get("/simulate_advanced.json", &simulate_advanced);
 	
         debug
         {
@@ -72,11 +73,9 @@ public class WWWServer
         float[4] exp_defense_tokens;
     };
 
-    private void simulate(HTTPServerRequest req, HTTPServerResponse res)
+    private void simulate_basic(HTTPServerRequest req, HTTPServerResponse res)
     {
-        //writeln(req.query.serializeToPrettyJson());
-
-        
+        //writeln(req.query.serializeToPrettyJson());        
 
 		/*************************************************************************************************/
 		AttackSetup attack_setup;
@@ -86,56 +85,31 @@ public class WWWServer
         attack_setup.tokens.target_lock  = to!int(req.query.get("attack_target_lock_count", "0"));
         
 		// Add results
-		attack_setup.add_hit_count       += (req.query.get("attack_fearlessness", "")       == "on") ? 1 : 0;
-		attack_setup.add_blank_count     += (req.query.get("attack_finn", "")               == "on") ? 1 : 0;
+		attack_setup.AMAD.add_hit_count       += (req.query.get("attack_fearlessness", "")       == "on") ? 1 : 0;
+		attack_setup.AMAD.add_blank_count     += (req.query.get("attack_finn", "")               == "on") ? 1 : 0;
 
 		// Rerolls
-		attack_setup.any_reroll_count    += (req.query.get("attack_predator_1", "")         == "on") ? 1 : 0;
-		attack_setup.any_reroll_count    += (req.query.get("attack_predator_2", "")         == "on") ? 2 : 0;
-		attack_setup.any_reroll_count    += (req.query.get("attack_rage", "")               == "on") ? 3 : 0;
-		attack_setup.blank_reroll_count  += (req.query.get("attack_rey", "")				== "on") ? 2 : 0;
-		attack_setup.focus_reroll_count  += (req.query.get("attack_wired", "")				== "on") ? attack_setup.dice : 0;
-
+		attack_setup.AMAD.reroll_any_count    += (req.query.get("attack_predator_1", "")         == "on") ? 1 : 0;
+		attack_setup.AMAD.reroll_any_count    += (req.query.get("attack_predator_2", "")         == "on") ? 2 : 0;
+		attack_setup.AMAD.reroll_any_count    += (req.query.get("attack_rage", "")               == "on") ? 3 : 0;
+		attack_setup.AMAD.reroll_blank_count  += (req.query.get("attack_rey", "")				== "on")  ? 2 : 0;
+		attack_setup.AMAD.reroll_focus_count  += (req.query.get("attack_wired", "")				== "on")  ? int.max : 0;
 
 		// Change results
 		// TODO: Verify this is always correct for marksmanship... in practice the entire effect must be applied at once
-		attack_setup.focus_to_crit_count += (req.query.get("attack_marksmanship", "")       == "on") ? 1 : 0;
-		attack_setup.focus_to_hit_count  += (req.query.get("attack_marksmanship", "")       == "on") ? attack_setup.dice : 0;
-		attack_setup.focus_to_hit_count  += (req.query.get("attack_expertise", "")          == "on") ? attack_setup.dice : 0;
-		attack_setup.hit_to_crit_count   += (req.query.get("attack_mercenary_copilot", "")  == "on") ? 1 : 0;
-		attack_setup.hit_to_crit_count   += (req.query.get("attack_mangler_cannon", "")     == "on") ? 1 : 0;
+		attack_setup.AMAD.focus_to_crit_count += (req.query.get("attack_marksmanship", "")       == "on") ? 1 : 0;
+		attack_setup.AMAD.focus_to_hit_count  += (req.query.get("attack_marksmanship", "")       == "on") ? int.max : 0;
+		attack_setup.AMAD.focus_to_hit_count  += (req.query.get("attack_expertise", "")          == "on") ? int.max : 0;
+		attack_setup.AMAD.hit_to_crit_count   += (req.query.get("attack_mercenary_copilot", "")  == "on") ? 1 : 0;
+		attack_setup.AMAD.hit_to_crit_count   += (req.query.get("attack_mangler_cannon", "")     == "on") ? 1 : 0;
+
+		attack_setup.AMDD.evade_to_focus_count += (req.query.get("attack_juke", "")              == "on") ? 1 : 0;
         
-		attack_setup.heavy_laser_cannon  = req.query.get("attack_heavy_laser_cannon", "")   == "on";        
-		attack_setup.juke                = req.query.get("attack_juke", "")                 == "on";
+		// Special effects...
+		attack_setup.heavy_laser_cannon  = req.query.get("attack_heavy_laser_cannon", "")   == "on";
         attack_setup.accuracy_corrector  = req.query.get("attack_accuracy_corrector", "")   == "on";
         attack_setup.fire_control_system = req.query.get("attack_fire_control_system", "")  == "on";
 		attack_setup.one_damage_on_hit   = req.query.get("attack_one_damage_on_hit", "")    == "on";
-
-
-
-		/*
-		attack_setup.rey                 = req.query.get("attack_rey", "")					== "on";
-
-        attack_setup.expertise           = req.query.get("attack_expertise", "")            == "on";
-        attack_setup.fearlessness        = req.query.get("attack_fearlessness", "")         == "on";
-        attack_setup.juke                = req.query.get("attack_juke", "")                 == "on";
-        attack_setup.predator_rerolls =
-            req.query.get("attack_predator_1", "") == "on" ? 1 : 
-            (req.query.get("attack_predator_2", "") == "on" ? 2 : 0);
-        attack_setup.rage                = req.query.get("attack_rage", "")                 == "on";
-        attack_setup.wired               = req.query.get("attack_wired", "")                == "on";
-
-        attack_setup.mercenary_copilot   = req.query.get("attack_mercenary_copilot", "")    == "on";
-        attack_setup.finn                = req.query.get("attack_finn", "")                 == "on";
-        
-        attack_setup.heavy_laser_cannon  = req.query.get("attack_heavy_laser_cannon", "")   == "on";        
-        attack_setup.mangler_cannon      = req.query.get("attack_mangler_cannon", "")       == "on";
-        attack_setup.marksmanship        = req.query.get("attack_marksmanship", "")         == "on";
-        attack_setup.one_damage_on_hit   = req.query.get("attack_one_damage_on_hit", "")    == "on";
-
-        attack_setup.accuracy_corrector  = req.query.get("attack_accuracy_corrector", "")   == "on";
-        attack_setup.fire_control_system = req.query.get("attack_fire_control_system", "")  == "on";
-		*/
 
 		/*************************************************************************************************/
         DefenseSetup defense_setup;
@@ -167,11 +141,88 @@ public class WWWServer
 
 		/*************************************************************************************************/
 
-        //writefln("Attack Setup: %s", attack_setup.serializeToPrettyJson());
+        simulate_response(res, attack_setup, defense_setup);
+	}
+
+	private void simulate_advanced(HTTPServerRequest req, HTTPServerResponse res)
+    {
+        //writeln(req.query.serializeToPrettyJson());        
+
+		// TODO: CTFE this glue gode a bit, perhaps via JSON serialize/deserialize
+
+		/*************************************************************************************************/
+		AttackSetup attack_setup;
+
+        attack_setup.dice                = to!int(req.query.get("attack_dice",              "3"));
+        attack_setup.tokens.focus        = to!int(req.query.get("attack_focus_token_count", "0"));
+        attack_setup.tokens.target_lock  = to!int(req.query.get("attack_target_lock_count", "0"));
+
+		// Special effects...
+		attack_setup.heavy_laser_cannon  = req.query.get("attack_heavy_laser_cannon", "")   == "on";
+        attack_setup.accuracy_corrector  = req.query.get("attack_accuracy_corrector", "")   == "on";
+        attack_setup.fire_control_system = req.query.get("attack_fire_control_system", "")  == "on";
+		attack_setup.one_damage_on_hit   = req.query.get("attack_one_damage_on_hit", "")    == "on";
+		
+		// Modify attack dice
+		attack_setup.AMAD.add_hit_count       = to!int(req.query.get("amad_add_hit_count",      "0"));
+		attack_setup.AMAD.add_crit_count      = to!int(req.query.get("amad_add_crit_count",     "0"));
+		attack_setup.AMAD.add_blank_count     = to!int(req.query.get("amad_add_blank_count",    "0"));
+		attack_setup.AMAD.add_focus_count     = to!int(req.query.get("amad_add_focus_count",    "0"));
+		attack_setup.AMAD.reroll_any_count    = to!int(req.query.get("amad_reroll_any_count",   "0"));
+		attack_setup.AMAD.reroll_blank_count  = to!int(req.query.get("amad_reroll_blank_count", "0"));
+		attack_setup.AMAD.reroll_focus_count  = to!int(req.query.get("amad_reroll_focus_count", "0"));
+
+		attack_setup.AMAD.focus_to_crit_count = to!int(req.query.get("amad_focus_to_crit_count", "0"));
+		attack_setup.AMAD.focus_to_hit_count  = to!int(req.query.get("amad_focus_to_hit_count",  "0"));
+		attack_setup.AMAD.blank_to_crit_count = to!int(req.query.get("amad_blank_to_crit_count", "0"));
+		attack_setup.AMAD.blank_to_hit_count  = to!int(req.query.get("amad_blank_to_hit_count",  "0"));
+		attack_setup.AMAD.hit_to_crit_count   = to!int(req.query.get("amad_hit_to_crit_count",   "0"));
+		
+		// Modify defense dice
+		attack_setup.AMDD.evade_to_focus_count = to!int(req.query.get("amdd_evade_to_focus_count", "0"));
+
+
+		/*************************************************************************************************/
+        DefenseSetup defense_setup;
+
+        defense_setup.dice            = to!int(req.query.get("defense_dice",              "3"));
+        defense_setup.tokens.focus    = to!int(req.query.get("defense_focus_token_count", "0"));
+        defense_setup.tokens.evade    = to!int(req.query.get("defense_evade_token_count", "0"));
+
+		defense_setup.rey             = req.query.get("defense_rey", "")				  == "on";
+        defense_setup.wired           = req.query.get("defense_wired", "")                == "on";
+        defense_setup.finn            = req.query.get("defense_finn", "")                 == "on";
+        defense_setup.sensor_jammer   = req.query.get("defense_sensor_jammer", "")        == "on";
+        defense_setup.autothrusters   = req.query.get("defense_autothrusters", "")        == "on";
+
+
+		/*************************************************************************************************/
+		// Bit awkward but good enough for now...
+        string attack_type = req.query.get("attack_type", "single");
+        if (attack_type == "single")
+            attack_setup.type = MultiAttackType.Single;
+        else if (attack_type == "secondary_perform_twice")
+            attack_setup.type = MultiAttackType.SecondaryPerformTwice;
+        else if (attack_type == "after_attack_does_not_hit")
+            attack_setup.type = MultiAttackType.AfterAttackDoesNotHit;
+        else if (attack_type == "after_attack")
+            attack_setup.type = MultiAttackType.AfterAttack;
+        else
+            assert(false);
+
+		/*************************************************************************************************/
+
+        simulate_response(res, attack_setup, defense_setup);
+	}
+
+	private void simulate_response(HTTPServerResponse res,
+								   ref const(AttackSetup)  attack_setup,
+								   ref const(DefenseSetup) defense_setup)
+	{
+		//writefln("Attack Setup: %s", attack_setup.serializeToPrettyJson());
         //writefln("Defense Setup: %s", defense_setup.serializeToPrettyJson());
 
         auto simulation = new Simulation(attack_setup, defense_setup);
-
 
 		// Exhaustive search
         {            
@@ -187,7 +238,6 @@ public class WWWServer
         auto total_sum = simulation.total_sum();
 
         int max_hits = cast(int)total_hits_pdf.length;
-
 
         // Setup page content
         SimulationContent content;
