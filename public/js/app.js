@@ -167,17 +167,20 @@ $(document).ready(function()
 			$('#attack_predator_1').prop("checked", false);
 	});
 	
+	$(".stepper-number").change(function() {
+		var max = parseInt($(this).attr('max'));
+		var min = parseInt($(this).attr('min'));
+		if ($(this).val() > max)
+		  $(this).val(max);
+		else if ($(this).val() < min)
+		  $(this).val(min);
+    });
 	
-	$('.input-number-increment').click(function() {
-		var $input = $(this).parents('.input-number-group').find('.input-number');
-		var val = parseInt($input.val(), 10);
-		$input.val(val + 1);
+	$('.stepper-button').click(function() {
+		var $input = $(this).parents('.stepper-group').find('.stepper-number');
+		var val   = parseInt($input.val(), 10);
+		var delta = parseInt($(this).data("delta"));
+		$input.val(val + delta);
+		$input.trigger("change");
 	});
-
-	$('.input-number-decrement').click(function() {
-		var $input = $(this).parents('.input-number-group').find('.input-number');
-		var val = parseInt($input.val(), 10);
-		$input.val(val - 1);
-	})
-
 });
