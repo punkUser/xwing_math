@@ -75,10 +75,10 @@ block content
                             h3 Attacker Modify Attack Dice
                             fieldset.fieldset
                                 legend Add Results
-                                - stepper_control("amad_add_blank_count", "Blank", 0, 5, 0);
-                                - stepper_control("amad_add_focus_count", "Focus", 0, 5, 0);
-                                - stepper_control("amad_add_hit_count",   "Hit",   0, 5, 0);
-                                - stepper_control("amad_add_crit_count",  "Crit",  0, 5, 0);
+                                - stepper_control("amad_add_blank_count", "Blank", 0, 2, 0);
+                                - stepper_control("amad_add_focus_count", "Focus", 0, 2, 0);
+                                - stepper_control("amad_add_hit_count",   "Hit",   0, 2, 0);
+                                - stepper_control("amad_add_crit_count",  "Crit",  0, 2, 0);
                             fieldset.fieldset
                                 legend Free Rerolls
                                 - stepper_control("amad_reroll_blank_count", "Blank", 0, 20, 0);
@@ -91,12 +91,16 @@ block content
                                 - stepper_control("amad_focus_to_hit_count",  "Focus to Hit",  0, 20, 0);
                                 - stepper_control("amad_focus_to_crit_count", "Focus to Crit", 0, 20, 0);
                                 - stepper_control("amad_hit_to_crit_count",   "Hit to Crit",   0, 20, 0);
-                                - switch_control("attack_accuracy_corrector",  "Accuracy Corrector");
+                                - switch_control("amad_accuracy_corrector",  "Accuracy Corrector");
+                            fieldset.fieldset
+                                legend Change Results Once
+                                - switch_control("amad_once_any_to_hit",  "Any to Hit");
+                                - switch_control("amad_once_any_to_crit", "Any to Crit");
 
                     .medium-6.columns
                         .callout.small.success
                             h3 Defense Dice and Tokens
-                            - stepper_control("defense_dice",              "Attack Dice",  0, 6, 3);
+                            - stepper_control("defense_dice",              "Defense Dice", 0, 6, 3);
                             - stepper_control("defense_focus_token_count", "Focus Tokens", 0, 2, 0);
                             - stepper_control("defense_evade_token_count", "Evade Tokens", 0, 2, 0);
 
@@ -110,9 +114,9 @@ block content
                             h3 Defender Modify Defense Dice
                             fieldset.fieldset
                                 legend Add Results
-                                - stepper_control("dmdd_add_blank_count", "Blank", 0, 5, 0);
-                                - stepper_control("dmdd_add_focus_count", "Focus", 0, 5, 0);
-                                - stepper_control("dmdd_add_evade_count", "Evade", 0, 5, 0);
+                                - stepper_control("dmdd_add_blank_count", "Blank", 0, 2, 0);
+                                - stepper_control("dmdd_add_focus_count", "Focus", 0, 2, 0);
+                                - stepper_control("dmdd_add_evade_count", "Evade", 0, 2, 0);
                             fieldset.fieldset
                                 legend Free Rerolls
                                 - stepper_control("dmdd_reroll_blank_count", "Blank", 0, 20, 0);

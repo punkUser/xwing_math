@@ -16,7 +16,7 @@ var pdf_chart_data =
 	labels: ["0", "1", "2", "3", "4", "5", "6"],
 	datasets: [{
 		type: 'line',
-		label: 'P(Hits>=x)',
+		label: 'At Least # Hits',
 		borderColor: window.chartColors.blue,
 		backgroundColor: window.chartColors.blue,
 		borderWidth: 2,

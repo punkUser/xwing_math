@@ -75,7 +75,7 @@ public class WWWServer
 
     private void simulate_basic(HTTPServerRequest req, HTTPServerResponse res)
     {
-        //writeln(req.query.serializeToPrettyJson());        
+        //debug writeln(req.query.serializeToPrettyJson());
 
 		/*************************************************************************************************/
 		AttackSetup attack_setup;
@@ -93,16 +93,16 @@ public class WWWServer
 		attack_setup.AMAD.reroll_any_count    += (req.query.get("attack_predator_2", "")         == "on") ? 2 : 0;
 		attack_setup.AMAD.reroll_any_count    += (req.query.get("attack_rage", "")               == "on") ? 3 : 0;
 		attack_setup.AMAD.reroll_blank_count  += (req.query.get("attack_rey", "")				== "on")  ? 2 : 0;
-		attack_setup.AMAD.reroll_focus_count  += (req.query.get("attack_wired", "")				== "on")  ? int.max : 0;
+		attack_setup.AMAD.reroll_focus_count  += (req.query.get("attack_wired", "")				== "on")  ? k_all_dice_count : 0;
 
 		// Change results
 		// TODO: Verify this is always correct for marksmanship... in practice the entire effect must be applied at once
 		attack_setup.AMAD.focus_to_crit_count += (req.query.get("attack_marksmanship", "")       == "on") ? 1 : 0;
-		attack_setup.AMAD.focus_to_hit_count  += (req.query.get("attack_marksmanship", "")       == "on") ? int.max : 0;
-		attack_setup.AMAD.focus_to_hit_count  += (req.query.get("attack_expertise", "")          == "on") ? int.max : 0;
+		attack_setup.AMAD.focus_to_hit_count  += (req.query.get("attack_marksmanship", "")       == "on") ? k_all_dice_count : 0;
+		attack_setup.AMAD.focus_to_hit_count  += (req.query.get("attack_expertise", "")          == "on") ? k_all_dice_count : 0;
 		attack_setup.AMAD.hit_to_crit_count   += (req.query.get("attack_mercenary_copilot", "")  == "on") ? 1 : 0;
 		attack_setup.AMAD.hit_to_crit_count   += (req.query.get("attack_mangler_cannon", "")     == "on") ? 1 : 0;
-		attack_setup.AMAD.accuracy_corrector  = req.query.get("attack_accuracy_corrector", "")   == "on";
+		attack_setup.AMAD.accuracy_corrector   = (req.query.get("attack_accuracy_corrector", "") == "on");
 
 		// Modify defense dice
 		attack_setup.AMDD.evade_to_focus_count += (req.query.get("attack_juke", "")              == "on") ? 1 : 0;
@@ -124,7 +124,7 @@ public class WWWServer
 
 		// Rerolls
 		defense_setup.DMDD.reroll_blank_count     += (req.query.get("defense_rey", "")		     == "on") ? 2 : 0;
-        defense_setup.DMDD.reroll_focus_count     += (req.query.get("defense_wired", "")         == "on") ? int.max : 0;
+        defense_setup.DMDD.reroll_focus_count     += (req.query.get("defense_wired", "")         == "on") ? k_all_dice_count : 0;
 
 		// Change results
 		defense_setup.DMDD.blank_to_evade_count   += (req.query.get("defense_autothrusters", "") == "on") ? 1 : 0;
@@ -156,7 +156,7 @@ public class WWWServer
 
 	private void simulate_advanced(HTTPServerRequest req, HTTPServerResponse res)
     {
-        writeln(req.query.serializeToPrettyJson());        
+		//debug writeln(req.query.serializeToPrettyJson());
 
 		// TODO: CTFE this glue gode a bit, perhaps via JSON serialize/deserialize
 
@@ -186,8 +186,10 @@ public class WWWServer
 		attack_setup.AMAD.blank_to_crit_count = to!int(req.query.get("amad_blank_to_crit_count", "0"));
 		attack_setup.AMAD.blank_to_hit_count  = to!int(req.query.get("amad_blank_to_hit_count",  "0"));
 		attack_setup.AMAD.hit_to_crit_count   = to!int(req.query.get("amad_hit_to_crit_count",   "0"));
+		attack_setup.AMAD.accuracy_corrector  = req.query.get("amad_accuracy_corrector", "") == "on";
 
-		attack_setup.AMAD.accuracy_corrector  = req.query.get("attack_accuracy_corrector", "") == "on";
+		attack_setup.AMAD.once_any_to_hit     = req.query.get("amad_once_any_to_hit", "")  == "on";
+		attack_setup.AMAD.once_any_to_crit    = req.query.get("amad_once_any_to_crit", "") == "on";
 		
 		// Modify defense dice
 		attack_setup.AMDD.evade_to_focus_count = to!int(req.query.get("amdd_evade_to_focus_count", "0"));
