@@ -19,6 +19,8 @@ public class WWWServer
         //settings.sessionStore = new MemorySessionStore();
         //settings.accessLogFile = m_config.http_server_log_file;
 
+		settings.accessLogToConsole = true;
+
 	    auto router = new URLRouter;
     
         router.get("/", &index);
@@ -84,6 +86,10 @@ public class WWWServer
         attack_setup.tokens.focus        = to!int(req.query.get("attack_focus_token_count", "0"));
         attack_setup.tokens.target_lock  = to!int(req.query.get("attack_target_lock_count", "0"));
         
+		// Once per turn abilities are treated like "tokens" for simulation purposes
+		attack_setup.tokens.amad_any_to_hit  = (req.query.get("attack_guidance_chips_hit", "")  == "on");
+		attack_setup.tokens.amad_any_to_crit = (req.query.get("attack_guidance_chips_crit", "") == "on");
+
 		// Add results
 		attack_setup.AMAD.add_hit_count       += (req.query.get("attack_fearlessness", "")  == "on") ? 1 : 0;
 		attack_setup.AMAD.add_blank_count     += (req.query.get("attack_finn", "")          == "on") ? 1 : 0;

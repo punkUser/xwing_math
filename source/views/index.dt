@@ -53,6 +53,11 @@ block content
                                 - switch_control("attack_accuracy_corrector",  "Accuracy Corrector");
                                 - switch_control("attack_fire_control_system", "Fire Control System");
 
+                            fieldset.fieldset
+                                legend Modifications
+                                - switch_control("attack_guidance_chips_hit",  "Guidance Chips (Hit)");
+                                - switch_control("attack_guidance_chips_crit", "Guidance Chips (Crit)");
+
                     .medium-6.columns
                         .callout.small.success
                             - stepper_control("defense_dice",              "Defense Dice", 0, 6, 3);

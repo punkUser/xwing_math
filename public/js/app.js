@@ -181,6 +181,14 @@ $(document).ready(function()
 		if (this.checked)
 			$('#attack_dengar_1').prop("checked", false);
 	});
+	$('#attack_guidance_chips_hit').change(function() {
+		if (this.checked)
+			$('#attack_guidance_chips_crit').prop("checked", false);
+	});
+	$('#attack_guidance_chips_crit').change(function() {
+		if (this.checked)
+			$('#attack_guidance_chips_hit').prop("checked", false);
+	});
 	
 	$(".stepper-number").change(function() {
 		var max = parseInt($(this).attr('max'));
