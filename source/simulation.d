@@ -462,18 +462,21 @@ class Simulation
 		
 		// Blank to focus we have to treat a bit carefully... again things can technically get fairly complicated in
 		// the "optimal" case here, but for the most part we can get away with considering these blanks "useful" iff
-		// we can subtract "useful" focus tokens in the same amount. That's a good enough solution for the common cases.
-		// Note that we only do this relative to how many actual blank dice we have, otherwise we can end up rerolling
-		// stuff unnecessarily.
+		// we have excess "useful" focus tokens in the same amount. That's a good enough solution for the common cases.
+		// This logic definitely isn't perfect since if we don't trigger this condition we're basically not considering
+		// the blank to focus availability at all (which might affect things like whether it's "safe" to reroll focus
+		// results since we can always immediately convert them back to focus even if we roll into a blank), but
+		// it's sufficient for the time being without introducing too much additional complexity.
 		{
-			int blank_to_useful_focus = min(m_attack_setup.AMAD.blank_to_focus_count,
-											attack_dice.count(DieResult.Blank) - useful_blank_results);
-			if (blank_to_useful_focus > 0)
+			int excess_useless_blanks = min(m_attack_setup.AMAD.blank_to_focus_count, attack_dice.count(DieResult.Blank) - useful_blank_results);
+			int excess_useful_focus   = useful_focus_results - attack_dice.count(DieResult.Focus);
+			if (excess_useless_blanks > 0 && excess_useful_focus >= excess_useless_blanks)
 			{
-				blank_to_useful_focus = min(blank_to_useful_focus, useful_focus_results);
-				useful_blank_results += blank_to_useful_focus;
-				useful_focus_results -= blank_to_useful_focus;
-			}			
+				useful_blank_results += excess_useless_blanks;
+				useful_focus_results -= excess_useless_blanks;
+				assert(useful_focus_results >= 0);
+				assert(useful_blank_results >= 0);
+			}
 		}
 
 		int focus_to_reroll = 0;
