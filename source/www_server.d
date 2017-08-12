@@ -85,24 +85,32 @@ public class WWWServer
         attack_setup.tokens.target_lock  = to!int(req.query.get("attack_target_lock_count", "0"));
         
 		// Add results
-		attack_setup.AMAD.add_hit_count       += (req.query.get("attack_fearlessness", "")       == "on") ? 1 : 0;
-		attack_setup.AMAD.add_blank_count     += (req.query.get("attack_finn", "")               == "on") ? 1 : 0;
+		attack_setup.AMAD.add_hit_count       += (req.query.get("attack_fearlessness", "")  == "on") ? 1 : 0;
+		attack_setup.AMAD.add_blank_count     += (req.query.get("attack_finn", "")          == "on") ? 1 : 0;
 
 		// Rerolls
-		attack_setup.AMAD.reroll_any_count    += (req.query.get("attack_predator_1", "")         == "on") ? 1 : 0;
-		attack_setup.AMAD.reroll_any_count    += (req.query.get("attack_predator_2", "")         == "on") ? 2 : 0;
-		attack_setup.AMAD.reroll_any_count    += (req.query.get("attack_rage", "")               == "on") ? 3 : 0;
-		attack_setup.AMAD.reroll_blank_count  += (req.query.get("attack_rey", "")				== "on")  ? 2 : 0;
-		attack_setup.AMAD.reroll_focus_count  += (req.query.get("attack_wired", "")				== "on")  ? k_all_dice_count : 0;
+		attack_setup.AMAD.reroll_any_count    += (req.query.get("attack_dengar_1", "")    == "on") ? 1 : 0;
+		attack_setup.AMAD.reroll_any_count    += (req.query.get("attack_dengar_2", "")    == "on") ? 2 : 0;
+		attack_setup.AMAD.reroll_any_count    += (req.query.get("attack_predator_1", "")  == "on") ? 1 : 0;
+		attack_setup.AMAD.reroll_any_count    += (req.query.get("attack_predator_2", "")  == "on") ? 2 : 0;
+		attack_setup.AMAD.reroll_any_count    += (req.query.get("attack_rage", "")        == "on") ? 3 : 0;
+		attack_setup.AMAD.reroll_blank_count  += (req.query.get("attack_lone_wolf", "")	  == "on") ? 1 : 0;
+		attack_setup.AMAD.reroll_blank_count  += (req.query.get("attack_rey_pilot", "")	  == "on") ? 2 : 0;
+		attack_setup.AMAD.reroll_focus_count  += (req.query.get("attack_wired", "")		  == "on") ? k_all_dice_count : 0;
 
 		// Change results
 		// TODO: Verify this is always correct for marksmanship... in practice the entire effect must be applied at once
-		attack_setup.AMAD.focus_to_crit_count += (req.query.get("attack_marksmanship", "")       == "on") ? 1 : 0;
-		attack_setup.AMAD.focus_to_hit_count  += (req.query.get("attack_marksmanship", "")       == "on") ? k_all_dice_count : 0;
-		attack_setup.AMAD.focus_to_hit_count  += (req.query.get("attack_expertise", "")          == "on") ? k_all_dice_count : 0;
-		attack_setup.AMAD.hit_to_crit_count   += (req.query.get("attack_mercenary_copilot", "")  == "on") ? 1 : 0;
-		attack_setup.AMAD.hit_to_crit_count   += (req.query.get("attack_mangler_cannon", "")     == "on") ? 1 : 0;
-		attack_setup.AMAD.accuracy_corrector   = (req.query.get("attack_accuracy_corrector", "") == "on");
+		attack_setup.AMAD.focus_to_crit_count  += (req.query.get("attack_ezra_crew", "")            == "on") ? 1 : 0;
+		attack_setup.AMAD.focus_to_crit_count  += (req.query.get("attack_proton_torpedoes", "")     == "on") ? 1 : 0;
+		attack_setup.AMAD.focus_to_crit_count  += (req.query.get("attack_marksmanship", "")         == "on") ? 1 : 0;
+		attack_setup.AMAD.focus_to_hit_count   += (req.query.get("attack_marksmanship", "")         == "on") ? k_all_dice_count : 0;
+		attack_setup.AMAD.focus_to_hit_count   += (req.query.get("attack_expertise", "")            == "on") ? k_all_dice_count : 0;
+		attack_setup.AMAD.blank_to_hit_count   += (req.query.get("attack_concussion_missiles", "")  == "on") ? 1 : 0;
+		attack_setup.AMAD.blank_to_focus_count += (req.query.get("attack_adv_proton_torpedoes", "") == "on") ? 3 : 0;
+		attack_setup.AMAD.hit_to_crit_count    += (req.query.get("attack_bistan", "")               == "on") ? 1 : 0;
+		attack_setup.AMAD.hit_to_crit_count    += (req.query.get("attack_mercenary_copilot", "")    == "on") ? 1 : 0;
+		attack_setup.AMAD.hit_to_crit_count    += (req.query.get("attack_mangler_cannon", "")       == "on") ? 1 : 0;
+		attack_setup.AMAD.accuracy_corrector   = (req.query.get("attack_accuracy_corrector", "")    == "on");
 
 		// Modify defense dice
 		attack_setup.AMDD.evade_to_focus_count += (req.query.get("attack_juke", "")              == "on") ? 1 : 0;
@@ -120,13 +128,16 @@ public class WWWServer
         defense_setup.tokens.evade    = to!int(req.query.get("defense_evade_token_count", "0"));
 
 		// Add results
-		defense_setup.DMDD.add_blank_count        += (req.query.get("defense_finn", "")          == "on") ? 1 : 0;
+		defense_setup.DMDD.add_evade_count    += (req.query.get("defense_concord_dawn", "")  == "on") ? 1 : 0;
+		defense_setup.DMDD.add_blank_count    += (req.query.get("defense_finn", "")          == "on") ? 1 : 0;
 
 		// Rerolls
-		defense_setup.DMDD.reroll_blank_count     += (req.query.get("defense_rey", "")		     == "on") ? 2 : 0;
-        defense_setup.DMDD.reroll_focus_count     += (req.query.get("defense_wired", "")         == "on") ? k_all_dice_count : 0;
+		defense_setup.DMDD.reroll_blank_count     += (req.query.get("defense_lone_wolf", "") == "on") ? 1 : 0;
+		defense_setup.DMDD.reroll_blank_count     += (req.query.get("defense_rey_pilot", "") == "on") ? 2 : 0;
+        defense_setup.DMDD.reroll_focus_count     += (req.query.get("defense_wired", "")     == "on") ? k_all_dice_count : 0;
 
 		// Change results
+		defense_setup.DMDD.focus_to_evade_count   += (req.query.get("defense_luke_pilot", "")    == "on") ? 1 : 0;
 		defense_setup.DMDD.blank_to_evade_count   += (req.query.get("defense_autothrusters", "") == "on") ? 1 : 0;
         
 		// Modify attack dice
@@ -151,7 +162,7 @@ public class WWWServer
 
 		/*************************************************************************************************/
 
-        simulate_response(res, attack_setup, defense_setup);
+        simulate_response(req.peer, res, attack_setup, defense_setup);
 	}
 
 	private void simulate_advanced(HTTPServerRequest req, HTTPServerResponse res)
@@ -167,29 +178,32 @@ public class WWWServer
         attack_setup.tokens.focus        = to!int(req.query.get("attack_focus_token_count", "0"));
         attack_setup.tokens.target_lock  = to!int(req.query.get("attack_target_lock_count", "0"));
 
+		// Once per turn abilities are treated like "tokens" for simulation purposes
+		attack_setup.tokens.amad_any_to_hit  = req.query.get("amad_once_any_to_hit", "")  == "on";
+		attack_setup.tokens.amad_any_to_crit = req.query.get("amad_once_any_to_crit", "") == "on";
+
 		// Special effects...
 		attack_setup.heavy_laser_cannon  = req.query.get("attack_heavy_laser_cannon", "")   == "on";
         attack_setup.fire_control_system = req.query.get("attack_fire_control_system", "")  == "on";
 		attack_setup.one_damage_on_hit   = req.query.get("attack_one_damage_on_hit", "")    == "on";
 		
 		// Modify attack dice
-		attack_setup.AMAD.add_hit_count       = to!int(req.query.get("amad_add_hit_count",      "0"));
-		attack_setup.AMAD.add_crit_count      = to!int(req.query.get("amad_add_crit_count",     "0"));
-		attack_setup.AMAD.add_blank_count     = to!int(req.query.get("amad_add_blank_count",    "0"));
-		attack_setup.AMAD.add_focus_count     = to!int(req.query.get("amad_add_focus_count",    "0"));
-		attack_setup.AMAD.reroll_blank_count  = to!int(req.query.get("amad_reroll_blank_count", "0"));
-		attack_setup.AMAD.reroll_focus_count  = to!int(req.query.get("amad_reroll_focus_count", "0"));
-		attack_setup.AMAD.reroll_any_count    = to!int(req.query.get("amad_reroll_any_count",   "0"));
+		attack_setup.AMAD.add_hit_count        = to!int(req.query.get("amad_add_hit_count",        "0"));
+		attack_setup.AMAD.add_crit_count       = to!int(req.query.get("amad_add_crit_count",       "0"));
+		attack_setup.AMAD.add_blank_count      = to!int(req.query.get("amad_add_blank_count",      "0"));
+		attack_setup.AMAD.add_focus_count      = to!int(req.query.get("amad_add_focus_count",      "0"));
+		attack_setup.AMAD.reroll_blank_count   = to!int(req.query.get("amad_reroll_blank_count",   "0"));
+		attack_setup.AMAD.reroll_focus_count   = to!int(req.query.get("amad_reroll_focus_count",   "0"));
+		attack_setup.AMAD.reroll_any_count     = to!int(req.query.get("amad_reroll_any_count",     "0"));
 
-		attack_setup.AMAD.focus_to_crit_count = to!int(req.query.get("amad_focus_to_crit_count", "0"));
-		attack_setup.AMAD.focus_to_hit_count  = to!int(req.query.get("amad_focus_to_hit_count",  "0"));
-		attack_setup.AMAD.blank_to_crit_count = to!int(req.query.get("amad_blank_to_crit_count", "0"));
-		attack_setup.AMAD.blank_to_hit_count  = to!int(req.query.get("amad_blank_to_hit_count",  "0"));
-		attack_setup.AMAD.hit_to_crit_count   = to!int(req.query.get("amad_hit_to_crit_count",   "0"));
-		attack_setup.AMAD.accuracy_corrector  = req.query.get("amad_accuracy_corrector", "") == "on";
-
-		attack_setup.AMAD.once_any_to_hit     = req.query.get("amad_once_any_to_hit", "")  == "on";
-		attack_setup.AMAD.once_any_to_crit    = req.query.get("amad_once_any_to_crit", "") == "on";
+		attack_setup.AMAD.focus_to_crit_count  = to!int(req.query.get("amad_focus_to_crit_count",  "0"));
+		attack_setup.AMAD.focus_to_hit_count   = to!int(req.query.get("amad_focus_to_hit_count",   "0"));
+		attack_setup.AMAD.blank_to_crit_count  = to!int(req.query.get("amad_blank_to_crit_count",  "0"));
+		attack_setup.AMAD.blank_to_hit_count   = to!int(req.query.get("amad_blank_to_hit_count",   "0"));
+		attack_setup.AMAD.blank_to_focus_count = to!int(req.query.get("amad_blank_to_focus_count", "0"));
+		
+		attack_setup.AMAD.hit_to_crit_count    = to!int(req.query.get("amad_hit_to_crit_count",    "0"));
+		attack_setup.AMAD.accuracy_corrector   = req.query.get("amad_accuracy_corrector", "") == "on";
 		
 		// Modify defense dice
 		attack_setup.AMDD.evade_to_focus_count = to!int(req.query.get("amdd_evade_to_focus_count", "0"));
@@ -232,10 +246,11 @@ public class WWWServer
 
 		/*************************************************************************************************/
 
-        simulate_response(res, attack_setup, defense_setup);
+        simulate_response(req.peer, res, attack_setup, defense_setup);
 	}
 
-	private void simulate_response(HTTPServerResponse res,
+	private void simulate_response(string peer_address,		// Mostly for logging
+								   HTTPServerResponse res,
 								   ref const(AttackSetup)  attack_setup,
 								   ref const(DefenseSetup) defense_setup)
 	{
@@ -250,7 +265,7 @@ public class WWWServer
 
             simulation.simulate_attack_exhaustive();
 
-            writefln("Exhaustive simulation: %d evaluations in %s msec",
+            writefln("%s: Exhaustive simulation: %d evaluations in %s msec", peer_address,
                      simulation.total_sum().evaluation_count, sw.peek().msecs());
         }
 

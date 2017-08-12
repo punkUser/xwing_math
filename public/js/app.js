@@ -164,7 +164,7 @@ $(document).ready(function()
 		$.getJSON('/simulate_advanced.json', data, simulateUpdateChart);
 	});
 
-	// Predator selectors are mutually exclusive
+	// TODO: Clean this all up
 	$('#attack_predator_1').change(function() {
 		if (this.checked)
 			$('#attack_predator_2').prop("checked", false);
@@ -172,6 +172,14 @@ $(document).ready(function()
 	$('#attack_predator_2').change(function() {
 		if (this.checked)
 			$('#attack_predator_1').prop("checked", false);
+	});
+	$('#attack_dengar_1').change(function() {
+		if (this.checked)
+			$('#attack_dengar_2').prop("checked", false);
+	});
+	$('#attack_dengar_2').change(function() {
+		if (this.checked)
+			$('#attack_dengar_1').prop("checked", false);
 	});
 	
 	$(".stepper-number").change(function() {

@@ -1,58 +1,29 @@
 extends layout
 
-block content    
+block content
+
     .row
         .large-12.columns
             form#simulate-basic-form(action="#", method="GET")
-
-                - void slider_control(string name, string label, int min, int max, int init)
-                    .row
-                        .large-6.medium-8.small-8.columns
-                            .input-group
-                                span.input-group-label #{label}
-                                input.input-group-field(id="#{name}_output", name="#{name}", type="number")
-                        .large-6.medium-4.small-4.columns
-                            .slider(data-slider, data-initial-start="#{init}", data-start="#{min}", data-end="#{max}")
-                                span.slider-handle(data-slider-handle, role="slider", tabindex="1", aria-controls="#{name}_output")
-                                span.slider-fill(data-slider-fill)
-
-                - void switch_control(string name, string label, string type="checkbox")
-                    .row
-                        .large-9.medium-9.small-9.columns
-                            label(for="#{name}") #{label}
-                        .large-3.medium-3.small-3.columns.text-right
-                            .switch.small
-                                input.switch-input(id="#{name}", name="#{name}", type="#{type}")
-                                label.switch-paddle(for="#{name}")
-
-                - void radio_switch_control(string name, string label, string value, bool checked = false)
-                    .row
-                        .large-9.medium-9.small-9.columns
-                            label(for="#{value}") #{label}
-                        .large-3.medium-3.small-3.columns.text-right
-                            .switch.small
-                                - if (checked)
-                                    input.switch-input(id="#{value}", name="#{name}", value="#{value}", type="radio", checked)
-                                - else
-                                    input.switch-input(id="#{value}", name="#{name}", value="#{value}", type="radio")
-                                label.switch-paddle(for="#{value}")
+                include controls.inc
 
                 .row
                     .medium-6.columns
                         .callout.small.alert
-                            - slider_control("attack_dice",                "Attack Dice",        1, 8, 3);
-                            - slider_control("attack_focus_token_count",   "Focus Tokens",       0, 2, 0);
-                            - slider_control("attack_target_lock_count",   "Target Locks",       0, 2, 0);
+                            - stepper_control("attack_dice",              "Attack Dice",  1, 8, 3);
+                            - stepper_control("attack_focus_token_count", "Focus Tokens", 0, 2, 0);
+                            - stepper_control("attack_target_lock_count", "Target Locks", 0, 2, 0);
                             
                             fieldset.fieldset
                                 legend Pilots
-                                - switch_control("attack_rey",                 "Rey");
+                                - switch_control("attack_rey_pilot",           "Rey");
 
                             fieldset.fieldset
                                 legend Elite Pilot Talents
                                 - switch_control("attack_expertise",           "Expertise");
                                 - switch_control("attack_fearlessness",        "Fearlessness");
                                 - switch_control("attack_juke",                "Juke");
+                                - switch_control("attack_lone_wolf",           "Lone Wolf");
                                 - switch_control("attack_marksmanship",        "Marksmanship");
                                 - switch_control("attack_predator_1",          "Predator (1 reroll)");
                                 - switch_control("attack_predator_2",          "Predator (2 rerolls)");
@@ -61,14 +32,21 @@ block content
                                 
                             fieldset.fieldset
                                 legend Crew
+                                - switch_control("attack_bistan",              "Bistan");
+                                - switch_control("attack_dengar_1",            "Dengar (1 reroll)");
+                                - switch_control("attack_dengar_2",            "Dengar (2 rerolls)");
+                                - switch_control("attack_ezra_crew",           "Ezra");
                                 - switch_control("attack_finn",                "Finn");
                                 - switch_control("attack_mercenary_copilot",   "Mercenary Copilot");
                                 
                             fieldset.fieldset
-                                legend Cannons and Turrets
-                                - switch_control("attack_heavy_laser_cannon",  "Heavy Laser Cannon");
-                                - switch_control("attack_mangler_cannon",      "Mangler Cannon");
-                                - switch_control("attack_one_damage_on_hit",   "One Damage on Hit (TLT, Ion)");
+                                legend Secondary Weapons
+                                - switch_control("attack_adv_proton_torpedoes", "Advanced Proton Torpedoes");
+                                - switch_control("attack_concussion_missiles",  "Concussion Missiles");
+                                - switch_control("attack_heavy_laser_cannon",   "Heavy Laser Cannon");
+                                - switch_control("attack_mangler_cannon",       "Mangler Cannon");
+                                - switch_control("attack_one_damage_on_hit",    "One Damage on Hit (TLT, Ion)");
+                                - switch_control("attack_proton_torpedoes",     "Proton Torpedoes");
                                 
                             fieldset.fieldset
                                 legend System Upgrades
@@ -77,16 +55,19 @@ block content
 
                     .medium-6.columns
                         .callout.small.success
-                            - slider_control("defense_dice",              "Defense Dice", 0, 6, 3);
-                            - slider_control("defense_focus_token_count", "Focus Tokens", 0, 2, 0);
-                            - slider_control("defense_evade_token_count", "Evade Tokens", 0, 2, 0);
+                            - stepper_control("defense_dice",              "Defense Dice", 0, 6, 3);
+                            - stepper_control("defense_focus_token_count", "Focus Tokens", 0, 2, 0);
+                            - stepper_control("defense_evade_token_count", "Evade Tokens", 0, 2, 0);
                                
                             fieldset.fieldset
-                                legend Pilots
-                                - switch_control("defense_rey",                "Rey");
+                                legend Pilots and Titles
+                                - switch_control("defense_concord_dawn",       "Concord Dawn Protector");
+                                - switch_control("defense_luke_pilot",         "Luke");
+                                - switch_control("defense_rey_pilot",          "Rey");
 
                             fieldset.fieldset
                                 legend Elite Pilot Talents
+                                - switch_control("defense_lone_wolf",          "Lone Wolf");
                                 - switch_control("defense_wired",              "Wired");
 
                             fieldset.fieldset

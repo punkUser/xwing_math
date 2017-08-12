@@ -39,10 +39,9 @@ struct TokenState
     int target_lock = 0;
     int stress = 0;
 
-	// Used once per turn abilities
-	// TODO: May be simpler to switch these to "unused" and initialize appropriately based on setup
-	bool used_amad_once_any_to_hit = false;
-	bool used_amad_once_any_to_crit = false;
+	// Available once per turn abilities
+	bool amad_any_to_hit = false;
+	bool amad_any_to_crit = false;
 }
 
 struct AttackSetup
@@ -71,11 +70,10 @@ struct AttackSetup
 		int focus_to_hit_count = 0;
 		int blank_to_crit_count = 0;
 		int blank_to_hit_count = 0;
+		int blank_to_focus_count = 0;
 		int hit_to_crit_count = 0;
 
-		// Change results once
-		bool once_any_to_hit = false;
-		bool once_any_to_crit = false;
+		// NOTE: Single use abilities are treated as "tokens" (see TokenState)
 
 		// Can cancel all results and replace with 2 hits
 		bool accuracy_corrector = false;
@@ -93,21 +91,15 @@ struct AttackSetup
     bool fire_control_system = false;   // Get a target lock after attack (only affects multi-attack)
     bool heavy_laser_cannon = false;    // After initial roll, change all crits->hits
     bool one_damage_on_hit = false;     // If attack hits, 1 damage (TLT, Ion, etc)
+
     // TODO: Autoblaster (hit results cannot be canceled)
-
-    // TODO: Lone wolf (1 blank reroll)
     // TODO: Crack shot? (gets a little bit complex as presence affects defender logic and as well)
-
-    // Crew
-    // TODO: Ezra Crew (one focus->crit)
     // TODO: Zuckuss Crew
     // TODO: 4-LOM Crew
-    // TODO: Dengar Crew (overlaps w/ EPT rerolls...)
     // TODO: Bossk Crew (gets weird/hard...)
     // TODO: Hot shot copilot
     // TODO: Captain rex (only affects multi-attack)
     // TODO: Operations specialist? Again only multi-attack
-    // TODO: Bistain (hit -> crit, like merc copilot)
 
     // Ones that require spending tokens (more complex generally)
     // TODO: Calculation (pay focus: one focus->crit)
@@ -120,7 +112,6 @@ struct DefenseSetup
     // Tokens
     int dice = 0;
     TokenState tokens;
-
 
 	struct ModifyAttackDice
 	{
@@ -147,7 +138,6 @@ struct DefenseSetup
 	ModifyDefenseDice DMDD;		// "defender modify defense dice"
 
 	/*
-	// TODO: Lone wolf (1 blank reroll)
     // TODO: Elusiveness
     // TODO: C-3PO (always guess 0 probably the most relevant)
     // TODO: Latts? Gets a bit weird/complex
@@ -337,7 +327,7 @@ class Simulation
     public this(ref const(AttackSetup)  attack_setup,
                 ref const(DefenseSetup) defense_setup)
     {
-        m_attack_setup = attack_setup;
+        m_attack_setup  = attack_setup;
         m_defense_setup = defense_setup;
 
         // We always show at least 0..6 labels on the graph as this looks nice
@@ -467,7 +457,24 @@ class Simulation
 		int useful_focus_results = (m_attack_setup.AMAD.focus_to_hit_count + m_attack_setup.AMAD.focus_to_crit_count);
 		if (attack_tokens.focus > 0)			// Simplification since this involves spending a token, but good enough
 			useful_focus_results = k_all_dice_count;
+
 		int useful_blank_results = (m_attack_setup.AMAD.blank_to_hit_count + m_attack_setup.AMAD.blank_to_crit_count);
+		
+		// Blank to focus we have to treat a bit carefully... again things can technically get fairly complicated in
+		// the "optimal" case here, but for the most part we can get away with considering these blanks "useful" iff
+		// we can subtract "useful" focus tokens in the same amount. That's a good enough solution for the common cases.
+		// Note that we only do this relative to how many actual blank dice we have, otherwise we can end up rerolling
+		// stuff unnecessarily.
+		{
+			int blank_to_useful_focus = min(m_attack_setup.AMAD.blank_to_focus_count,
+											attack_dice.count(DieResult.Blank) - useful_blank_results);
+			if (blank_to_useful_focus > 0)
+			{
+				blank_to_useful_focus = min(blank_to_useful_focus, useful_focus_results);
+				useful_blank_results += blank_to_useful_focus;
+				useful_focus_results -= blank_to_useful_focus;
+			}			
+		}
 
 		int focus_to_reroll = 0;
 		int blank_to_reroll = 0;
@@ -494,8 +501,8 @@ class Simulation
 			// If we can change everything to hits/crits just with those abilities, don't spend the lock.
 			// Otherwise it's usually best to reroll everything since it could save us from using the once per turn.
 			int change_any_count =
-				(m_attack_setup.AMAD.once_any_to_crit && !attack_tokens.used_amad_once_any_to_crit ? 1 : 0) +
-				(m_attack_setup.AMAD.once_any_to_hit  && !attack_tokens.used_amad_once_any_to_hit  ? 1 : 0);
+				(attack_tokens.amad_any_to_crit ? 1 : 0) +
+				(attack_tokens.amad_any_to_hit  ? 1 : 0);
 			
 			if ((focus_to_reroll + blank_to_reroll) > change_any_count)
 			{
@@ -539,10 +546,11 @@ class Simulation
 		// NOTE: Order matters here - do the most useful changes first
 		// TODO: There are some cards that do multiple things at once... ex. Marksmanship
 		// Ensure that the timing of separating them into multiple effects here is always consistent/correct
-		attack_dice.change_dice(DieResult.Blank, DieResult.Crit, m_attack_setup.AMAD.blank_to_crit_count);
-		attack_dice.change_dice(DieResult.Blank, DieResult.Hit,  m_attack_setup.AMAD.blank_to_hit_count);
-		attack_dice.change_dice(DieResult.Focus, DieResult.Crit, m_attack_setup.AMAD.focus_to_crit_count);
-		attack_dice.change_dice(DieResult.Focus, DieResult.Hit,  m_attack_setup.AMAD.focus_to_hit_count);
+		attack_dice.change_dice(DieResult.Blank, DieResult.Crit,  m_attack_setup.AMAD.blank_to_crit_count);
+		attack_dice.change_dice(DieResult.Blank, DieResult.Hit,   m_attack_setup.AMAD.blank_to_hit_count);
+		attack_dice.change_dice(DieResult.Blank, DieResult.Focus, m_attack_setup.AMAD.blank_to_focus_count);
+		attack_dice.change_dice(DieResult.Focus, DieResult.Crit,  m_attack_setup.AMAD.focus_to_crit_count);
+		attack_dice.change_dice(DieResult.Focus, DieResult.Hit,   m_attack_setup.AMAD.focus_to_hit_count);
 
 		// TODO: We should technically take one damage on hit and a bunch of details about
 		// the defender's maximum defense results into account here with respect to spending
@@ -566,12 +574,11 @@ class Simulation
 		// Modify any hit results (including those generated above) as appropriate
 		attack_dice.change_dice(DieResult.Hit, DieResult.Crit, m_attack_setup.AMAD.hit_to_crit_count);
 
-		// Spend "once per turn" abilities if present and unused)
-		if (m_attack_setup.AMAD.once_any_to_crit && !attack_tokens.used_amad_once_any_to_crit)
-			attack_tokens.used_amad_once_any_to_crit = (attack_dice.change_blank_focus(DieResult.Crit, 1) > 0);
-
-		if (m_attack_setup.AMAD.once_any_to_hit && !attack_tokens.used_amad_once_any_to_hit)
-			attack_tokens.used_amad_once_any_to_hit = (attack_dice.change_blank_focus(DieResult.Hit, 1) > 0);
+		// Spend "once per turn" abilities if present
+		if (attack_tokens.amad_any_to_crit)
+			attack_tokens.amad_any_to_crit = (attack_dice.change_blank_focus(DieResult.Crit, 1) == 0);
+		if (attack_tokens.amad_any_to_hit)
+			attack_tokens.amad_any_to_hit  = (attack_dice.change_blank_focus(DieResult.Hit,  1) == 0);
 
         // Use accuracy corrector in the following cases:
         // a) We ended up with less than 2 hits/crits
@@ -1030,7 +1037,7 @@ class Simulation
 		while (initial_states.length > 0)
 		{
 			// Simulate an attack with the tokens from the first state
-			TokenState attack_tokens = initial_states.keys[0].attack_tokens;
+			TokenState attack_tokens  = initial_states.keys[0].attack_tokens;
 			TokenState defense_tokens = initial_states.keys[0].defense_tokens;
 
 			// TODO: Consider the use of completed attack count here...

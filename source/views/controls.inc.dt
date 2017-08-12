@@ -1,0 +1,34 @@
+- void switch_control(string name, string label, string type="checkbox")
+    .row
+        .small-9.columns
+            label(for="#{name}") #{label}
+        .small-3.columns.text-right
+            .switch.small
+                input.switch-input(id="#{name}", name="#{name}", type="#{type}")
+                label.switch-paddle(for="#{name}")
+                    //- span.switch-active(aria-hidden="true") All
+                    //- span.switch-inactive(aria-hidden="true") #
+
+- void radio_switch_control(string name, string label, string value, bool checked = false)
+    .row
+        .large-9.medium-9.small-9.columns
+            label(for="#{value}") #{label}
+        .large-3.medium-3.small-3.columns.text-right
+            .switch.small
+                - if (checked)
+                    input.switch-input(id="#{value}", name="#{name}", value="#{value}", type="radio", checked)
+                - else
+                    input.switch-input(id="#{value}", name="#{name}", value="#{value}", type="radio")
+                label.switch-paddle(for="#{value}")
+
+- void stepper_control(string name, string label, int min, int max, int init)
+    .row
+        .small-6.columns
+            label(for="#{name}") #{label}
+        .small-6.columns.text-right
+            .input-group.stepper-group
+                .input-group-button
+                    button.button.stepper-button(type="button", data-delta="-1") -
+                input.stepper-number(id="#{name}", name="#{name}", type="number", value="#{init}", min="#{min}", max="#{max}")
+                .input-group-button
+                    button.button.stepper-button(type="button", data-delta="1") +

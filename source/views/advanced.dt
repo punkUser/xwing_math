@@ -1,55 +1,10 @@
 extends layout
 
-block content    
+block content   
     .row
         .large-12.columns
             form#simulate-advanced-form(action="#", method="GET")
-
-                - void slider_control(string name, string label, int min, int max, int init)
-                    .row
-                        .large-6.medium-8.small-8.columns
-                            .input-group
-                                span.input-group-label #{label}
-                                input.input-group-field(id="#{name}_output", name="#{name}", type="number")
-                        .large-6.medium-4.small-4.columns
-                            .slider(data-slider, data-initial-start="#{init}", data-start="#{min}", data-end="#{max}")
-                                span.slider-handle(data-slider-handle, role="slider", tabindex="1", aria-controls="#{name}_output")
-                                span.slider-fill(data-slider-fill)
-
-                - void switch_control(string name, string label, string type="checkbox")
-                    .row
-                        .small-9.columns
-                            label(for="#{name}") #{label}
-                        .small-3.columns.text-right
-                            .switch.small
-                                input.switch-input(id="#{name}", name="#{name}", type="#{type}")
-                                label.switch-paddle(for="#{name}")
-                                    //- span.switch-active(aria-hidden="true") All
-                                    //- span.switch-inactive(aria-hidden="true") #
-
-                - void radio_switch_control(string name, string label, string value, bool checked = false)
-                    .row
-                        .large-9.medium-9.small-9.columns
-                            label(for="#{value}") #{label}
-                        .large-3.medium-3.small-3.columns.text-right
-                            .switch.small
-                                - if (checked)
-                                    input.switch-input(id="#{value}", name="#{name}", value="#{value}", type="radio", checked)
-                                - else
-                                    input.switch-input(id="#{value}", name="#{name}", value="#{value}", type="radio")
-                                label.switch-paddle(for="#{value}")
-
-                - void stepper_control(string name, string label, int min, int max, int init)
-                    .row
-                        .small-6.columns
-                            label(for="#{name}") #{label}
-                        .small-6.columns.text-right
-                            .input-group.stepper-group
-                                .input-group-button
-                                    button.button.stepper-button(type="button", data-delta="-1") -
-                                input.stepper-number(id="#{name}", name="#{name}", type="number", value="#{init}", min="#{min}", max="#{max}")
-                                .input-group-button
-                                    button.button.stepper-button(type="button", data-delta="1") +
+                include controls.inc          
 
                 .row
                     .medium-6.columns
@@ -86,12 +41,13 @@ block content
                                 - stepper_control("amad_reroll_any_count",   "Any",   0, 20, 0);
                             fieldset.fieldset
                                 legend Change Results
-                                - stepper_control("amad_blank_to_hit_count",  "Blank to Hit",  0, 20, 0);
-                                - stepper_control("amad_blank_to_crit_count", "Blank to Crit", 0, 20, 0);
-                                - stepper_control("amad_focus_to_hit_count",  "Focus to Hit",  0, 20, 0);
-                                - stepper_control("amad_focus_to_crit_count", "Focus to Crit", 0, 20, 0);
-                                - stepper_control("amad_hit_to_crit_count",   "Hit to Crit",   0, 20, 0);
-                                - switch_control("amad_accuracy_corrector",  "Accuracy Corrector");
+                                - stepper_control("amad_blank_to_focus_count", "Blank to Focus", 0, 20, 0);
+                                - stepper_control("amad_blank_to_hit_count",   "Blank to Hit",   0, 20, 0);
+                                - stepper_control("amad_blank_to_crit_count",  "Blank to Crit",  0, 20, 0);
+                                - stepper_control("amad_focus_to_hit_count",   "Focus to Hit",   0, 20, 0);
+                                - stepper_control("amad_focus_to_crit_count",  "Focus to Crit",  0, 20, 0);
+                                - stepper_control("amad_hit_to_crit_count",    "Hit to Crit",    0, 20, 0);
+                                - switch_control("amad_accuracy_corrector",    "Accuracy Corrector");
                             fieldset.fieldset
                                 legend Change Results Once
                                 - switch_control("amad_once_any_to_hit",  "Any to Hit");
