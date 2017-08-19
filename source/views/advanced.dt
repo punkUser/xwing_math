@@ -3,22 +3,22 @@ extends layout
 block content   
     .row
         .large-12.columns
-            form#simulate-advanced-form(action="#", method="GET")
-                include controls.inc          
+            form#simulate-form(action="/simulate_advanced.json", method="POST")
+                include controls.inc
 
                 .row
                     .medium-6.columns
                         .callout.small.alert
                             h3 Attack Dice and Tokens
-                            - stepper_control("attack_dice",              "Attack Dice",  1, 8, 3);
-                            - stepper_control("attack_focus_token_count", "Focus Tokens", 0, 2, 0);
-                            - stepper_control("attack_target_lock_count", "Target Locks", 0, 2, 0);
+                            - stepper_control_t!"attack_dice"              ("Attack Dice",  0, 8);
+                            - stepper_control_t!"attack_focus_token_count" ("Focus Tokens", 0, 2);
+                            - stepper_control_t!"attack_target_lock_count" ("Target Locks", 0, 2);
 
                             fieldset.fieldset
                                 legend Special Effects
-                                - switch_control("attack_one_damage_on_hit",   "One Damage on Hit (TLT, Ion)");
-                                - switch_control("attack_heavy_laser_cannon",  "Heavy Laser Cannon");
-                                - switch_control("attack_fire_control_system", "Fire Control System");
+                                - switch_control_t!"attack_one_damage_on_hit"   ("One Damage on Hit (TLT, Ion)");
+                                - switch_control_t!"attack_heavy_laser_cannon"  ("Heavy Laser Cannon");
+                                - switch_control_t!"attack_fire_control_system" ("Fire Control System");
                         
                         .callout.small.success
                             h3 Defender Modify Attack Dice
@@ -30,35 +30,35 @@ block content
                             h3 Attacker Modify Attack Dice
                             fieldset.fieldset
                                 legend Add Results
-                                - stepper_control("amad_add_blank_count", "Blank", 0, 2, 0);
-                                - stepper_control("amad_add_focus_count", "Focus", 0, 2, 0);
-                                - stepper_control("amad_add_hit_count",   "Hit",   0, 2, 0);
-                                - stepper_control("amad_add_crit_count",  "Crit",  0, 2, 0);
+                                - stepper_control_t!"amad_add_blank_count" ("Blank", 0, 2);
+                                - stepper_control_t!"amad_add_focus_count" ("Focus", 0, 2);
+                                - stepper_control_t!"amad_add_hit_count"   ("Hit",   0, 2);
+                                - stepper_control_t!"amad_add_crit_count"  ("Crit",  0, 2);
                             fieldset.fieldset
                                 legend Free Rerolls
-                                - stepper_control("amad_reroll_blank_count", "Blank", 0, 20, 0);
-                                - stepper_control("amad_reroll_focus_count", "Focus", 0, 20, 0);
-                                - stepper_control("amad_reroll_any_count",   "Any",   0, 20, 0);
+                                - stepper_control_t!"amad_reroll_blank_count" ("Blank", 0, 15);
+                                - stepper_control_t!"amad_reroll_focus_count" ("Focus", 0, 15);
+                                - stepper_control_t!"amad_reroll_any_count"   ("Any",   0, 15);
                             fieldset.fieldset
                                 legend Change Results
-                                - stepper_control("amad_blank_to_focus_count", "Blank to Focus", 0, 20, 0);
-                                - stepper_control("amad_blank_to_hit_count",   "Blank to Hit",   0, 20, 0);
-                                - stepper_control("amad_blank_to_crit_count",  "Blank to Crit",  0, 20, 0);
-                                - stepper_control("amad_focus_to_hit_count",   "Focus to Hit",   0, 20, 0);
-                                - stepper_control("amad_focus_to_crit_count",  "Focus to Crit",  0, 20, 0);
-                                - stepper_control("amad_hit_to_crit_count",    "Hit to Crit",    0, 20, 0);
-                                - switch_control("amad_accuracy_corrector",    "Accuracy Corrector");
+                                - stepper_control_t!"amad_blank_to_focus_count" ("Blank to Focus", 0, 15);
+                                - stepper_control_t!"amad_blank_to_hit_count"   ("Blank to Hit",   0, 15);
+                                - stepper_control_t!"amad_blank_to_crit_count"  ("Blank to Crit",  0, 15);
+                                - stepper_control_t!"amad_focus_to_hit_count"   ("Focus to Hit",   0, 15);
+                                - stepper_control_t!"amad_focus_to_crit_count"  ("Focus to Crit",  0, 15);
+                                - stepper_control_t!"amad_hit_to_crit_count"    ("Hit to Crit",    0, 15);
+                                - switch_control_t! "amad_accuracy_corrector"   ("Accuracy Corrector");
                             fieldset.fieldset
                                 legend Change Results Once
-                                - switch_control("amad_once_any_to_hit",  "Any to Hit");
-                                - switch_control("amad_once_any_to_crit", "Any to Crit");
+                                - switch_control_t!"amad_once_any_to_hit"  ("Any to Hit");
+                                - switch_control_t!"amad_once_any_to_crit" ("Any to Crit");
 
                     .medium-6.columns
                         .callout.small.success
                             h3 Defense Dice and Tokens
-                            - stepper_control("defense_dice",              "Defense Dice", 0, 6, 3);
-                            - stepper_control("defense_focus_token_count", "Focus Tokens", 0, 2, 0);
-                            - stepper_control("defense_evade_token_count", "Evade Tokens", 0, 2, 0);
+                            - stepper_control_t!"defense_dice"              ("Defense Dice", 0, 6);
+                            - stepper_control_t!"defense_focus_token_count" ("Focus Tokens", 0, 2);
+                            - stepper_control_t!"defense_evade_token_count" ("Evade Tokens", 0, 2);
 
                         .callout.small.alert
                             h3 Attacker Modify Defense Dice
@@ -70,18 +70,18 @@ block content
                             h3 Defender Modify Defense Dice
                             fieldset.fieldset
                                 legend Add Results
-                                - stepper_control("dmdd_add_blank_count", "Blank", 0, 2, 0);
-                                - stepper_control("dmdd_add_focus_count", "Focus", 0, 2, 0);
-                                - stepper_control("dmdd_add_evade_count", "Evade", 0, 2, 0);
+                                - stepper_control_t!"dmdd_add_blank_count" ("Blank", 0, 2);
+                                - stepper_control_t!"dmdd_add_focus_count" ("Focus", 0, 2);
+                                - stepper_control_t!"dmdd_add_evade_count" ("Evade", 0, 2);
                             fieldset.fieldset
                                 legend Free Rerolls
-                                - stepper_control("dmdd_reroll_blank_count", "Blank", 0, 20, 0);
-                                - stepper_control("dmdd_reroll_focus_count", "Focus", 0, 20, 0);
-                                - stepper_control("dmdd_reroll_any_count",   "Any",   0, 20, 0);
+                                - stepper_control_t!"dmdd_reroll_blank_count" ("Blank", 0, 20);
+                                - stepper_control_t!"dmdd_reroll_focus_count" ("Focus", 0, 20);
+                                - stepper_control_t!"dmdd_reroll_any_count"   ("Any",   0, 20);
                             fieldset.fieldset
                                 legend Change Results
-                                - stepper_control("dmdd_blank_to_evade_count", "Blank to Evade",  0, 20, 0);
-                                - stepper_control("dmdd_focus_to_evade_count", "Focus to Evade",  0, 20, 0);
+                                - stepper_control_t!"dmdd_blank_to_evade_count" ("Blank to Evade",  0, 20);
+                                - stepper_control_t!"dmdd_focus_to_evade_count" ("Focus to Evade",  0, 20);
 
                         
 

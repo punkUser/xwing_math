@@ -4,13 +4,13 @@ block content
 
     .row
         .large-12.columns
-            form#simulate-basic-form(action="#", method="GET")
+            form#simulate-form(action="/simulate_basic.json", method="POST")
                 include controls.inc
 
                 .row
                     .medium-6.columns
                         .callout.small.alert
-                            - stepper_control("attack_dice",              "Attack Dice",  1, 8, 3);
+                            - stepper_control("attack_dice",              "Attack Dice",  0, 8, 3);
                             - stepper_control("attack_focus_token_count", "Focus Tokens", 0, 2, 0);
                             - stepper_control("attack_target_lock_count", "Target Locks", 0, 2, 0);
                             

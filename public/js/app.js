@@ -134,34 +134,37 @@ window.onload = function()
 	});
 };
 
-function simulateUpdateChart(data)
+function simulateUpdate(updateHistory = false)
 {
-	pdf_chart_data.labels = data.pdf_x_labels;
-	pdf_chart_data.datasets[0].data = data.hit_inv_cdf;
-	pdf_chart_data.datasets[1].data = data.hit_pdf;
-	pdf_chart_data.datasets[2].data = data.crit_pdf;
-	window.pdf_chart.options.title.text = "Expected Total Hits: " + data.expected_total_hits.toFixed(2);
-	window.pdf_chart.update();
+	var simulateForm = $("#simulate-form").first();
+	var data = simulateForm.serializeArray();
 	
-	token_chart_data.labels = data.exp_token_labels;
-	token_chart_data.datasets[0].data = data.exp_attack_tokens;
-	token_chart_data.datasets[1].data = data.exp_defense_tokens;
-	window.token_chart.update();
+	$.post(simulateForm.attr("action"), data, function(data) {
+		pdf_chart_data.labels = data.pdf_x_labels;
+		pdf_chart_data.datasets[0].data = data.hit_inv_cdf;
+		pdf_chart_data.datasets[1].data = data.hit_pdf;
+		pdf_chart_data.datasets[2].data = data.crit_pdf;
+		window.pdf_chart.options.title.text = "Expected Total Hits: " + data.expected_total_hits.toFixed(2);
+		window.pdf_chart.update();
+		
+		token_chart_data.labels = data.exp_token_labels;
+		token_chart_data.datasets[0].data = data.exp_attack_tokens;
+		token_chart_data.datasets[1].data = data.exp_defense_tokens;
+		window.token_chart.update();
+
+		if (updateHistory && window.history.pushState && data.form_state_string.length > 0)
+		{
+			window.history.pushState(null, null, "?q="+data.form_state_string);
+		}		
+	}, 'json');
 }
 
 $(document).ready(function()
 {
-	// TODO: Clean this all up
-	$('#simulate-basic-form').submit(function(event) {
+	$('#simulate-form').submit(function(event) {
 		event.preventDefault();
-		var data = $("#simulate-basic-form").serializeArray();
-		$.getJSON('/simulate_basic.json', data, simulateUpdateChart);
-	});
-	
-	$('#simulate-advanced-form').submit(function(event) {
-		event.preventDefault();
-		var data = $("#simulate-advanced-form").serializeArray();
-		$.getJSON('/simulate_advanced.json', data, simulateUpdateChart);
+		// Form submitted by user, so update the history
+		simulateUpdate(true);
 	});
 
 	// TODO: Clean this all up
@@ -206,4 +209,16 @@ $(document).ready(function()
 		$input.val(val + delta);
 		$input.trigger("change");
 	});
+	
+	// If the user goes "back" after we've changed the URL, force a page reload
+	// since we don't currently handle all of the content/form updates via AJAX.
+	window.addEventListener("popstate", function(e) {
+		window.location.reload();
+	});
+	
+	// If we have a query string, trigger a simulation automatically (but don't update history)
+	if (window.location.search.length > 0)
+	{
+		simulateUpdate(false);
+	}
 });
