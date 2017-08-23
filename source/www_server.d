@@ -1,4 +1,6 @@
 import simulation;
+import form;
+import basic_form;
 import advanced_form;
 
 import std.stdio;
@@ -24,7 +26,7 @@ public class WWWServer
 
 	    auto router = new URLRouter;
     
-        router.get("/", &index);
+        router.get("/", &basic);
 		router.get("/advanced/", &advanced);
         router.post("/simulate_basic.json", &simulate_basic);
 		router.post("/simulate_advanced.json", &simulate_advanced);
@@ -83,79 +85,11 @@ public class WWWServer
     {
         //debug writeln(req.form.serializeToPrettyJson());
 
-		/*************************************************************************************************/
-		SimulationSetup setup;
+		auto basic_form = create_form_from_fields!BasicForm(req.form);
+		string form_state_string = serialize_form_to_url(basic_form);
 
-        setup.attack_dice				 = to!int(req.form.get("attack_dice",              "3"));
-        setup.attack_tokens.focus        = to!int(req.form.get("attack_focus_token_count", "0"));
-        setup.attack_tokens.target_lock  = to!int(req.form.get("attack_target_lock_count", "0"));
+		SimulationSetup setup = to_simulation_setup(basic_form);
         
-		// Once per turn abilities are treated like "tokens" for simulation purposes
-		setup.attack_tokens.amad_any_to_hit  = (req.form.get("attack_guidance_chips_hit", "")  == "on");
-		setup.attack_tokens.amad_any_to_crit = (req.form.get("attack_guidance_chips_crit", "") == "on");
-
-		// Add results
-		setup.AMAD.add_hit_count       += (req.form.get("attack_fearlessness", "")  == "on") ? 1 : 0;
-		setup.AMAD.add_blank_count     += (req.form.get("attack_finn", "")          == "on") ? 1 : 0;
-
-		// Rerolls
-		setup.AMAD.reroll_any_count    += (req.form.get("attack_dengar_1", "")    == "on") ? 1 : 0;
-		setup.AMAD.reroll_any_count    += (req.form.get("attack_dengar_2", "")    == "on") ? 2 : 0;
-		setup.AMAD.reroll_any_count    += (req.form.get("attack_predator_1", "")  == "on") ? 1 : 0;
-		setup.AMAD.reroll_any_count    += (req.form.get("attack_predator_2", "")  == "on") ? 2 : 0;
-		setup.AMAD.reroll_any_count    += (req.form.get("attack_rage", "")        == "on") ? 3 : 0;
-		setup.AMAD.reroll_blank_count  += (req.form.get("attack_lone_wolf", "")	  == "on") ? 1 : 0;
-		setup.AMAD.reroll_blank_count  += (req.form.get("attack_rey_pilot", "")	  == "on") ? 2 : 0;
-		setup.AMAD.reroll_focus_count  += (req.form.get("attack_wired", "")		  == "on") ? k_all_dice_count : 0;
-
-		// Change results
-		// TODO: Verify this is always correct for marksmanship... in practice the entire effect must be applied at once
-		setup.AMAD.focus_to_crit_count  += (req.form.get("attack_ezra_crew", "")            == "on") ? 1 : 0;
-		setup.AMAD.focus_to_crit_count  += (req.form.get("attack_proton_torpedoes", "")     == "on") ? 1 : 0;
-		setup.AMAD.focus_to_crit_count  += (req.form.get("attack_marksmanship", "")         == "on") ? 1 : 0;
-		setup.AMAD.focus_to_hit_count   += (req.form.get("attack_marksmanship", "")         == "on") ? k_all_dice_count : 0;
-		setup.AMAD.focus_to_hit_count   += (req.form.get("attack_expertise", "")            == "on") ? k_all_dice_count : 0;
-		setup.AMAD.blank_to_hit_count   += (req.form.get("attack_concussion_missiles", "")  == "on") ? 1 : 0;
-		setup.AMAD.blank_to_focus_count += (req.form.get("attack_adv_proton_torpedoes", "") == "on") ? 3 : 0;
-		setup.AMAD.hit_to_crit_count    += (req.form.get("attack_bistan", "")               == "on") ? 1 : 0;
-		setup.AMAD.hit_to_crit_count    += (req.form.get("attack_mercenary_copilot", "")    == "on") ? 1 : 0;
-		setup.AMAD.hit_to_crit_count    += (req.form.get("attack_mangler_cannon", "")       == "on") ? 1 : 0;
-		setup.AMAD.accuracy_corrector   = (req.form.get("attack_accuracy_corrector", "")    == "on");
-
-		// Modify defense dice
-		setup.AMDD.evade_to_focus_count += (req.form.get("attack_juke", "")              == "on") ? 1 : 0;
-        
-		// Special effects...
-		setup.heavy_laser_cannon  = req.form.get("attack_heavy_laser_cannon", "")   == "on";
-        setup.fire_control_system = req.form.get("attack_fire_control_system", "")  == "on";
-		setup.one_damage_on_hit   = req.form.get("attack_one_damage_on_hit", "")    == "on";
-
-		/*************************************************************************************************/
-
-        setup.defense_dice            = to!int(req.form.get("defense_dice",              "3"));
-        setup.defense_tokens.focus    = to!int(req.form.get("defense_focus_token_count", "0"));
-        setup.defense_tokens.evade    = to!int(req.form.get("defense_evade_token_count", "0"));
-
-		// Add results
-		setup.DMDD.add_evade_count    += (req.form.get("defense_concord_dawn", "")  == "on") ? 1 : 0;
-		setup.DMDD.add_blank_count    += (req.form.get("defense_finn", "")          == "on") ? 1 : 0;
-
-		// Rerolls
-		setup.DMDD.reroll_blank_count     += (req.form.get("defense_lone_wolf", "") == "on") ? 1 : 0;
-		setup.DMDD.reroll_blank_count     += (req.form.get("defense_rey_pilot", "") == "on") ? 2 : 0;
-        setup.DMDD.reroll_focus_count     += (req.form.get("defense_wired", "")     == "on") ? k_all_dice_count : 0;
-
-		// Change results
-		setup.DMDD.focus_to_evade_count   += (req.form.get("defense_luke_pilot", "")    == "on") ? 1 : 0;
-		setup.DMDD.blank_to_evade_count   += (req.form.get("defense_autothrusters", "") == "on") ? 1 : 0;
-        
-		// Modify attack dice
-		setup.DMAD.hit_to_focus_no_reroll_count += (req.form.get("defense_sensor_jammer", "") == "on") ? 1 : 0;
-        
-        
-        
-
-		/*************************************************************************************************/
 		// Bit awkward but good enough for now...
         string attack_type = req.form.get("attack_type", "single");
         if (attack_type == "single")
@@ -169,17 +103,14 @@ public class WWWServer
         else
             assert(false);
 
-		/*************************************************************************************************/
-
-        simulate_response(req.peer, res, setup);
+        simulate_response(req.peer, res, setup, form_state_string);
 	}
 
 	private void simulate_advanced(HTTPServerRequest req, HTTPServerResponse res)
     {
 		//debug writeln(req.form.serializeToPrettyJson());
 
-        // TODO: Likely fine to move this to POST instead of GET now
-		auto advanced_form = create_advanced_form_from_fields(req.form);
+		auto advanced_form = create_form_from_fields!AdvancedForm(req.form);
 		string form_state_string = serialize_form_to_url(advanced_form);
 
 		SimulationSetup setup = to_simulation_setup(advanced_form);
@@ -207,6 +138,7 @@ public class WWWServer
                                    string form_state_string = "")
 	{
 		//writefln("Setup: %s", setup.serializeToPrettyJson());
+        writeln(form_state_string);
 
         auto simulation = new Simulation(setup);
 
@@ -276,16 +208,19 @@ public class WWWServer
     }
 
 
-    private void index(HTTPServerRequest req, HTTPServerResponse res)
+    private void basic(HTTPServerRequest req, HTTPServerResponse res)
     {
-        res.render!("index.dt");
+        // Load values from URL if present
+        string form_state_string = req.query.get("q", "");
+        BasicForm form_values = create_form_from_url!BasicForm(form_state_string);
+        res.render!("basic.dt", form_values);
     }
 
 	private void advanced(HTTPServerRequest req, HTTPServerResponse res)
     {
         // Load values from URL if present
         string form_state_string = req.query.get("q", "");
-        AdvancedForm form_values = create_advanced_form_from_url(form_state_string);
+        AdvancedForm form_values = create_form_from_url!AdvancedForm(form_state_string);
         res.render!("advanced.dt", form_values);
     }
 

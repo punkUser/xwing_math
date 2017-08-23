@@ -24,7 +24,7 @@ block content
                             h3 Defender Modify Attack Dice
                             fieldset.fieldset
                                 legend Change Results
-                                - stepper_control("dmad_hit_to_focus_no_reroll_count",  "Hit to Focus (No Reroll)",  0, 20, 0);
+                                - stepper_control_t!"dmad_hit_to_focus_no_reroll_count" ("Hit to Focus (No Reroll)",  0, 20);
 
                         .callout.small.alert
                             h3 Attacker Modify Attack Dice
@@ -64,7 +64,7 @@ block content
                             h3 Attacker Modify Defense Dice
                             fieldset.fieldset
                                 legend Change Results
-                                - stepper_control("amdd_evade_to_focus_count", "Evade to Focus",  0, 20, 0);
+                                - stepper_control_t!"amdd_evade_to_focus_count" ("Evade to Focus",  0, 20);
 
                         .callout.small.success
                             h3 Defender Modify Defense Dice

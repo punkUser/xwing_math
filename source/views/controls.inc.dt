@@ -14,19 +14,10 @@
                     //- span.switch-active(aria-hidden="true") All
                     //- span.switch-inactive(aria-hidden="true") #
 
-- void switch_control(string name, string label, string type="checkbox")
-    .row
-        .small-9.columns
-            label(for="#{name}") #{label}
-        .small-3.columns.text-right
-            .switch.small
-                input.switch-input(id="#{name}", name="#{name}", type="#{type}")
-                label.switch-paddle(for="#{name}")
-                    //- span.switch-active(aria-hidden="true") All
-                    //- span.switch-inactive(aria-hidden="true") #
-
 - void stepper_control_t(alias name)(string label, int min, int max)
-    - mixin("int init = form_values." ~ name ~ ";");
+    //- TODO: Clamp to min/max? Probably a good idea in general
+    - import std.algorithm.comparison;
+    - mixin("int init = clamp(form_values." ~ name ~ ", min, max);");
 
     .row
         .small-6.columns
@@ -38,19 +29,6 @@
                 input.stepper-number(id="#{name}", name="#{name}", type="number", value="#{init}", min="#{min}", max="#{max}")
                 .input-group-button
                     button.button.stepper-button(type="button", data-delta="1") +
-
-- void stepper_control(string name, string label, int min, int max, int init)
-    .row
-        .small-6.columns
-            label(for="#{name}") #{label}
-        .small-6.columns.text-right
-            .input-group.stepper-group
-                .input-group-button
-                    button.button.stepper-button(type="button", data-delta="-1") -
-                input.stepper-number(id="#{name}", name="#{name}", type="number", value="#{init}", min="#{min}", max="#{max}")
-                .input-group-button
-                    button.button.stepper-button(type="button", data-delta="1") +
-
 
 - void radio_switch_control(string name, string label, string value, bool checked = false)
     .row
