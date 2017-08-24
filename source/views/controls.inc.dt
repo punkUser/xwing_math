@@ -15,7 +15,6 @@
                     //- span.switch-inactive(aria-hidden="true") #
 
 - void stepper_control_t(alias name)(string label, int min, int max)
-    //- TODO: Clamp to min/max? Probably a good idea in general
     - import std.algorithm.comparison;
     - mixin("int init = clamp(form_values." ~ name ~ ", min, max);");
 
@@ -30,13 +29,16 @@
                 .input-group-button
                     button.button.stepper-button(type="button", data-delta="1") +
 
-- void radio_switch_control(string name, string label, string value, bool checked = false)
+- void radio_switch_control_t(alias name)(string label, int value, int max)
+    - mixin("int init_value = form_values." ~ name ~ ";");
+    - init_value = (init_value > max ? 0 : init_value);
+
     .row
         .large-9.medium-9.small-9.columns
             label(for="#{value}") #{label}
         .large-3.medium-3.small-3.columns.text-right
             .switch.small
-                - if (checked)
+                - if (init_value == value)
                     input.switch-input(id="#{value}", name="#{name}", value="#{value}", type="radio", checked)
                 - else
                     input.switch-input(id="#{value}", name="#{name}", value="#{value}", type="radio")

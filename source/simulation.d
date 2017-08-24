@@ -24,12 +24,14 @@ enum DieResult : int
     Num
 };
 
+// NOTE: This is one enum that we directly use in the forms, so rearrange or delete values!
 enum MultiAttackType : int
 {
     Single = 0,                   // Regular single attack
     SecondaryPerformTwice,        // Ex. Twin Laser Turret, Cluster Missiles
     AfterAttackDoesNotHit,        // Ex. Gunner, Luke, IG88-B - TODO: Luke Gunner modeling somehow?
-    AfterAttack,                  // Ex. Corran    
+    AfterAttack,                  // Ex. Corran
+    Max,
 };
 
 struct TokenState

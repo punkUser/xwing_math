@@ -88,10 +88,11 @@ block content
                                 - switch_control_t!"defense_autothrusters"      ("Autothrusters");
                                                     
                         .callout.small.primary
-                            - radio_switch_control("attack_type", "Single Attack",             "single", true);
-                            - radio_switch_control("attack_type", "Secondary Perform Twice",   "secondary_perform_twice");
-                            - radio_switch_control("attack_type", "After Attack Does Not Hit", "after_attack_does_not_hit");
-                            - radio_switch_control("attack_type", "After Attack",              "after_attack");
+                            - import simulation : MultiAttackType;
+                            - radio_switch_control_t!"attack_type" ("Single Attack",             MultiAttackType.Single,                MultiAttackType.Max-1);
+                            - radio_switch_control_t!"attack_type" ("Secondary Perform Twice",   MultiAttackType.SecondaryPerformTwice, MultiAttackType.Max-1);
+                            - radio_switch_control_t!"attack_type" ("After Attack Does Not Hit", MultiAttackType.AfterAttackDoesNotHit, MultiAttackType.Max-1);
+                            - radio_switch_control_t!"attack_type" ("After Attack",              MultiAttackType.AfterAttack,           MultiAttackType.Max-1);
                             .row.text-center
                                 button#simulate.button.large.simulate-button Simulate
             

@@ -10,17 +10,19 @@ struct BasicForm
     // New fields can be given sensible default values
 
     mixin(bitfields!(
+        uint, "attack_type",                  4,        // enum MultiAttackType
         uint, "attack_dice",                  4,
         uint, "attack_focus_token_count",     4,
         uint, "attack_target_lock_count",     4,
-        uint, "defense_dice", 			      4,
 
+        uint, "defense_dice", 			      4,
         uint, "defense_focus_token_count", 	  4,
         uint, "defense_evade_token_count", 	  4,
         bool, "attack_rey_pilot",             1,
         bool, "attack_expertise",             1,
         bool, "attack_fearlessness",          1,
         bool, "attack_juke",                  1,
+
         bool, "attack_lone_wolf",             1,
         bool, "attack_marksmanship",          1,
         bool, "attack_predator_1",            1,
@@ -59,7 +61,7 @@ struct BasicForm
         bool, "defense_sensor_jammer",        1,
         bool, "defense_autothrusters",        1,
 
-        uint, "",							  6,	// Padding/reserved space
+        uint, "",							  2,	// Padding/reserved space
         ));
 
     // Can always add more on the end, so no need to reserve space explicitly
@@ -69,6 +71,7 @@ struct BasicForm
         BasicForm defaults;
 
         // Anything not referenced defaults to 0/false
+        defaults.attack_type = MultiAttackType.Single;
         defaults.attack_dice = 3;
         defaults.defense_dice = 3;
 
@@ -82,6 +85,8 @@ struct BasicForm
 static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
 {
     SimulationSetup setup;
+
+    setup.type                       = cast(MultiAttackType)form.attack_type;
 
     setup.attack_dice				 = form.attack_dice;
     setup.attack_tokens.focus        = form.attack_focus_token_count;

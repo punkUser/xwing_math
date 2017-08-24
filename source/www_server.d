@@ -87,21 +87,7 @@ public class WWWServer
 
 		auto basic_form = create_form_from_fields!BasicForm(req.form);
 		string form_state_string = serialize_form_to_url(basic_form);
-
 		SimulationSetup setup = to_simulation_setup(basic_form);
-        
-		// Bit awkward but good enough for now...
-        string attack_type = req.form.get("attack_type", "single");
-        if (attack_type == "single")
-            setup.type = MultiAttackType.Single;
-        else if (attack_type == "secondary_perform_twice")
-            setup.type = MultiAttackType.SecondaryPerformTwice;
-        else if (attack_type == "after_attack_does_not_hit")
-            setup.type = MultiAttackType.AfterAttackDoesNotHit;
-        else if (attack_type == "after_attack")
-            setup.type = MultiAttackType.AfterAttack;
-        else
-            assert(false);
 
         simulate_response(req.peer, res, setup, form_state_string);
 	}
@@ -112,22 +98,7 @@ public class WWWServer
 
 		auto advanced_form = create_form_from_fields!AdvancedForm(req.form);
 		string form_state_string = serialize_form_to_url(advanced_form);
-
 		SimulationSetup setup = to_simulation_setup(advanced_form);
-
-		// Bit awkward but good enough for now...
-        // TODO: Probably easier to just make these into regular checkboxes with some mutex code
-        string attack_type = req.form.get("attack_type", "single");
-        if (attack_type == "single")
-            setup.type = MultiAttackType.Single;
-        else if (attack_type == "secondary_perform_twice")
-            setup.type = MultiAttackType.SecondaryPerformTwice;
-        else if (attack_type == "after_attack_does_not_hit")
-            setup.type = MultiAttackType.AfterAttackDoesNotHit;
-        else if (attack_type == "after_attack")
-            setup.type = MultiAttackType.AfterAttack;
-        else
-            assert(false);
 
         simulate_response(req.peer, res, setup, form_state_string);
 	}
@@ -138,7 +109,7 @@ public class WWWServer
                                    string form_state_string = "")
 	{
 		//writefln("Setup: %s", setup.serializeToPrettyJson());
-        writeln(form_state_string);
+        //writeln(form_state_string);
 
         auto simulation = new Simulation(setup);
 
