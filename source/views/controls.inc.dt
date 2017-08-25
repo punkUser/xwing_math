@@ -1,7 +1,7 @@
 - void switch_control_t(alias name)(string label)
     - mixin("bool init = form_values." ~ name ~ ";");
 
-    .grid-x.grid-margin-x
+    .grid-x
         .auto.cell
             label(for="#{name}") #{label}
         .shrink.cell
@@ -18,14 +18,14 @@
     - import std.algorithm.comparison;
     - mixin("int init = clamp(form_values." ~ name ~ ", min, max);");
 
-    .grid-x.grid-margin-x
+    .grid-x
         .auto.cell
             label(for="#{name}") #{label}
         .auto.cell
             .input-group.stepper-group
                 .input-group-button
                     button.button.stepper-button(type="button", data-delta="-1") -
-                input.input-group-field.stepper-number(id="#{name}", name="#{name}", type="number", value="#{init}", min="#{min}", max="#{max}")
+                input.input-group-field.stepper-number(id="#{name}", name="#{name}", type="number", value="#{init}", min="#{min}", max="#{max}", required)
                 .input-group-button
                     button.button.stepper-button(type="button", data-delta="1") +
 
@@ -33,13 +33,13 @@
     - mixin("int init_value = form_values." ~ name ~ ";");
     - init_value = (init_value > max ? 0 : init_value);
 
-    .grid-x.grid-margin-x
+    .grid-x
         .auto.cell
             label(for="#{value}") #{label}
         .shrink.cell
             .switch.small
                 - if (init_value == value)
-                    input.switch-input(id="#{value}", name="#{name}", value="#{value}", type="radio", checked)
+                    input.switch-input(id="#{value}", name="#{name}", value="#{value}", type="radio", required, checked)
                 - else
-                    input.switch-input(id="#{value}", name="#{name}", value="#{value}", type="radio")
+                    input.switch-input(id="#{value}", name="#{name}", value="#{value}", type="radio", required)
                 label.switch-paddle(for="#{value}")

@@ -194,18 +194,16 @@ $(document).ready(function()
 	});
 	
 	$(".stepper-number").change(function() {
-		var max = parseInt($(this).attr('max'));
-		var min = parseInt($(this).attr('min'));
-		if ($(this).val() > max)
-		  $(this).val(max);
-		else if ($(this).val() < min)
-		  $(this).val(min);
+		var max = +($(this).attr('max'));
+		var min = +($(this).attr('min'));
+		var val = +($(this).val());
+		$(this).val(Math.min(Math.max(val, min), max));
     });
 	
 	$('.stepper-button').click(function() {
 		var $input = $(this).parents('.stepper-group').find('.stepper-number');
-		var val   = parseInt($input.val(), 10);
-		var delta = parseInt($(this).data("delta"));
+		var val   = +($input.val());
+		var delta = +($(this).data("delta"));
 		$input.val(val + delta);
 		$input.trigger("change");
 	});
@@ -217,8 +215,7 @@ $(document).ready(function()
 	});
 	
 	// If we have a query string, trigger a simulation automatically (but don't update history)
-	if (window.location.search.length > 0)
-	{
+	if (window.location.search.length > 0) {
 		simulateUpdate(false);
 	}
 });
