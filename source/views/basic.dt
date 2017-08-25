@@ -22,16 +22,18 @@ block form
                         - switch_control_t!"attack_juke"               ("Juke");
                         - switch_control_t!"attack_lone_wolf"          ("Lone Wolf");
                         - switch_control_t!"attack_marksmanship"       ("Marksmanship");
-                        - switch_control_t!"attack_predator_1"         ("Predator (1 reroll)");
-                        - switch_control_t!"attack_predator_2"         ("Predator (2 rerolls)");
+                        .switch-mutex
+                            - switch_control_t!"attack_predator_1"     ("Predator (1 reroll)");
+                            - switch_control_t!"attack_predator_2"     ("Predator (2 rerolls)");
                         - switch_control_t!"attack_rage"               ("Rage (3 rerolls)");
                         - switch_control_t!"attack_wired"              ("Wired");
 
                     fieldset.fieldset
                         legend Crew
                         - switch_control_t!"attack_bistan"             ("Bistan");
-                        - switch_control_t!"attack_dengar_1"           ("Dengar (1 reroll)");
-                        - switch_control_t!"attack_dengar_2"           ("Dengar (2 rerolls)");
+                        .switch-mutex
+                            - switch_control_t!"attack_dengar_1"       ("Dengar (1 reroll)");
+                            - switch_control_t!"attack_dengar_2"       ("Dengar (2 rerolls)");
                         - switch_control_t!"attack_ezra_crew"          ("Ezra");
                         - switch_control_t!"attack_finn"               ("Finn");
                         - switch_control_t!"attack_mercenary_copilot"  ("Mercenary Copilot");
@@ -52,8 +54,9 @@ block form
 
                     fieldset.fieldset
                         legend Modifications
-                        - switch_control_t!"attack_guidance_chips_hit"  ("Guidance Chips (Hit)");
-                        - switch_control_t!"attack_guidance_chips_crit" ("Guidance Chips (Crit)");
+                        .switch-mutex
+                            - switch_control_t!"attack_guidance_chips_hit"  ("Guidance Chips (Hit)");
+                            - switch_control_t!"attack_guidance_chips_crit" ("Guidance Chips (Crit)");
 
             .cell
                 .callout.small.success

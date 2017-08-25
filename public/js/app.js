@@ -161,45 +161,29 @@ function simulateUpdate(updateHistory = false)
 
 $(document).ready(function()
 {
+	// AJAX form submission
 	$('#simulate-form').submit(function(event) {
 		event.preventDefault();
 		// Form submitted by user, so update the history
 		simulateUpdate(true);
 	});
-
-	// TODO: Clean this all up
-	$('#attack_predator_1').change(function() {
-		if (this.checked)
-			$('#attack_predator_2').prop("checked", false);
-	});
-	$('#attack_predator_2').change(function() {
-		if (this.checked)
-			$('#attack_predator_1').prop("checked", false);
-	});
-	$('#attack_dengar_1').change(function() {
-		if (this.checked)
-			$('#attack_dengar_2').prop("checked", false);
-	});
-	$('#attack_dengar_2').change(function() {
-		if (this.checked)
-			$('#attack_dengar_1').prop("checked", false);
-	});
-	$('#attack_guidance_chips_hit').change(function() {
-		if (this.checked)
-			$('#attack_guidance_chips_crit').prop("checked", false);
-	});
-	$('#attack_guidance_chips_crit').change(function() {
-		if (this.checked)
-			$('#attack_guidance_chips_hit').prop("checked", false);
+	
+	// Mutually exclusive checkboxes
+	$('.switch-mutex').find('input').change(function () {
+		var root = $(this).parents('.switch-mutex');
+		var state = this.checked;
+		root.find('input').prop("checked", false);
+		$(this).prop("checked", state);
 	});
 	
+	// Stepper range clamping
 	$(".stepper-number").change(function() {
 		var max = +($(this).attr('max'));
 		var min = +($(this).attr('min'));
 		var val = +($(this).val());
 		$(this).val(Math.min(Math.max(val, min), max));
     });
-	
+	// Stepper +/- buttons
 	$('.stepper-button').click(function() {
 		var $input = $(this).parents('.stepper-group').find('.stepper-number');
 		var val   = +($input.val());
