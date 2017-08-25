@@ -15,13 +15,6 @@ canvas {
 .input-group {
 	margin-bottom: 0.2rem;
 }
-.input-group-field {
-}
-
-.slider {
-	margin-top: 0.8rem;
-	margin-bottom: 0.8rem;
-}
 
 .simulate-button {
 	margin-top: 0.5rem;
@@ -60,7 +53,8 @@ label {
     padding: 0;
     margin-top: 0;
     padding-top: 0;
-    font-size: 0.9rem;
+	font-size: 0.9rem;
+    font-weight: bold;
 }
 
 .dropdown.menu a {
@@ -107,4 +101,3 @@ label {
 	height: 2.0rem;
 	border-radius: 0;
 }
-
