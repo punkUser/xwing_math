@@ -28,6 +28,7 @@ public class WWWServer
     
         router.get("/", &basic);
 		router.get("/advanced/", &advanced);
+        router.get("/faq/", &faq);
         router.post("/simulate_basic.json", &simulate_basic);
 		router.post("/simulate_advanced.json", &simulate_advanced);
 	
@@ -193,6 +194,11 @@ public class WWWServer
         string form_state_string = req.query.get("q", "");
         AdvancedForm form_values = create_form_from_url!AdvancedForm(form_state_string);
         res.render!("advanced.dt", form_values);
+    }
+
+    private void faq(HTTPServerRequest req, HTTPServerResponse res)
+    {
+        res.render!("faq.dt");
     }
 
     // *************************************** ERROR ************************************************

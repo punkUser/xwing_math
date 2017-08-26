@@ -1,0 +1,14 @@
+extends layout
+
+block content
+    h1 Frequently Asked Questions
+
+    //- Exhaustive search
+
+    //- Advanced vs basic form (basic is convenience, maps to advanced fields)
+    
+    //- Attacker tries to maximize hits
+    //- Rerolls all done at once
+
+    //- Defender tries to avoid being hit
+    //- Defense token spending (prefer evades or focus)

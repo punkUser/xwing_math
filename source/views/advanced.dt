@@ -1,4 +1,4 @@
-extends layout
+extends form_layout
 
 block form
     form#simulate-form(action="/simulate_advanced.json", method="POST")

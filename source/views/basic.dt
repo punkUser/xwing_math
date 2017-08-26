@@ -1,4 +1,4 @@
-extends layout
+extends form_layout
 
 block form
     form#simulate-form(action="/simulate_basic.json", method="POST", autocomplete="off")
