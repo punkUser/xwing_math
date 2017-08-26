@@ -60,8 +60,8 @@ struct BasicForm
 
         bool, "defense_sensor_jammer",        1,
         bool, "defense_autothrusters",        1,
-
-        uint, "",							  2,	// Padding/reserved space
+        bool, "attack_hotshot_copilot",       1,
+        bool, "defense_hotshot_copilot",      1,
         ));
 
     // Can always add more on the end, so no need to reserve space explicitly
@@ -112,7 +112,6 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
 
     // Change results
     // TODO: Verify this is always correct for marksmanship... in practice the entire effect must be applied at once
-    setup.AMAD.focus_to_crit_count  += form.attack_ezra_crew            ? 1 : 0;
     setup.AMAD.focus_to_crit_count  += form.attack_proton_torpedoes     ? 1 : 0;
     setup.AMAD.focus_to_crit_count  += form.attack_marksmanship         ? 1 : 0;
     setup.AMAD.focus_to_hit_count   += form.attack_marksmanship         ? k_all_dice_count : 0;
@@ -124,13 +123,19 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.AMAD.hit_to_crit_count    += form.attack_mangler_cannon       ? 1 : 0;
     setup.AMAD.accuracy_corrector    = form.attack_accuracy_corrector;
 
+    // TODO: Needs "if stressed"
+    //setup.AMAD.focus_to_crit_count  += form.attack_ezra_crew            ? 1 : 0;
+
     // Modify defense dice
     setup.AMDD.evade_to_focus_count += form.attack_juke                 ? 1 : 0;
 
     // Special effects...
-    setup.heavy_laser_cannon  = form.attack_heavy_laser_cannon;
-    setup.fire_control_system = form.attack_fire_control_system;
-    setup.one_damage_on_hit   = form.attack_one_damage_on_hit;
+    setup.attack_heavy_laser_cannon  = form.attack_heavy_laser_cannon;
+    setup.attack_fire_control_system = form.attack_fire_control_system;
+    setup.attack_one_damage_on_hit   = form.attack_one_damage_on_hit;
+
+    setup.attack_must_spend_focus    = form.defense_hotshot_copilot;    // NOTE: Affects the *other* person
+    setup.defense_must_spend_focus   = form.attack_hotshot_copilot;     // NOTE: Affects the *other* person
 
     setup.defense_dice            = form.defense_dice;
     setup.defense_tokens.focus    = form.defense_focus_token_count;

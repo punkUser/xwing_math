@@ -90,10 +90,10 @@ struct SimulationSetup
 	AttackerModifyDefenseDice AMDD;
 
 	// Special effects    
-    bool fire_control_system = false;   // Get a target lock after attack (only affects multi-attack)
-    bool heavy_laser_cannon = false;    // After initial roll, change all crits->hits
-    bool one_damage_on_hit = false;     // If attack hits, 1 damage (TLT, Ion, etc)
-
+    bool attack_fire_control_system = false;       // Get a target lock after attack (only affects multi-attack)
+    bool attack_heavy_laser_cannon = false;        // After initial roll, change all crits->hits
+    bool attack_one_damage_on_hit = false;         // If attack hits, 1 damage (TLT, Ion, etc)
+    bool attack_must_spend_focus = false;          // Attacker must spend focus (hotshot copilot on defender)
 
 	// Defense tokens
     int defense_dice = 0;
@@ -123,13 +123,15 @@ struct SimulationSetup
 	};
 	DefenderModifyDefenseDice DMDD;
 
+    // Special effects
+    bool defense_must_spend_focus = false;         // Defender must spend focus (hotshot copilot on attacker)
 
     // TODO: Autoblaster (hit results cannot be canceled)
+
     // TODO: Crack shot? (gets a little bit complex as presence affects defender logic and as well)
     // TODO: Zuckuss Crew
     // TODO: 4-LOM Crew
     // TODO: Bossk Crew (gets weird/hard...)
-    // TODO: Hot shot copilot
     // TODO: Captain rex (only affects multi-attack)
     // TODO: Operations specialist? Again only multi-attack
 
@@ -568,8 +570,14 @@ class Simulation
         if (attack_tokens.focus > 0)
         {
             int changed_results = attack_dice.change_dice(DieResult.Focus, DieResult.Hit);
-            if (changed_results > 0)
+
+            // NOTE: We don't currently have any other "spend focus to X" abilities, so for now we can
+            // just always force this focus spend if required by the setup.
+            // NOTE: This still works correctly with accuracy corrector, as the FAQ states that if you
+            // invoke AC and thus cannot modify dice, you are no longer able/required to spend focus.
+            if (changed_results > 0 || m_setup.attack_must_spend_focus)
                 --attack_tokens.focus;
+            
         }
 
 		// Modify any hit results (including those generated above) as appropriate
@@ -591,7 +599,7 @@ class Simulation
             int crits = attack_dice.count(DieResult.Crit);
             if (((hits + crits) <  2) ||
                 (hits == 2 && crits == 0) ||
-                ((hits + crits) == 2 && m_setup.one_damage_on_hit))
+                ((hits + crits) == 2 && m_setup.attack_one_damage_on_hit))
             {
                 attack_tokens = attack_tokens_before_ac;  // Undo focus token spending (see above notes)
 
@@ -653,8 +661,11 @@ class Simulation
 		int focus_results = defense_dice.count(DieResult.Focus);
 
 		// FAQ update: can only spend a single focus or evade per attack!
-        bool can_spend_focus = defense_tokens.focus > 0 && focus_results > 0;		
+        bool can_spend_focus = (defense_tokens.focus > 0 && focus_results > 0);
 		bool can_spend_evade = (defense_tokens.evade > 0);
+
+        bool spent_focus = false;
+        bool spent_evade = false;
 
         // Spend regular focus or evade tokens?
         if (uncanceled_hits > 0 && (can_spend_focus || can_spend_evade))
@@ -664,22 +675,16 @@ class Simulation
 
             // In the presence of "one damage on hit" effects from the attacker, if we can't cancel everything,
             // it's pointless to spend any tokens at all.
-            if (can_cancel_all || !m_setup.one_damage_on_hit)
+            if (can_cancel_all || !m_setup.attack_one_damage_on_hit)
             {
-                // For now simple logic:
-                // Cancel all hits with just a focus? Do it.
-                // Cancel all hits with just evade tokens? Do that.
-                // If attacker can modify evades into focus (ex. juke), flip this order as it's usually better to hang on to focus tokens
-                //   NOTE: Optimal strategy here depends on quite a lot of factors, but this is good enough in most cases
-                // Otherwise both.
+                // NOTE: Optimal strategy here depends on quite a lot of factors, but this is good enough in most cases
+                // - If defender must spend focus (ex. hotshot copilot), prefer to spend focus.
+                // - If attacker can modify evades into focus (ex. juke), prefer to spend evade.
+                // - Generally prefer to spend focus if none of the above conditions apply                
+                bool prefer_spend_focus = (m_setup.AMDD.evade_to_focus_count == 0) || (m_setup.defense_must_spend_focus);
 
                 bool can_cancel_all_with_focus = can_spend_focus && (focus_results >= uncanceled_hits);
                 bool can_cancel_all_with_evade = can_spend_evade && (1 >= uncanceled_hits);
-
-				bool prefer_spend_focus = (m_setup.AMDD.evade_to_focus_count == 0);
-
-                bool spent_focus = false;
-                bool spent_evade = false;
 
                 // Do we need to spend both to cancel all hits?
                 if (!can_cancel_all_with_focus && !can_cancel_all_with_evade)
@@ -690,7 +695,10 @@ class Simulation
                 else if (prefer_spend_focus)      // Hold onto evade primarily
                 {
                     if (can_cancel_all_with_focus)
-                        spent_focus = can_spend_focus;
+                    {
+                        assert(can_spend_focus);
+                        spent_focus = true;
+                    }
                     else
 					{
 						assert(can_cancel_all_with_evade);
@@ -700,37 +708,38 @@ class Simulation
                 else                              // Hold on to focus primarily
                 {
                     if (can_cancel_all_with_evade)
-                        spent_evade = can_spend_evade;
+                    {
+                        assert(can_spend_evade);
+                        spent_evade = true;
+                    }
                     else
 					{
 						assert(can_cancel_all_with_focus);
                         spent_focus = can_spend_focus;
 					}
                 }
-
-                if (spent_focus)
-                {
-                    uncanceled_hits -= focus_results;
-                    defense_dice.change_dice(DieResult.Focus, DieResult.Evade);
-                    --defense_tokens.focus;
-                }
-
-                // Evade tokens add defense dice to the pool
-                if (spent_evade)
-                {
-                    --uncanceled_hits;
-                    ++defense_dice.results[DieResult.Evade];
-                    --defense_tokens.evade;
-                }
-
-                assert(uncanceled_hits <= 0 || ((!can_spend_focus || spent_focus) && (!can_spend_evade || spent_evade)));
             }
-
-            // Sanity
-            assert(defense_tokens.evade >= 0);
-            assert(defense_tokens.focus >= 0);
-            assert(uncanceled_hits <= 0 || !can_cancel_all);
         }
+
+        if (spent_focus || (defense_tokens.focus > 0 && m_setup.defense_must_spend_focus))
+        {
+            uncanceled_hits -= focus_results;
+            defense_dice.change_dice(DieResult.Focus, DieResult.Evade);
+            --defense_tokens.focus;
+        }
+
+        // Evade tokens add defense dice to the pool
+        if (spent_evade)
+        {
+            --uncanceled_hits;
+            ++defense_dice.results[DieResult.Evade];
+            --defense_tokens.evade;
+        }
+
+        // Sanity
+        assert(uncanceled_hits <= 0 || ((!can_spend_focus || spent_focus) && (!can_spend_evade || spent_evade)));
+        assert(defense_tokens.evade >= 0);
+        assert(defense_tokens.focus >= 0);
     }
 
     private int[DieResult.Num] compare_results(
@@ -759,7 +768,7 @@ class Simulation
         bool attack_hit = (attack_results[DieResult.Hit] + attack_results[DieResult.Crit]) > 0;
 
         // TLT/ion does one damage if it hits, regardless of the dice results
-        if (m_setup.one_damage_on_hit && attack_hit)
+        if (m_setup.attack_one_damage_on_hit && attack_hit)
         {
             attack_results[DieResult.Hit] = 1;
             attack_results[DieResult.Crit] = 0;
@@ -770,7 +779,7 @@ class Simulation
     private void after_attack(ref TokenState attack_tokens, ref TokenState defense_tokens) const
     {
         // Update any abilities that trigger "after attacking" or "after defending"
-        if (m_setup.fire_control_system)
+        if (m_setup.attack_fire_control_system)
         {
             // TODO: Handle multi-target-lock stuff... really only an issue with Redline and so on
             attack_tokens.target_lock = max(attack_tokens.target_lock, 1);
@@ -1139,7 +1148,7 @@ class Simulation
     private ExhaustiveState exhaustive_attack_modify_before_reroll(ExhaustiveState state)
     {
         // "After rolling" events
-        if (m_setup.heavy_laser_cannon)
+        if (m_setup.attack_heavy_laser_cannon)
             state.attack_dice.change_dice(DieResult.Crit, DieResult.Hit);
 
         defender_modify_attack_dice(state.attack_dice, state.attack_tokens);

@@ -14,9 +14,10 @@ block form
 
                     fieldset.fieldset
                         legend Special Effects
-                        - switch_control_t!"attack_one_damage_on_hit"   ("One Damage on Hit (TLT, Ion)");
-                        - switch_control_t!"attack_heavy_laser_cannon"  ("Heavy Laser Cannon");
                         - switch_control_t!"attack_fire_control_system" ("Fire Control System");
+                        - switch_control_t!"attack_heavy_laser_cannon"  ("Heavy Laser Cannon");
+                        - switch_control_t!"attack_must_spend_focus"    ("Must Spend Focus");
+                        - switch_control_t!"attack_one_damage_on_hit"   ("One Damage on Hit (TLT, Ion)");
                         
                 .callout.small.success
                     h3 Defender Modify Attack Dice
@@ -57,6 +58,10 @@ block form
                     - stepper_control_t!"defense_dice"              ("Defense Dice", 0, 6);
                     - stepper_control_t!"defense_focus_token_count" ("Focus Tokens", 0, 2);
                     - stepper_control_t!"defense_evade_token_count" ("Evade Tokens", 0, 2);
+
+                    fieldset.fieldset
+                        legend Special Effects
+                        - switch_control_t!"defense_must_spend_focus" ("Must Spend Focus");
 
                 .callout.small.alert
                     h3 Attacker Modify Defense Dice
