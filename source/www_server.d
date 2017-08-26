@@ -142,7 +142,6 @@ public class WWWServer
             content.pdf_x_labels[i] = to!string(i);
 
         // Compute PDF
-        // TODO: Move some of this to simulation helpers?
         content.hit_pdf     = new float[max_hits];
         content.crit_pdf    = new float[max_hits];
         content.hit_inv_cdf = new float[max_hits];

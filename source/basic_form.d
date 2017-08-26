@@ -111,7 +111,6 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.AMAD.reroll_focus_count  += form.attack_wired         ? k_all_dice_count : 0;
 
     // Change results
-    // TODO: Verify this is always correct for marksmanship... in practice the entire effect must be applied at once
     setup.AMAD.focus_to_crit_count  += form.attack_proton_torpedoes     ? 1 : 0;
     setup.AMAD.focus_to_crit_count  += form.attack_marksmanship         ? 1 : 0;
     setup.AMAD.focus_to_hit_count   += form.attack_marksmanship         ? k_all_dice_count : 0;

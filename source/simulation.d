@@ -423,7 +423,6 @@ class Simulation
 
 
 
-
     // TODO: Needs a way to force rerolls eventually as well
     private void defender_modify_attack_dice(ref DiceState attack_dice,
                                              ref TokenState attack_tokens) const
@@ -489,13 +488,6 @@ class Simulation
 		// Early out if we have nothing left to reroll
 		if (focus_to_reroll == 0 && blank_to_reroll == 0)
 			return dice_to_reroll;
-		
-		// TODO: There are a few effects that should technically change our behavior here...
-        // Ex. One Damage on Hit (TLT, Ion) vs. enemies that can only ever get a maximum # of evade results
-        // Doing more than that + 1 hits is just wasting tokens, and crits are useless (ex. Calculation)
-        // It would be difficult to perfectly model this, and human behavior would not be perfect either.
-        // That said, there is probably some low hanging fruit in a few situations that should get us
-        // "close enough".
 
 		// If we have a target lock, we can reroll the additional stuff
 		if (attack_tokens.target_lock > 0)
@@ -533,7 +525,7 @@ class Simulation
         // Note that human behavior here is not 100% optimal, but for our purposes it's fair to assume
         // that people will still attempt to modify dice as usual with rerolls until they determine they
         // can't beat AC.
-        // TODO: As with some other things there are various edge cases that we could handle here... ex.
+        // TODO: As usual, there are various edge cases that we could handle here... ex.
         // if there's no possible way to get more than two hits we could just trigger AC right off the bat
         // and ignore the rolled results entirely. More complex, in some cases with FCS + gunner it might be
         // better to cancel but not add the two hits back in to intentionally trigger FCS and gunner for a
@@ -542,13 +534,7 @@ class Simulation
 
         // Rerolls are done - change results
 
-		// TODO: Semi-complex logic in the case of abilities where you can spend something to change
-        // a finite number of focus or blank results, etc. Gets a bit complicated in the presence of
-        // other abilities like marksmanship and expertise and so on.
-
 		// NOTE: Order matters here - do the most useful changes first
-		// TODO: There are some cards that do multiple things at once... ex. Marksmanship
-		// Ensure that the timing of separating them into multiple effects here is always consistent/correct
 		attack_dice.change_dice(DieResult.Blank, DieResult.Crit,  m_setup.AMAD.blank_to_crit_count);
 		attack_dice.change_dice(DieResult.Blank, DieResult.Hit,   m_setup.AMAD.blank_to_hit_count);
 		attack_dice.change_dice(DieResult.Blank, DieResult.Focus, m_setup.AMAD.blank_to_focus_count);
@@ -868,7 +854,6 @@ class Simulation
 		{
 			int count = initial_roll ? initial_roll_dice : state.dice_to_reroll;
 
-			// TODO: Could probably clean this up a bit but what it does is fairly clear
 			double total_fork_probability = 0.0f;            // Just for debug
 			for (int crit = 0; crit <= count; ++crit)
 			{
@@ -943,7 +928,6 @@ class Simulation
 		{
 			int count = initial_roll ? initial_roll_dice : state.dice_to_reroll;
 
-			// TODO: Could probably clean this up a bit but what it does is fairly clear
 			double total_fork_probability = 0.0f;            // Just for debug
 			for (int evade = 0; evade <= count; ++evade)
 			{
@@ -1007,12 +991,6 @@ class Simulation
 
 		ExhaustiveStateMap states;
 		states[initial_state] = 1.0f;
-
-		// TODO: first optimize the state set into the things that matter for this attack: tokens
-		// We can't completely drop the rest of state because it matters in the composite results - i.e. we have to
-		// accumulate the "final" results appropriately with the states they came from still.
-		// This does require keeping a map from input token state -> [all output states] and then composing the
-		// two for each input state after simulation.
 
 		// Roll and modify attack dice
 		states = exhaustive_roll_attack_dice!(true)(states, &exhaustive_attack_modify_before_reroll, m_setup.attack_dice);
