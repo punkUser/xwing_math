@@ -1,6 +1,7 @@
 import dice;
 
 import std.math;
+import vibe.utils.hashmap;
 
 // TODO: Can generalize this but okay for now
 // Do it in floating point since for our purposes we always end up converting immediately anyways
@@ -22,11 +23,50 @@ private static immutable double[] k_factorials_table = [
     87178291200,		// 14!
 ];
 
-public static double factorial(int n)
+private pure double factorial(int n)
 {
     assert(n < k_factorials_table.length);
     return k_factorials_table[n];
 }
+
+
+// Multinomial distribution: https://en.wikipedia.org/wiki/Multinomial_distribution
+// roll_probability = n! / (x_1! * ... * x_k!) * p_1^x_1 * ... p_k^x_k
+// NOTE: Can optimize power functions into a table fairly easily as well but performance
+// improvement is negligable and readability is greater this way.
+
+private pure double compute_attack_roll_probability(int blank, int focus, int hit, int crit)
+{
+    // P(blank) = 2/8
+    // P(focus) = 2/8
+    // P(hit)   = 3/8
+    // P(crit)  = 1/8
+    double nf = factorial(blank + focus + hit + crit);
+    double xf = (factorial(blank) * factorial(focus) * factorial(hit) * factorial(crit));
+    double p = pow(0.25, blank + focus) * pow(0.375, hit) * pow(0.125, crit);
+
+    double roll_probability = (nf / xf) * p;
+
+    assert(roll_probability >= 0.0 && roll_probability <= 1.0);
+    return roll_probability;
+}
+
+private pure double compute_defense_roll_probability(int blank, int focus, int evade)
+{
+    // P(blank) = 3/8
+    // P(focus) = 2/8
+    // P(evade) = 3/8
+    double nf = factorial(blank + focus + evade);
+    double xf = (factorial(blank) * factorial(focus) * factorial(evade));
+    double p = pow(0.375, blank + evade) * pow(0.25, focus);
+
+    double roll_probability = (nf / xf) * p;
+
+    assert(roll_probability >= 0.0 && roll_probability <= 1.0);
+    return roll_probability;
+}
+
+
 
 public struct TokenState
 {
@@ -61,6 +101,8 @@ public struct SimulationState
 
 // Maps state -> probability
 public alias SimulationStateMap = double[SimulationState];
+//public alias SimulationStateMap = HashMap!(SimulationState, double);
+
 public alias ForkDiceDelegate = SimulationState delegate(SimulationState state);
 
 // Utility to either insert a new state into the map, or accumualte probability if already present
@@ -83,9 +125,10 @@ public void append_state(ref SimulationStateMap map, SimulationState state, doub
 // accumulate into new states depending on uniqueness of the key and return the new map.
 // TODO: Probably makes sense to have a cleaner division between initial roll and rerolls at this point
 // considering it complicates the calling code a bit too (having to put things into state.dice_to_roll)
-public SimulationStateMap exhaustive_roll_attack_dice(bool initial_roll)(SimulationStateMap prev_states,
-                                                                  ForkDiceDelegate cb,
-                                                                  int initial_roll_dice = 0)
+public SimulationStateMap exhaustive_roll_attack_dice(bool initial_roll)(
+    ref const(SimulationStateMap) prev_states,
+    ForkDiceDelegate cb,
+    int initial_roll_dice = 0)
 {
     SimulationStateMap next_states;
     foreach (state, state_probability; prev_states)
@@ -120,24 +163,8 @@ public SimulationStateMap exhaustive_roll_attack_dice(bool initial_roll)(Simulat
                         new_state.attack_dice.rerolled_results[DieResult.Blank] += blank;
                     }
 
-                    // Work out probability of this configuration and accumulate                    
-                    // Multinomial distribution: https://en.wikipedia.org/wiki/Multinomial_distribution
-                    // n = count
-                    // k = 4 (possible outcomes)
-                    // p_1 = P(blank) = 2/8; x_1 = blank
-                    // p_2 = P(focus) = 2/8; x_2 = focus
-                    // p_3 = P(hit)   = 3/8; x_3 = hit
-                    // p_4 = P(crit)  = 1/8; x_4 = crit
-                    // n! / (x_1! * ... * x_k!) * p_1^x_1 * ... p_k^x_k
-
-                    // Could also do this part in integers/fixed point easily enough actually... revisit
-                    // TODO: Optimize for small integer powers if needed
-                    double nf = factorial(count);
-                    double xf = (factorial(blank) * factorial(focus) * factorial(hit) * factorial(crit));
-                    double p = pow(0.25, blank + focus) * pow(0.375, hit) * pow(0.125, crit);
-
-                    double roll_probability = (nf / xf) * p;
-                    assert(roll_probability >= 0.0 && roll_probability <= 1.0);
+                    double roll_probability = compute_attack_roll_probability(blank, focus, hit, crit);
+                    
                     total_fork_probability += roll_probability;
                     assert(total_fork_probability >= 0.0 && total_fork_probability <= 1.0);
 
@@ -155,12 +182,11 @@ public SimulationStateMap exhaustive_roll_attack_dice(bool initial_roll)(Simulat
     return next_states;
 }
 
-public SimulationStateMap exhaustive_roll_defense_dice(bool initial_roll)(SimulationStateMap prev_states,
-                                                                   ForkDiceDelegate cb, 
-                                                                   int initial_roll_dice = 0)
+public SimulationStateMap exhaustive_roll_defense_dice(bool initial_roll)(
+    ref const(SimulationStateMap) prev_states,
+    ForkDiceDelegate cb, 
+    int initial_roll_dice = 0)
 {
-    double total_fork_probability = 0.0f;            // Just for debug
-
     SimulationStateMap next_states;
     foreach (state, state_probability; prev_states)
     {
@@ -190,16 +216,8 @@ public SimulationStateMap exhaustive_roll_defense_dice(bool initial_roll)(Simula
                     new_state.defense_dice.rerolled_results[DieResult.Blank] += blank;
                 }                
 
-                // Work out probability of this configuration and accumulate (see attack dice)
-                // P(blank) = 3/8
-                // P(focus) = 2/8
-                // P(evade) = 3/8
-                double nf = factorial(count);
-                double xf = (factorial(blank) * factorial(focus) * factorial(evade));
-                double p = pow(0.375, blank + evade) * pow(0.25, focus);
-
-                double roll_probability = (nf / xf) * p;
-                assert(roll_probability >= 0.0 && roll_probability <= 1.0);
+                double roll_probability = compute_defense_roll_probability(blank, focus, evade);
+                
                 total_fork_probability += roll_probability;
                 assert(total_fork_probability >= 0.0 && total_fork_probability <= 1.0);
 

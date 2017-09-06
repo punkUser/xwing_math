@@ -3,6 +3,7 @@ import dice;
 
 import std.algorithm;
 import std.stdio;
+import std.datetime;
 
 // NOTE: This is one enum that we directly use in the forms, so rearrange or delete values!
 enum MultiAttackType : int
@@ -604,7 +605,7 @@ class Simulation
         if (m_setup.attack_fire_control_system)
         {
             // TODO: Handle multi-target-lock stuff... really only an issue with Redline and so on
-            attack_tokens.target_lock = max(attack_tokens.target_lock, 1);
+            if (attack_tokens.target_lock < 1) attack_tokens.target_lock = 1;
         }
     }
 
@@ -661,18 +662,24 @@ class Simulation
 		while (initial_states.length > 0)
 		{
 			// Simulate an attack with the tokens from the first state
-			TokenState attack_tokens  = initial_states.keys[0].attack_tokens;
-			TokenState defense_tokens = initial_states.keys[0].defense_tokens;
+            SimulationState first_state = initial_states.byKey.front;
+			TokenState attack_tokens  = first_state.attack_tokens;
+			TokenState defense_tokens = first_state.defense_tokens;
 
 			// TODO: Consider the use of completed attack count here...
 			// It should be fine since any calls to second attacks, etc. are done in lock step with the relevant
 			// states being carried forward, but there may be some simple ways to make this somewhat more robust
 			// to theoretical cases of mixed state sets.
-			auto second_attack_states = simulate_single_attack_exhaustive(attack_tokens, defense_tokens, initial_states.keys[0].completed_attack_count);
+			auto second_attack_states = simulate_single_attack_exhaustive(attack_tokens, defense_tokens, first_state.completed_attack_count);
 
 			// Now find all attacks in our initial state list that ended with the same tokens
 			// Since it's illegal to delete elements from the AA as we go, we'll add ones that we didn't delete to
 			// a separate AA instead...
+
+            //auto sw = StopWatch(AutoStart.yes);
+
+            // TODO: This fairly inefficient merge can account for a decent chunk (~10%) of performance in adversarial simulations
+            // Investigate ways to optimize this better (probably via sorting on tokens first, then iterating in order)
 			SimulationStateMap kept_states;
 			foreach (ref initial_state, initial_probability; initial_states)
 			{
@@ -696,6 +703,8 @@ class Simulation
 					kept_states[initial_state] = initial_probability;
 				}
 			}
+
+            //writefln("Merged in %s msec", sw.peek().msecs());
 
 			// Should always consume at least the one input we had...
 			assert(kept_states.length < initial_states.length);
