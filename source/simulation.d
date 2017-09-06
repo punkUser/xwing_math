@@ -1,28 +1,8 @@
-module simulation;
+import simulation_state;
+import dice;
 
 import std.algorithm;
-import std.random;
 import std.stdio;
-import std.math;
-
-
-// We need a value that is large enough to mean "all of the dice", but no so large as to overflow
-// easily when we add multiple such values together (ex. int.max). This is that value.
-// The specifics of this value should never be relied upon, and indeed it should be completely fine
-// to mix different values technically - the main purpose in this definition is just for clarity
-// of intention in the code.
-immutable int k_all_dice_count = 1000;
-
-
-enum DieResult : int
-{
-    Blank = 0,
-    Hit,
-    Crit,
-    Focus,
-    Evade,
-    Num
-};
 
 // NOTE: This is one enum that we directly use in the forms, so rearrange or delete values!
 enum MultiAttackType : int
@@ -33,18 +13,6 @@ enum MultiAttackType : int
     AfterAttack,                  // Ex. Corran
     Max,
 };
-
-struct TokenState
-{
-    int focus = 0;
-    int evade = 0;
-    int target_lock = 0;
-    int stress = 0;
-
-	// Available once per turn abilities
-	bool amad_any_to_hit = false;
-	bool amad_any_to_crit = false;
-}
 
 struct SimulationSetup
 {
@@ -184,138 +152,6 @@ SimulationResult accumulate_result(SimulationResult a, SimulationResult b)
     a.defense_delta_stress       += b.defense_delta_stress;
 
     return a;
-}
-
-//-----------------------------------------------------------------------------------
-
-// New setup where we only count totals and hash, etc.
-struct DiceState
-{
-    // Count number of dice for each result
-    // Count rerolled dice separately (can only reroll each die once)
-    int[DieResult.Num] results;
-    int[DieResult.Num] rerolled_results;
-
-    // Cancel all dice/reinitialize
-    void cancel_all()
-    {
-        results[] = 0;
-        rerolled_results[] = 0;
-    }
-
-	// "Simplifies" dice state into only states that matter for comparing results after all modification
-	// NOTE: There are a few special cases in which the total number of dice matter (example: lightweight frame)
-	// and in those cases it's important that the caller record the necessary metadata before
-	// simplifying the dice state.
-	void simplify()
-	{
-		results = count_all();
-		rerolled_results[] = 0;
-		results[DieResult.Blank] = 0;
-		results[DieResult.Focus] = 0;
-	}
-
-    // Utilities
-    pure int[DieResult.Num] count_all() const
-    {
-        int[DieResult.Num] total = results[];
-        total[] += rerolled_results[];
-        return total;
-    }
-	pure int count(DieResult type) const
-    {
-        return results[type] + rerolled_results[type];
-    }
-	pure int count() const	// Count *all* dice
-	{
-		return sum(count_all()[]);
-	}
-
-    // Removes dice that we are able to reroll from results and returns the
-    // number that were removed. Caller should add rerolled_results based on this.
-    int remove_dice_for_reroll(DieResult from, int max_count = int.max)
-    {
-        if (max_count == 0)
-            return 0;
-        assert(max_count > 0);
-
-        int rerolled_count = min(results[from], max_count);
-        results[from] -= rerolled_count;
-
-        return rerolled_count;
-    }
-
-    // Prefers changing rerolled dice first where limited as they are more constrained
-    int change_dice(DieResult from, DieResult to, int max_count = int.max)
-    {
-        if (max_count == 0)
-            return 0;
-		assert(max_count > 0);
-
-        // Change rerolled dice first
-        int changed_count = 0;
-
-        int delta = min(rerolled_results[from], max_count - changed_count);
-        if (delta > 0)
-        {
-            rerolled_results[from] -= delta;
-            rerolled_results[to]   += delta;
-            changed_count          += delta;
-        }
-        // Then regular ones
-        delta = min(results[from], max_count - changed_count);
-        if (delta > 0)
-        {
-            results[from] -= delta;
-            results[to]   += delta;
-            changed_count += delta;
-        }
-
-        return changed_count;
-    }
-
-	// Prefers changing blanks, secondarily focus results
-	int change_blank_focus(DieResult to, int max_count = int.max)
-	{
-		int changed_results = change_dice(DieResult.Blank, to, max_count);
-		if (changed_results >= max_count) return changed_results;
-
-		changed_results += change_dice(DieResult.Focus, to, max_count - changed_results);
-		return changed_results;
-	}
-
-    // Like above, but the changed dice cannot be rerolled
-    // Because this is generally used when modifying *opponents* dice, we prefer
-    // to change non-rerolled dice first to add additional constraints.
-    // Ex. M9G8 forced reroll and sensor jammer can cause two separate dice
-    // to be unable to be rerolled by the attacker.
-    int change_dice_no_reroll(DieResult from, DieResult to, int max_count = int.max)
-    {
-        if (max_count == 0)
-            return 0;
-		assert(max_count > 0);
-
-        // Change regular dice first
-        int changed_count = 0;
-
-        int delta = min(results[from], max_count - changed_count);
-        if (delta > 0)
-        {
-            results[from]          -= delta;
-            rerolled_results[to]   += delta; // Disallow reroll on the changed result(s)
-            changed_count          += delta;
-        }
-        // Then rerolled ones
-        delta = min(rerolled_results[from], max_count - changed_count);
-        if (delta > 0)
-        {
-            rerolled_results[from] -= delta;
-            rerolled_results[to]   += delta;
-            changed_count          += delta;
-        }
-
-        return changed_count;
-    }
 }
 
 //-----------------------------------------------------------------------------------
@@ -773,223 +609,19 @@ class Simulation
     }
 
 
-    //************************************** EXHAUSTIVE SEARCH *****************************************
-    // TODO: Can generalize this but okay for now
-    // Do it in floating point since for our purposes we always end up converting immediately anyways
-    static immutable double[] k_factorials_table = [
-        1,                  // 0!
-        1,                  // 1!
-        2,                  // 2!
-        6,                  // 3!
-        24,                 // 4!
-        120,                // 5!
-        720,                // 6!
-        5040,               // 7!
-        40320,              // 8!
-        362880,             // 9!
-        3628800,            // 10!
-		39916800,			// 11!
-		479001600,			// 12!
-		6227020800,			// 13!
-		87178291200,		// 14!
-    ];
-    static double factorial(int n)
-    {
-        assert(n < k_factorials_table.length);
-        return k_factorials_table[n];
-    }
-
-    struct ExhaustiveState
-    {
-        DiceState attack_dice;
-        TokenState attack_tokens;
-        DiceState defense_dice;
-        TokenState defense_tokens;
-
-		// Information for next stage of iteration
-		int dice_to_reroll = 0;
-
-		// Final results (multi-attack, etc)
-		int completed_attack_count = 0;
-		int final_hits = 0;
-		int final_crits = 0;
-
-		// TODO: Since this is such an important part of the simulation process now, we should compress
-		// the size of this structure and implement (and test!) a proper custom hash function.
-    }
-
-	// Maps state -> probability
-	alias ExhaustiveStateMap = double[ExhaustiveState];
-	ExhaustiveStateMap m_prev_state;
-	ExhaustiveStateMap m_next_state;
-
-    alias ForkDiceDelegate = ExhaustiveState delegate(ExhaustiveState state);
-
-	// Utility to either insert a new state into the map, or accumualte probability if already present
-	void append_state(ref ExhaustiveStateMap map, ExhaustiveState state, double probability)
-	{
-		auto i = (state in map);
-		if (i)
-		{
-			//writefln("Append state: %s", state);
-			*i += probability;
-		}
-		else
-		{
-			//writefln("New state: %s", state);
-			map[state] = probability;
-		}
-	}
-
-	// Take all previous states, roll state.dice_roll attack dice, call "cb" delegate on each of them,
-	// accumulate into new states depending on uniqueness of the key and return the new map.
-	// TODO: Probably makes sense to have a cleaner division between initial roll and rerolls at this point
-	// considering it complicates the calling code a bit too (having to put things into state.dice_to_roll)
-    ExhaustiveStateMap exhaustive_roll_attack_dice(bool initial_roll)(ExhaustiveStateMap prev_states,
-																	  ForkDiceDelegate cb,
-																	  int initial_roll_dice = 0)
-    {
-		ExhaustiveStateMap next_states;
-		foreach (state, state_probability; prev_states)
-		{
-			int count = initial_roll ? initial_roll_dice : state.dice_to_reroll;
-
-			double total_fork_probability = 0.0f;            // Just for debug
-			for (int crit = 0; crit <= count; ++crit)
-			{
-				for (int hit = 0; hit <= (count - crit); ++hit)
-				{
-					for (int focus = 0; focus <= (count - crit - hit); ++focus)
-					{
-						int blank = count - crit - hit - focus;
-						assert(blank >= 0);
-
-						// Add dice to the relevant pool
-						ExhaustiveState new_state = state;
-						new_state.dice_to_reroll = 0;
-						if (initial_roll)
-						{
-							new_state.attack_dice.results[DieResult.Crit]  += crit;
-							new_state.attack_dice.results[DieResult.Hit]   += hit;
-							new_state.attack_dice.results[DieResult.Focus] += focus;
-							new_state.attack_dice.results[DieResult.Blank] += blank;
-						}
-						else
-						{
-							new_state.attack_dice.rerolled_results[DieResult.Crit]  += crit;
-							new_state.attack_dice.rerolled_results[DieResult.Hit]   += hit;
-							new_state.attack_dice.rerolled_results[DieResult.Focus] += focus;
-							new_state.attack_dice.rerolled_results[DieResult.Blank] += blank;
-						}
-
-						// Work out probability of this configuration and accumulate                    
-						// Multinomial distribution: https://en.wikipedia.org/wiki/Multinomial_distribution
-						// n = count
-						// k = 4 (possible outcomes)
-						// p_1 = P(blank) = 2/8; x_1 = blank
-						// p_2 = P(focus) = 2/8; x_2 = focus
-						// p_3 = P(hit)   = 3/8; x_3 = hit
-						// p_4 = P(crit)  = 1/8; x_4 = crit
-						// n! / (x_1! * ... * x_k!) * p_1^x_1 * ... p_k^x_k
-
-						// Could also do this part in integers/fixed point easily enough actually... revisit
-						// TODO: Optimize for small integer powers if needed
-						double nf = factorial(count);
-						double xf = (factorial(blank) * factorial(focus) * factorial(hit) * factorial(crit));
-						double p = pow(0.25, blank + focus) * pow(0.375, hit) * pow(0.125, crit);
-
-						double roll_probability = (nf / xf) * p;
-						assert(roll_probability >= 0.0 && roll_probability <= 1.0);
-						total_fork_probability += roll_probability;
-						assert(total_fork_probability >= 0.0 && total_fork_probability <= 1.0);
-
-						double next_state_probability = roll_probability * state_probability;
-						append_state(next_states, cb(new_state), next_state_probability);
-					}
-				}
-			}
-
-			// Total probability of our fork loop should be very close to 1, modulo numeric precision
-			assert(abs(total_fork_probability - 1.0) < 1e-6);
-		}
-
-		//writefln("After %s attack states: %s", initial_roll ? "initial" : "reroll", next_states.length);
-		return next_states;
-    }
-
-    ExhaustiveStateMap exhaustive_roll_defense_dice(bool initial_roll)(ExhaustiveStateMap prev_states,
-																	   ForkDiceDelegate cb, 
-																	   int initial_roll_dice = 0)
-    {
-        double total_fork_probability = 0.0f;            // Just for debug
-
-		ExhaustiveStateMap next_states;
-		foreach (state, state_probability; prev_states)
-		{
-			int count = initial_roll ? initial_roll_dice : state.dice_to_reroll;
-
-			double total_fork_probability = 0.0f;            // Just for debug
-			for (int evade = 0; evade <= count; ++evade)
-			{
-				for (int focus = 0; focus <= (count - evade); ++focus)
-				{
-					int blank = count - focus - evade;
-					assert(blank >= 0);
-
-					// Add dice to the relevant pool
-					ExhaustiveState new_state = state;
-					new_state.dice_to_reroll = 0;
-					if (initial_roll)
-					{
-						new_state.defense_dice.results[DieResult.Evade] += evade;
-						new_state.defense_dice.results[DieResult.Focus] += focus;
-						new_state.defense_dice.results[DieResult.Blank] += blank;
-					}
-					else
-					{
-						new_state.defense_dice.rerolled_results[DieResult.Evade] += evade;
-						new_state.defense_dice.rerolled_results[DieResult.Focus] += focus;
-						new_state.defense_dice.rerolled_results[DieResult.Blank] += blank;
-					}                
-
-					// Work out probability of this configuration and accumulate (see attack dice)
-					// P(blank) = 3/8
-					// P(focus) = 2/8
-					// P(evade) = 3/8
-					double nf = factorial(count);
-					double xf = (factorial(blank) * factorial(focus) * factorial(evade));
-					double p = pow(0.375, blank + evade) * pow(0.25, focus);
-
-					double roll_probability = (nf / xf) * p;
-					assert(roll_probability >= 0.0 && roll_probability <= 1.0);
-					total_fork_probability += roll_probability;
-					assert(total_fork_probability >= 0.0 && total_fork_probability <= 1.0);
-
-					double next_state_probability = roll_probability * state_probability;
-					append_state(next_states, cb(new_state), next_state_probability);
-				}
-			}
-
-			// Total probability of our fork loop should be very close to 1, modulo numeric precision
-			assert(abs(total_fork_probability - 1.0) < 1e-6);
-		}
-        
-		//writefln("After %s defense states: %s", initial_roll ? "initial" : "reroll", next_states.length);
-		return next_states;
-    }
 
 	// Returns full set of states after result comparison (results put into state.final_hits, etc)
 	// Does not directly accumulate as this may be part of a multi-attack sequence.
-	public ExhaustiveStateMap simulate_single_attack_exhaustive(TokenState attack_tokens,
+	public SimulationStateMap simulate_single_attack_exhaustive(TokenState attack_tokens,
 																TokenState defense_tokens,
 																int completed_attack_count = 0)
 	{
-		ExhaustiveState initial_state;
+		SimulationState initial_state;
         initial_state.attack_tokens  = attack_tokens;
         initial_state.defense_tokens = defense_tokens;
 		initial_state.completed_attack_count = completed_attack_count;
 
-		ExhaustiveStateMap states;
+		SimulationStateMap states;
 		states[initial_state] = 1.0f;
 
 		// Roll and modify attack dice
@@ -1006,7 +638,7 @@ class Simulation
 
 	// Returns full set of states after result comparison (results put into state.final_hits, etc)
 	// Does not directly accumulate as this may be part of a multi-attack sequence.
-	public ExhaustiveStateMap simulate_single_attack_exhaustive(ExhaustiveStateMap initial_states)
+	public SimulationStateMap simulate_single_attack_exhaustive(SimulationStateMap initial_states)
 	{
 		// NOTE: It would be "correct" here to just immediately fork all of our states set into another attack,
 		// but that is relatively inefficient. Since the core thing that affects how the next attack plays out is
@@ -1025,7 +657,7 @@ class Simulation
 		// TODO: Lots of this can be optimized, but it culls so much work compared to the brute force thing that
 		// it's already really "fast enough" to be honest.
 
-		ExhaustiveStateMap new_states;
+		SimulationStateMap new_states;
 		while (initial_states.length > 0)
 		{
 			// Simulate an attack with the tokens from the first state
@@ -1041,7 +673,7 @@ class Simulation
 			// Now find all attacks in our initial state list that ended with the same tokens
 			// Since it's illegal to delete elements from the AA as we go, we'll add ones that we didn't delete to
 			// a separate AA instead...
-			ExhaustiveStateMap kept_states;
+			SimulationStateMap kept_states;
 			foreach (ref initial_state, initial_probability; initial_states)
 			{
 				if (initial_state.attack_tokens == attack_tokens && initial_state.defense_tokens == defense_tokens)
@@ -1052,7 +684,7 @@ class Simulation
 						// NOTE: Important to keep the token state and such from after the second attack, not initial one
 						// We basically just want to add each of the combinations of "final hits/crits" together for the
 						// combined attack.
-						ExhaustiveState new_state = second_attack_state;
+						SimulationState new_state = second_attack_state;
 						new_state.final_hits			 += initial_state.final_hits;
 						new_state.final_crits		     += initial_state.final_crits;
 						new_state.completed_attack_count += initial_state.completed_attack_count;
@@ -1089,8 +721,8 @@ class Simulation
 		else if (m_setup.type == MultiAttackType.AfterAttackDoesNotHit)
 		{
 			// Only attack again for the states that didn't hit anything
-			ExhaustiveStateMap second_attack_states;
-			ExhaustiveStateMap no_second_attack_states;
+			SimulationStateMap second_attack_states;
+			SimulationStateMap no_second_attack_states;
 			foreach (ref state, state_probability; states)
 			{
 				if (state.final_hits == 0 && state.final_crits == 0)
@@ -1123,7 +755,7 @@ class Simulation
 		}
     }
 
-    private ExhaustiveState exhaustive_attack_modify_before_reroll(ExhaustiveState state)
+    private SimulationState exhaustive_attack_modify_before_reroll(SimulationState state)
     {
         // "After rolling" events
         if (m_setup.attack_heavy_laser_cannon)
@@ -1134,7 +766,7 @@ class Simulation
 		return state;
 	}
 
-    private ExhaustiveState exhaustive_attack_modify_after_reroll(ExhaustiveState state)
+    private SimulationState exhaustive_attack_modify_after_reroll(SimulationState state)
     {
         attacker_modify_attack_dice_after_reroll(state.attack_dice, state.attack_tokens);		
         // Done modifying attack dice
@@ -1147,14 +779,14 @@ class Simulation
 		return state;
     }
 
-    private ExhaustiveState exhaustive_defense_modify_before_reroll(ExhaustiveState state)
+    private SimulationState exhaustive_defense_modify_before_reroll(SimulationState state)
     {
         attacker_modify_defense_dice(state.attack_dice.count_all(), state.defense_dice, state.defense_tokens);
         state.dice_to_reroll = defender_modify_defense_dice_before_reroll(state.attack_dice.count_all(), state.defense_dice, state.defense_tokens);
 		return state;
     }
 
-    private ExhaustiveState exhaustive_defense_modify_after_reroll(ExhaustiveState state)
+    private SimulationState exhaustive_defense_modify_after_reroll(SimulationState state)
     {
         defender_modify_defense_dice_after_reroll(state.attack_dice.count_all(), state.defense_dice, state.defense_tokens);
         // Done modifying defense dice

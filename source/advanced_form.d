@@ -1,11 +1,7 @@
 import simulation;
+import dice;
 
 import std.bitmanip;
-import std.traits;
-import std.base64;
-import core.stdc.string : memcpy;
-
-import vibe.d;
 
 struct AdvancedForm
 {

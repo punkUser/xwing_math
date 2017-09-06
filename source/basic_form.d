@@ -1,4 +1,5 @@
 import simulation;
+import dice;
 
 import std.bitmanip;
 

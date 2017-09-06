@@ -1,5 +1,3 @@
-module main;
-
 import www_server;
 import std.stdio;
 
