@@ -654,62 +654,59 @@ class Simulation
 		// on anything like the number of hits that happened in the previous attack. This is a safe assumption for
 		// now. We could technically split our state set into two parts to represent this more formally, but that
 		// would make it a lot more wordy - and potentially less efficient - to pass it around everywhere.
-		//
-		// TODO: Lots of this can be optimized, but it culls so much work compared to the brute force thing that
-		// it's already really "fast enough" to be honest.
 
-		SimulationStateMap new_states;
-		while (initial_states.length > 0)
-		{
-			// Simulate an attack with the tokens from the first state
-            SimulationState first_state = initial_states.byKey.front;
-			TokenState attack_tokens  = first_state.attack_tokens;
-			TokenState defense_tokens = first_state.defense_tokens;
+        SimulationStateMap new_states;
+        int second_attack_evaluations = 0;
 
-			// TODO: Consider the use of completed attack count here...
-			// It should be fine since any calls to second attacks, etc. are done in lock step with the relevant
-			// states being carried forward, but there may be some simple ways to make this somewhat more robust
-			// to theoretical cases of mixed state sets.
-			auto second_attack_states = simulate_single_attack_exhaustive(attack_tokens, defense_tokens, first_state.completed_attack_count);
+        // Sort our states by tokens so that any matching sets are back to back in the list
+        SimulationState[] initial_states_list = initial_states.keys.dup;
+        multiSort!("a.attack_tokens < b.attack_tokens", "a.defense_tokens < b.defense_tokens")(initial_states_list);
+        
+        TokenState last_attack_tokens;
+        TokenState last_defense_tokens;
+        // Hacky just to ensure these don't match the first element
+        last_attack_tokens.focus = initial_states_list[0].attack_tokens.focus + 1;
 
-			// Now find all attacks in our initial state list that ended with the same tokens
-			// Since it's illegal to delete elements from the AA as we go, we'll add ones that we didn't delete to
-			// a separate AA instead...
+        SimulationStateMap second_attack_states;
+       
+        foreach (ref initial_state; initial_states_list)
+        {
+            // If our tokens are the same as the previous simulation (we sorted), we don't have to simulate again
+            if (initial_state.attack_tokens != last_attack_tokens ||
+                initial_state.defense_tokens != last_defense_tokens)
+            {
+                //auto sw = StopWatch(AutoStart.yes);
 
-            //auto sw = StopWatch(AutoStart.yes);
+                // New token state set, so run a new simulation
+                last_attack_tokens = initial_state.attack_tokens;
+                last_defense_tokens = initial_state.defense_tokens;
 
-            // TODO: This fairly inefficient merge can account for a decent chunk (~10%) of performance in adversarial simulations
-            // Investigate ways to optimize this better (probably via sorting on tokens first, then iterating in order)
-			SimulationStateMap kept_states;
-			foreach (ref initial_state, initial_probability; initial_states)
-			{
-				if (initial_state.attack_tokens == attack_tokens && initial_state.defense_tokens == defense_tokens)
-				{
-					// Compose all of the results from the second attack set with this one
-					foreach (ref second_attack_state, second_probability; second_attack_states)
-					{
-						// NOTE: Important to keep the token state and such from after the second attack, not initial one
-						// We basically just want to add each of the combinations of "final hits/crits" together for the
-						// combined attack.
-						SimulationState new_state = second_attack_state;
-						new_state.final_hits			 += initial_state.final_hits;
-						new_state.final_crits		     += initial_state.final_crits;
-						new_state.completed_attack_count += initial_state.completed_attack_count;
-						append_state(new_states, new_state, initial_probability * second_probability);
-					}
-				}
-				else
-				{
-					kept_states[initial_state] = initial_probability;
-				}
-			}
+                // TODO: Consider the use of completed attack count here...
+                // It should be fine since any calls to second attacks, etc. are done in lock step with the relevant
+                // states being carried forward, but there may be some simple ways to make this somewhat more robust
+                // to theoretical cases of mixed state sets.
+                second_attack_states = simulate_single_attack_exhaustive(last_attack_tokens,
+                                                                         last_defense_tokens,
+                                                                         initial_state.completed_attack_count);
+                ++second_attack_evaluations;
 
-            //writefln("Merged in %s msec", sw.peek().msecs());
+                //writefln("Second attack in %s msec", sw.peek().msecs());
+            }
 
-			// Should always consume at least the one input we had...
-			assert(kept_states.length < initial_states.length);
-			initial_states = kept_states;
-		}
+            // Compose all of the results from the second attack set with this one
+            auto initial_probability = initial_states[initial_state];
+            foreach (ref second_attack_state, second_probability; second_attack_states)
+            {
+                // NOTE: Important to keep the token state and such from after the second attack, not initial one
+                // We basically just want to add each of the combinations of "final hits/crits" together for the
+                // combined attack.
+                SimulationState new_state = second_attack_state;
+                new_state.final_hits			 += initial_state.final_hits;
+                new_state.final_crits		     += initial_state.final_crits;
+                new_state.completed_attack_count += initial_state.completed_attack_count;
+                append_state(new_states, new_state, initial_probability * second_probability);
+            }
+        }
 
 		return new_states;
 	}
