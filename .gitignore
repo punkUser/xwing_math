@@ -59,3 +59,4 @@ deploy.sh
 xwing_math_daemon
 update.sh
 *.pdb
+*.exe_cv
