@@ -613,9 +613,9 @@ class Simulation
 
 	// Returns full set of states after result comparison (results put into state.final_hits, etc)
 	// Does not directly accumulate as this may be part of a multi-attack sequence.
-	public SimulationStateMap simulate_single_attack_exhaustive(TokenState attack_tokens,
-																TokenState defense_tokens,
-																int completed_attack_count = 0)
+	public SimulationStateMap simulate_single_attack(TokenState attack_tokens,
+													 TokenState defense_tokens,
+													 int completed_attack_count = 0)
 	{
 		SimulationState initial_state;
         initial_state.attack_tokens  = attack_tokens;
@@ -626,12 +626,12 @@ class Simulation
 		states[initial_state] = 1.0f;
 
 		// Roll and modify attack dice
-		states = exhaustive_roll_attack_dice!(true)(states, &exhaustive_attack_modify_before_reroll, m_setup.attack_dice);
-		states = exhaustive_roll_attack_dice!(false)(states, &exhaustive_attack_modify_after_reroll);
+		states = roll_attack_dice!(true)(states, &attack_modify_before_reroll, m_setup.attack_dice);
+		states = roll_attack_dice!(false)(states, &attack_modify_after_reroll);
 
 		// Roll and modify defense dice, and compare results
-        states = exhaustive_roll_defense_dice!(true)(states, &exhaustive_defense_modify_before_reroll, m_setup.defense_dice);
-		states = exhaustive_roll_defense_dice!(false)(states, &exhaustive_defense_modify_after_reroll);
+        states = roll_defense_dice!(true)(states, &defense_modify_before_reroll, m_setup.defense_dice);
+		states = roll_defense_dice!(false)(states, &defense_modify_after_reroll);
 
 		return states;
 	}
@@ -639,7 +639,7 @@ class Simulation
 
 	// Returns full set of states after result comparison (results put into state.final_hits, etc)
 	// Does not directly accumulate as this may be part of a multi-attack sequence.
-	public SimulationStateMap simulate_single_attack_exhaustive(SimulationStateMap initial_states)
+	public SimulationStateMap simulate_single_attack(SimulationStateMap initial_states)
 	{
 		// NOTE: It would be "correct" here to just immediately fork all of our states set into another attack,
 		// but that is relatively inefficient. Since the core thing that affects how the next attack plays out is
@@ -685,9 +685,9 @@ class Simulation
                 // It should be fine since any calls to second attacks, etc. are done in lock step with the relevant
                 // states being carried forward, but there may be some simple ways to make this somewhat more robust
                 // to theoretical cases of mixed state sets.
-                second_attack_states = simulate_single_attack_exhaustive(last_attack_tokens,
-                                                                         last_defense_tokens,
-                                                                         initial_state.completed_attack_count);
+                second_attack_states = simulate_single_attack(last_attack_tokens,
+                                                              last_defense_tokens,
+                                                              initial_state.completed_attack_count);
                 ++second_attack_evaluations;
 
                 //writefln("Second attack in %s msec", sw.peek().msecs());
@@ -711,10 +711,10 @@ class Simulation
 		return new_states;
 	}
 
-    public void simulate_attack_exhaustive()
+    public void simulate_attack()
     {		
 		// First attack
-		auto states = simulate_single_attack_exhaustive(m_setup.attack_tokens, m_setup.defense_tokens);
+		auto states = simulate_single_attack(m_setup.attack_tokens, m_setup.defense_tokens);
 
 		//writefln("Attack complete with %s states.", states.length);
 
@@ -722,7 +722,7 @@ class Simulation
 			m_setup.type == MultiAttackType.AfterAttack)
 		{
 			// Unconditional second attacks
-			states = simulate_single_attack_exhaustive(states);
+			states = simulate_single_attack(states);
 		}
 		else if (m_setup.type == MultiAttackType.AfterAttackDoesNotHit)
 		{
@@ -744,7 +744,7 @@ class Simulation
 			//writefln("Second attack for %s states.", second_attack_states.length);
 
 			// Do the next attack for those states, then merge them into the other list
-			second_attack_states = simulate_single_attack_exhaustive(second_attack_states);
+			second_attack_states = simulate_single_attack(second_attack_states);
 
 			states = no_second_attack_states;
 			foreach (ref state, state_probability; second_attack_states)
@@ -761,7 +761,7 @@ class Simulation
 		}
     }
 
-    private SimulationState exhaustive_attack_modify_before_reroll(SimulationState state)
+    private SimulationState attack_modify_before_reroll(SimulationState state)
     {
         // "After rolling" events
         if (m_setup.attack_heavy_laser_cannon)
@@ -772,7 +772,7 @@ class Simulation
 		return state;
 	}
 
-    private SimulationState exhaustive_attack_modify_after_reroll(SimulationState state)
+    private SimulationState attack_modify_after_reroll(SimulationState state)
     {
         attacker_modify_attack_dice_after_reroll(state.attack_dice, state.attack_tokens);		
         // Done modifying attack dice
@@ -785,14 +785,14 @@ class Simulation
 		return state;
     }
 
-    private SimulationState exhaustive_defense_modify_before_reroll(SimulationState state)
+    private SimulationState defense_modify_before_reroll(SimulationState state)
     {
         attacker_modify_defense_dice(state.attack_dice.count_all(), state.defense_dice, state.defense_tokens);
         state.dice_to_reroll = defender_modify_defense_dice_before_reroll(state.attack_dice.count_all(), state.defense_dice, state.defense_tokens);
 		return state;
     }
 
-    private SimulationState exhaustive_defense_modify_after_reroll(SimulationState state)
+    private SimulationState defense_modify_after_reroll(SimulationState state)
     {
         defender_modify_defense_dice_after_reroll(state.attack_dice.count_all(), state.defense_dice, state.defense_tokens);
         // Done modifying defense dice

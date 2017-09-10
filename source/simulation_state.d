@@ -144,7 +144,7 @@ public alias ForkDiceDelegate = SimulationState delegate(SimulationState state);
 public void append_state(ref SimulationStateMap map, SimulationState state, double probability)
 {
     auto i = (state in map);
-    if (i)
+    if (i !is null)
     {
         //writefln("Append state: %s", state);
         *i += probability;
@@ -160,7 +160,7 @@ public void append_state(ref SimulationStateMap map, SimulationState state, doub
 // accumulate into new states depending on uniqueness of the key and return the new map.
 // TODO: Probably makes sense to have a cleaner division between initial roll and rerolls at this point
 // considering it complicates the calling code a bit too (having to put things into state.dice_to_roll)
-public SimulationStateMap exhaustive_roll_attack_dice(bool initial_roll)(
+public SimulationStateMap roll_attack_dice(bool initial_roll)(
     ref const(SimulationStateMap) prev_states,
     ForkDiceDelegate cb,
     int initial_roll_dice = 0)
@@ -217,7 +217,7 @@ public SimulationStateMap exhaustive_roll_attack_dice(bool initial_roll)(
     return next_states;
 }
 
-public SimulationStateMap exhaustive_roll_defense_dice(bool initial_roll)(
+public SimulationStateMap roll_defense_dice(bool initial_roll)(
     ref const(SimulationStateMap) prev_states,
     ForkDiceDelegate cb, 
     int initial_roll_dice = 0)

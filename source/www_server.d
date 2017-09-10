@@ -115,9 +115,9 @@ public class WWWServer
         {
             auto sw = StopWatch(AutoStart.yes);
 
-            simulation.simulate_attack_exhaustive();
+            simulation.simulate_attack();
 
-            writefln("%s: Exhaustive simulation: %d evaluations in %s msec", peer_address,
+            writefln("%s: Simulated %d evaluations in %s msec", peer_address,
                      simulation.total_sum().evaluation_count, sw.peek().msecs());
         }
 
