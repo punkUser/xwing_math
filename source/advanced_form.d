@@ -27,45 +27,45 @@ struct AdvancedForm
 
     // Integer fields
     mixin(bitfields!(
-        uint, "attack_type",                  4,        // enum MultiAttackType
-        uint, "attack_dice",                  4,
-        uint, "attack_focus_token_count",     4,
-        uint, "attack_target_lock_count",     4,
+        ubyte, "attack_type",                 4,        // enum MultiAttackType
+        ubyte, "attack_dice",                 4,
+        ubyte, "attack_focus_token_count",    4,
+        ubyte, "attack_target_lock_count",    4,
 
-        uint, "amad_add_hit_count",        	  4,
-        uint, "amad_add_crit_count",       	  4,
-        uint, "amad_add_blank_count",      	  4,
-        uint, "amad_add_focus_count",      	  4,
+        ubyte, "amad_add_hit_count",          4,
+        ubyte, "amad_add_crit_count",         4,
+        ubyte, "amad_add_blank_count",        4,
+        ubyte, "amad_add_focus_count",        4,
 
-        uint, "amad_reroll_blank_count",   	  4,
-        uint, "amad_reroll_focus_count",   	  4,
-        uint, "amad_reroll_any_count",		  4,
-        uint, "amad_focus_to_crit_count",  	  4,
+        ubyte, "amad_reroll_blank_count",     4,
+        ubyte, "amad_reroll_focus_count",     4,
+        ubyte, "amad_reroll_any_count",		  4,
+        ubyte, "amad_focus_to_crit_count",    4,
 
-        uint, "amad_focus_to_hit_count",   	  4,
-        uint, "amad_blank_to_crit_count",  	  4,
-        uint, "amad_blank_to_hit_count",   	  4,
-        uint, "amad_blank_to_focus_count", 	  4,
+        ubyte, "amad_focus_to_hit_count",     4,
+        ubyte, "amad_blank_to_crit_count",    4,
+        ubyte, "amad_blank_to_hit_count",     4,
+        ubyte, "amad_blank_to_focus_count",   4,
     ));
 
     mixin(bitfields!(
-        uint, "amad_hit_to_crit_count", 	  4,
-        uint, "amdd_evade_to_focus_count",    4,
-        uint, "defense_dice", 			      4,
-        uint, "defense_focus_token_count", 	  4,
+        ubyte, "amad_hit_to_crit_count", 	  4,
+        ubyte, "amdd_evade_to_focus_count",   4,
+        ubyte, "defense_dice", 			      4,
+        ubyte, "defense_focus_token_count",   4,
 
-        uint, "defense_evade_token_count", 	  4,
-        uint, "dmdd_add_blank_count", 	      4,
-        uint, "dmdd_add_focus_count", 	      4,
-        uint, "dmdd_add_evade_count", 		  4,
+        ubyte, "defense_evade_token_count",   4,
+        ubyte, "dmdd_add_blank_count", 	      4,
+        ubyte, "dmdd_add_focus_count", 	      4,
+        ubyte, "dmdd_add_evade_count", 		  4,
 
-        uint, "dmdd_reroll_blank_count", 	  4,
-        uint, "dmdd_reroll_focus_count", 	  4,
-        uint, "dmdd_reroll_any_count", 	      4,
-        uint, "dmdd_blank_to_evade_count", 	  4,
+        ubyte, "dmdd_reroll_blank_count", 	  4,
+        ubyte, "dmdd_reroll_focus_count", 	  4,
+        ubyte, "dmdd_reroll_any_count", 	  4,
+        ubyte, "dmdd_blank_to_evade_count",   4,
 
-        uint, "dmdd_focus_to_evade_count", 	  4,
-        uint, "dmad_hit_to_focus_no_reroll_count", 	  4,
+        ubyte, "dmdd_focus_to_evade_count",   4,
+        ubyte, "dmad_hit_to_focus_no_reroll_count", 	  4,
 
         uint, "",							  8,	// Padding/reserved space
     ));

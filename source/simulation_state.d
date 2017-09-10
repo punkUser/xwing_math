@@ -100,10 +100,10 @@ private pure double compute_defense_roll_probability(int blank, int focus, int e
 
 public struct TokenState
 {
-    int focus = 0;
-    int evade = 0;
-    int target_lock = 0;
-    int stress = 0;
+    ubyte focus = 0;
+    ubyte evade = 0;
+    ubyte target_lock = 0;
+    ubyte stress = 0;
 
 	// Available once per turn abilities
 	bool amad_any_to_hit = false;

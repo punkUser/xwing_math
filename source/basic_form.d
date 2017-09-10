@@ -11,14 +11,14 @@ struct BasicForm
     // New fields can be given sensible default values
 
     mixin(bitfields!(
-        uint, "attack_type",                  4,        // enum MultiAttackType
-        uint, "attack_dice",                  4,
-        uint, "attack_focus_token_count",     4,
-        uint, "attack_target_lock_count",     4,
+        ubyte, "attack_type",                 4,        // enum MultiAttackType
+        ubyte, "attack_dice",                 4,
+        ubyte, "attack_focus_token_count",    4,
+        ubyte, "attack_target_lock_count",    4,
 
-        uint, "defense_dice", 			      4,
-        uint, "defense_focus_token_count", 	  4,
-        uint, "defense_evade_token_count", 	  4,
+        ubyte, "defense_dice", 			      4,
+        ubyte, "defense_focus_token_count",   4,
+        ubyte, "defense_evade_token_count",   4,
         bool, "attack_rey_pilot",             1,
         bool, "attack_expertise",             1,
         bool, "attack_fearlessness",          1,

@@ -665,7 +665,8 @@ class Simulation
         TokenState last_attack_tokens;
         TokenState last_defense_tokens;
         // Hacky just to ensure these don't match the first element
-        last_attack_tokens.focus = initial_states_list[0].attack_tokens.focus + 1;
+        last_attack_tokens.focus = initial_states_list[0].attack_tokens.focus;
+        ++last_attack_tokens.focus;
 
         SimulationStateMap second_attack_states;
        
