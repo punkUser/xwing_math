@@ -22,43 +22,36 @@ public struct DiceState
 {
     // Count number of dice for each result
     // Count rerolled dice separately (can only reroll each die once)
-    int[DieResult.Num] results;
-    int[DieResult.Num] rerolled_results;
+    // "Final" results cannot be modified, only cancelled
+    ubyte[DieResult.Num] results;
+    ubyte[DieResult.Num] rerolled_results;
+    ubyte[DieResult.Num] final_results;
 
     // Cancel all dice/reinitialize
     void cancel_all()
     {
         results[] = 0;
         rerolled_results[] = 0;
+        final_results[] = 0;
     }
 
-	// "Simplifies" dice state into only states that matter for comparing results after all modification
-	// NOTE: There are a few special cases in which the total number of dice matter (example: lightweight frame)
-	// and in those cases it's important that the caller record the necessary metadata before
-	// simplifying the dice state.
-	void simplify()
+	// "Finalize" dice state into only states that matter for comparing results after all modification
+    // Converts all focus results into blanks but maintains the total dice count (for things like lightwight frame)
+	void finalize()
 	{
-		results = count_all();
+		final_results = results[] + rerolled_results[] + final_results[];
+        final_results[DieResult.Blank] += final_results[DieResult.Focus];
+		final_results[DieResult.Focus] = 0;
+
+        results[] = 0;
 		rerolled_results[] = 0;
-		results[DieResult.Blank] = 0;
-		results[DieResult.Focus] = 0;
 	}
 
     // Utilities
-    pure int[DieResult.Num] count_all() const
-    {
-        int[DieResult.Num] total = results[];
-        total[] += rerolled_results[];
-        return total;
-    }
 	pure int count(DieResult type) const
     {
-        return results[type] + rerolled_results[type];
+        return results[type] + rerolled_results[type] + final_results[type];
     }
-	pure int count() const	// Count *all* dice
-	{
-		return sum(count_all()[]);
-	}
 
     // Removes dice that we are able to reroll from results and returns the
     // number that were removed. Caller should add rerolled_results based on this.
@@ -75,6 +68,7 @@ public struct DiceState
     }
 
     // Prefers changing rerolled dice first where limited as they are more constrained
+    // NOTE: Cannot change final results by definition
     int change_dice(DieResult from, DieResult to, int max_count = int.max)
     {
         if (max_count == 0)

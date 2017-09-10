@@ -434,7 +434,7 @@ class Simulation
     }
 
     void attacker_modify_defense_dice(
-		const(int)[DieResult.Num] attack_results,
+		ubyte[DieResult.Num] attack_results,
         ref DiceState defense_dice,
         ref TokenState defense_tokens) const
     {
@@ -443,7 +443,7 @@ class Simulation
     }
 
     int defender_modify_defense_dice_before_reroll(
-		const(int)[DieResult.Num] attack_results,
+		const(ubyte)[DieResult.Num] attack_results,
         ref DiceState defense_dice,
         ref TokenState defense_tokens) const
     {
@@ -470,7 +470,7 @@ class Simulation
     }
 
     void defender_modify_defense_dice_after_reroll(
-		const(int)[DieResult.Num] attack_results,
+		const(ubyte)[DieResult.Num] attack_results,
         ref DiceState defense_dice,
         ref TokenState defense_tokens) const
     {
@@ -565,9 +565,9 @@ class Simulation
         assert(defense_tokens.focus >= 0);
     }
 
-    private int[DieResult.Num] compare_results(
-		int[DieResult.Num] attack_results,
-        int[DieResult.Num] defense_results) const
+    private ubyte[DieResult.Num] compare_results(
+		ubyte[DieResult.Num] attack_results,
+        ubyte[DieResult.Num] defense_results) const
     {
         // Sanity...
         assert(attack_results[DieResult.Evade] == 0);
@@ -774,31 +774,32 @@ class Simulation
 
     private SimulationState attack_modify_after_reroll(SimulationState state)
     {
-        attacker_modify_attack_dice_after_reroll(state.attack_dice, state.attack_tokens);		
-        // Done modifying attack dice
+        attacker_modify_attack_dice_after_reroll(state.attack_dice, state.attack_tokens);
 
-		// State simplification
-		// TODO: Store total dice count somewhere if lightweight frame or other effects are present for defender
-		state.dice_to_reroll = 0;
-		state.attack_dice.simplify();
+        // Done modifying attack dice
+        state.attack_dice.finalize();
+		state.dice_to_reroll = 0;		
 
 		return state;
     }
 
     private SimulationState defense_modify_before_reroll(SimulationState state)
     {
-        attacker_modify_defense_dice(state.attack_dice.count_all(), state.defense_dice, state.defense_tokens);
-        state.dice_to_reroll = defender_modify_defense_dice_before_reroll(state.attack_dice.count_all(), state.defense_dice, state.defense_tokens);
+        attacker_modify_defense_dice(state.attack_dice.final_results, state.defense_dice, state.defense_tokens);
+        state.dice_to_reroll = defender_modify_defense_dice_before_reroll(state.attack_dice.final_results, state.defense_dice, state.defense_tokens);
 		return state;
     }
 
     private SimulationState defense_modify_after_reroll(SimulationState state)
     {
-        defender_modify_defense_dice_after_reroll(state.attack_dice.count_all(), state.defense_dice, state.defense_tokens);
+        defender_modify_defense_dice_after_reroll(state.attack_dice.final_results, state.defense_dice, state.defense_tokens);
+
         // Done modifying defense dice
+        state.defense_dice.finalize();
+		state.dice_to_reroll = 0;
 
 		// Compare results
-		auto attack_results = compare_results(state.attack_dice.count_all(), state.defense_dice.count_all());
+		auto attack_results = compare_results(state.attack_dice.final_results, state.defense_dice.final_results);
 
 		// "After attack" abilities do not trigger on the first of a "secondary perform twice" attack
 		if (state.completed_attack_count > 0 || m_setup.type != MultiAttackType.SecondaryPerformTwice)
