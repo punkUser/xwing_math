@@ -569,11 +569,6 @@ class Simulation
 		ubyte[DieResult.Num] attack_results,
         ubyte[DieResult.Num] defense_results) const
     {
-        // Sanity...
-        assert(attack_results[DieResult.Evade] == 0);
-        assert(defense_results[DieResult.Hit] == 0);
-        assert(defense_results[DieResult.Crit] == 0);
-
         // Compare results
 
         // Cancel pairs of hits and evades

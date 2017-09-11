@@ -118,8 +118,9 @@ public struct TokenState
 public struct SimulationState
 {
     DiceState attack_dice;
-    TokenState attack_tokens;
     DiceState defense_dice;
+
+    TokenState attack_tokens;
     TokenState defense_tokens;
 
     // Information for next stage of iteration

@@ -11,10 +11,11 @@ public immutable int k_all_dice_count = 1000;
 public enum DieResult : int
 {
     Blank = 0,
-    Hit,
-    Crit,
-    Focus,
-    Evade,
+    Focus = 1,
+    Hit = 2,
+    // Minor optimization... hit/crit are mutually exclusive with evade, so reuse the index
+    Evade = 2,
+    Crit = 3,
     Num
 };
 
