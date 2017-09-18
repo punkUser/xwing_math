@@ -3,6 +3,18 @@ extends layout
 block content
     h1 Frequently Asked Questions
 
+    ul.accordion(data-accordion, data-multi-expand="true", data-allow-all-closed="true")
+
+        li.accordion-item(data-accordion-item)
+            a.accordion-title(href="#") What's the difference between "Basic" and "Advanced"?
+            div.accordion-content(data-tab-content)
+                p Stuffs!
+
+        li.accordion-item(data-accordion-item)
+            a.accordion-title(href="#") Which effects and triggers are active?
+            div.accordion-content(data-tab-content)
+                p Stuffs!
+
     //- Exhaustive search
 
     //- Advanced vs basic form (basic is convenience, maps to advanced fields)

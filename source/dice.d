@@ -36,11 +36,11 @@ public struct DiceState
         final_results[] = 0;
     }
 
-	// "Finalize" dice state into only states that matter for comparing results after all modification
+	// "Finalize" dice state "final_results"
     // Converts all focus results into blanks but maintains the total dice count (for things like lightwight frame)
 	void finalize()
 	{
-		final_results = results[] + rerolled_results[] + final_results[];
+		final_results[] += results[] + rerolled_results[];
         final_results[DieResult.Blank] += final_results[DieResult.Focus];
 		final_results[DieResult.Focus] = 0;
 
