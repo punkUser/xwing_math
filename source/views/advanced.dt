@@ -46,6 +46,7 @@ block form
                         - stepper_control_t!"amad_focus_to_hit_count"   ("Focus to Hit",   0, 15);
                         - stepper_control_t!"amad_focus_to_crit_count"  ("Focus to Crit",  0, 15);
                         - stepper_control_t!"amad_hit_to_crit_count"    ("Hit to Crit",    0, 15);
+                        - stepper_control_t!"amad_spend_focus_one_blank_to_hit_count"("Spend Focus, One Blank to Hit", 0, 15);
                         - switch_control_t! "amad_accuracy_corrector"   ("Accuracy Corrector");
                     fieldset.fieldset
                         legend Change Results Once
@@ -78,13 +79,14 @@ block form
                         - stepper_control_t!"dmdd_add_evade_count" ("Evade", 0, 2);
                     fieldset.fieldset
                         legend Free Rerolls
-                        - stepper_control_t!"dmdd_reroll_blank_count" ("Blank", 0, 20);
-                        - stepper_control_t!"dmdd_reroll_focus_count" ("Focus", 0, 20);
-                        - stepper_control_t!"dmdd_reroll_any_count"   ("Any",   0, 20);
+                        - stepper_control_t!"dmdd_reroll_blank_count" ("Blank", 0, 15);
+                        - stepper_control_t!"dmdd_reroll_focus_count" ("Focus", 0, 15);
+                        - stepper_control_t!"dmdd_reroll_any_count"   ("Any",   0, 15);
                     fieldset.fieldset
                         legend Change Results
-                        - stepper_control_t!"dmdd_blank_to_evade_count" ("Blank to Evade",  0, 20);
-                        - stepper_control_t!"dmdd_focus_to_evade_count" ("Focus to Evade",  0, 20);
+                        - stepper_control_t!"dmdd_blank_to_evade_count" ("Blank to Evade",  0, 15);
+                        - stepper_control_t!"dmdd_focus_to_evade_count" ("Focus to Evade",  0, 15);
+                        - stepper_control_t!"dmdd_spend_focus_one_blank_to_evade_count"("Spend Focus, One Blank to Evade", 0, 15);
                             
                 .callout.small.primary
                     - import simulation : MultiAttackType;

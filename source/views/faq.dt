@@ -1,6 +1,8 @@
 extends layout
 
 block content
+    //- Exhaustive search
+
     h1 Frequently Asked Questions
 
     ul.accordion(data-accordion, data-multi-expand="true", data-allow-all-closed="true")
@@ -15,10 +17,8 @@ block content
             div.accordion-content(data-tab-content)
                 p Stuffs!
 
-    //- Exhaustive search
-
-    //- Advanced vs basic form (basic is convenience, maps to advanced fields)
-    
+    //- Can you add X? [Advanced form, things with too many decisions/combinations, UI complexities]
+        
     //- Attacker tries to maximize hits
     //- Rerolls all done at once
 

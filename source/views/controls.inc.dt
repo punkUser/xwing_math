@@ -21,7 +21,7 @@
     .grid-x
         .auto.cell
             label(for="#{name}") #{label}
-        .auto.cell
+        .shrink.cell
             .input-group.stepper-group
                 .input-group-button
                     button.button.stepper-button(type="button", data-delta="-1") -

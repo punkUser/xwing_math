@@ -43,6 +43,7 @@ struct SimulationSetup
 		int blank_to_hit_count = 0;
 		int blank_to_focus_count = 0;
 		int hit_to_crit_count = 0;
+        int spend_focus_one_blank_to_hit = 0;
 
 		// NOTE: Single use abilities are treated as "tokens" (see TokenState)
 
@@ -89,6 +90,7 @@ struct SimulationSetup
 		// Change results
 		int blank_to_evade_count = 0;
 		int focus_to_evade_count = 0;
+        int spend_focus_one_blank_to_evade = 0;
 	};
 	DefenderModifyDefenseDice DMDD;
 
@@ -392,15 +394,28 @@ class Simulation
 		// Generally we prefer spending focus to any more general modifications that work other dice results
         if (attack_tokens.focus > 0)
         {
-            int changed_results = attack_dice.change_dice(DieResult.Focus, DieResult.Hit);
+            int initial_focus_count = attack_tokens.focus;
 
-            // NOTE: We don't currently have any other "spend focus to X" abilities, so for now we can
-            // just always force this focus spend if required by the setup.
-            // NOTE: This still works correctly with accuracy corrector, as the FAQ states that if you
-            // invoke AC and thus cannot modify dice, you are no longer able/required to spend focus.
-            if (changed_results > 0 || m_setup.attack_must_spend_focus)
+            writefln("Before: %s b, %s f, %s h, %s c   %s", attack_dice.count(DieResult.Blank), attack_dice.count(DieResult.Focus), attack_dice.count(DieResult.Hit), attack_dice.count(DieResult.Crit), attack_tokens.focus);
+
+            // Regular focus effect
+            if (attack_dice.change_dice(DieResult.Focus, DieResult.Hit) > 0)
                 --attack_tokens.focus;
             
+            // Spend a focus each to convert a blank into a hit
+            int blank_to_hit_count = min(m_setup.AMAD.spend_focus_one_blank_to_hit, attack_tokens.focus);
+            attack_tokens.focus -= attack_dice.change_dice(DieResult.Blank, DieResult.Hit, blank_to_hit_count);
+
+            // NOTE: This still works correctly with accuracy corrector, as the FAQ states that if you
+            // invoke AC and thus cannot modify dice, you are no longer able/required to spend focus.
+            if (m_setup.attack_must_spend_focus && initial_focus_count == attack_tokens.focus)
+            {
+                --attack_tokens.focus;
+                // NOTE: Would need to modify this logic if we add additional complexity around "one damage on hit"
+                assert(attack_dice.count_mutable(DieResult.Focus) == 0);
+            }
+
+            writefln("After: %s b, %s f, %s h, %s c   %s", attack_dice.count(DieResult.Blank), attack_dice.count(DieResult.Focus), attack_dice.count(DieResult.Hit), attack_dice.count(DieResult.Crit), attack_tokens.focus);
         }
 
 		// Modify any hit results (including those generated above) as appropriate
@@ -474,6 +489,8 @@ class Simulation
         ref DiceState defense_dice,
         ref TokenState defense_tokens) const
     {
+        int initial_focus_count = defense_tokens.focus;
+
 		// Change results
 		// NOTE: Order matters here - do the most useful changes first
 		defense_dice.change_dice(DieResult.Blank, DieResult.Evade, m_setup.DMDD.blank_to_evade_count);
@@ -481,10 +498,10 @@ class Simulation
 
         // Figure out if we should spend focus or evade tokens (regular effect)
         int uncanceled_hits = attack_results[DieResult.Hit] + attack_results[DieResult.Crit] - defense_dice.count(DieResult.Evade);
-		int focus_results = defense_dice.count(DieResult.Focus);
+		int mutable_focus_results = defense_dice.count_mutable(DieResult.Focus);
 
 		// FAQ update: can only spend a single focus or evade per attack!
-        bool can_spend_focus = (defense_tokens.focus > 0 && focus_results > 0);
+        bool can_spend_focus = (defense_tokens.focus > 0 && mutable_focus_results > 0);
 		bool can_spend_evade = (defense_tokens.evade > 0);
 
         bool spent_focus = false;
@@ -493,7 +510,7 @@ class Simulation
         // Spend regular focus or evade tokens?
         if (uncanceled_hits > 0 && (can_spend_focus || can_spend_evade))
         {
-            int max_damage_canceled = (can_spend_focus ? focus_results : 0) + (can_spend_evade ? 1 : 0);
+            int max_damage_canceled = (can_spend_focus ? mutable_focus_results : 0) + (can_spend_evade ? 1 : 0);
             bool can_cancel_all = (max_damage_canceled >= uncanceled_hits);
 
             // In the presence of "one damage on hit" effects from the attacker, if we can't cancel everything,
@@ -506,7 +523,7 @@ class Simulation
                 // - Generally prefer to spend focus if none of the above conditions apply                
                 bool prefer_spend_focus = (m_setup.AMDD.evade_to_focus_count == 0) || (m_setup.defense_must_spend_focus);
 
-                bool can_cancel_all_with_focus = can_spend_focus && (focus_results >= uncanceled_hits);
+                bool can_cancel_all_with_focus = can_spend_focus && (mutable_focus_results >= uncanceled_hits);
                 bool can_cancel_all_with_evade = can_spend_evade && (1 >= uncanceled_hits);
 
                 // Do we need to spend both to cancel all hits?
@@ -544,9 +561,9 @@ class Simulation
             }
         }
 
-        if (spent_focus || (defense_tokens.focus > 0 && m_setup.defense_must_spend_focus))
+        if (spent_focus)
         {
-            uncanceled_hits -= focus_results;
+            uncanceled_hits -= mutable_focus_results;
             defense_dice.change_dice(DieResult.Focus, DieResult.Evade);
             --defense_tokens.focus;
         }
@@ -557,6 +574,21 @@ class Simulation
             --uncanceled_hits;
             ++defense_dice.results[DieResult.Evade];
             --defense_tokens.evade;
+        }
+        
+        // If we still have uncanceled hits, consider spending other tokens if possible)
+        if (uncanceled_hits > 0)
+        {
+            // Spend a focus each to convert a blank into an evade
+            int blank_to_evade_count = min(m_setup.DMDD.spend_focus_one_blank_to_evade, defense_tokens.focus);
+            defense_tokens.focus -= defense_dice.change_dice(DieResult.Blank, DieResult.Evade, blank_to_evade_count);
+        }
+
+        // If required and we didn't already spend focus, spend it now
+        if (m_setup.defense_must_spend_focus && initial_focus_count > 0 && initial_focus_count == defense_tokens.focus)
+        {
+            --defense_tokens.focus;
+            assert(uncanceled_hits == 0 || defense_dice.count_mutable(DieResult.Focus) == 0);
         }
 
         // Sanity

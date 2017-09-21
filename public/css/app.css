@@ -85,6 +85,7 @@ label {
 }
 
 .stepper-group .stepper-number {
+	width: 3.5rem;
 	height: 2.0rem;
 	text-align: center;
 	vertical-align: middle;

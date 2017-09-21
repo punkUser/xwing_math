@@ -53,6 +53,11 @@ public struct DiceState
     {
         return results[type] + rerolled_results[type] + final_results[type];
     }
+    // As above, but excludes "final", immutable dice
+    pure int count_mutable(DieResult type) const
+    {
+        return results[type] + rerolled_results[type];
+    }
 
     // Removes dice that we are able to reroll from results and returns the
     // number that were removed. Caller should add rerolled_results based on this.

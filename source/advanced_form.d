@@ -27,7 +27,7 @@ struct AdvancedForm
 
     // Integer fields
     mixin(bitfields!(
-        ubyte, "attack_type",                 4,        // enum MultiAttackType
+        ubyte, "attack_type",                 4,    // enum MultiAttackType
         ubyte, "attack_dice",                 4,
         ubyte, "attack_focus_token_count",    4,
         ubyte, "attack_target_lock_count",    4,
@@ -65,9 +65,9 @@ struct AdvancedForm
         ubyte, "dmdd_blank_to_evade_count",   4,
 
         ubyte, "dmdd_focus_to_evade_count",   4,
-        ubyte, "dmad_hit_to_focus_no_reroll_count", 	  4,
-
-        uint, "",							  8,	// Padding/reserved space
+        ubyte, "dmad_hit_to_focus_no_reroll_count", 	    4,
+        ubyte, "amad_spend_focus_one_blank_to_hit_count",   4,
+        ubyte, "dmdd_spend_focus_one_blank_to_evade_count", 4,
     ));
 
     // Can always add more on the end, so no need to reserve space explicitly
@@ -119,8 +119,9 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     setup.AMAD.blank_to_hit_count    = form.amad_blank_to_hit_count;
     setup.AMAD.blank_to_focus_count  = form.amad_blank_to_focus_count;
     setup.AMAD.hit_to_crit_count     = form.amad_hit_to_crit_count;
+    setup.AMAD.spend_focus_one_blank_to_hit = form.amad_spend_focus_one_blank_to_hit_count;
     setup.AMAD.accuracy_corrector    = form.amad_accuracy_corrector;
-    setup.AMDD.evade_to_focus_count  = form.amdd_evade_to_focus_count;
+    setup.AMDD.evade_to_focus_count  = form.amdd_evade_to_focus_count;    
 
     setup.defense_dice               = form.defense_dice;
     setup.defense_tokens.focus       = form.defense_focus_token_count;
@@ -136,7 +137,8 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     setup.DMDD.reroll_any_count      = form.dmdd_reroll_any_count;
     setup.DMDD.blank_to_evade_count  = form.dmdd_blank_to_evade_count;
     setup.DMDD.focus_to_evade_count  = form.dmdd_focus_to_evade_count;
-    setup.DMAD.hit_to_focus_no_reroll_count = form.dmad_hit_to_focus_no_reroll_count;
+    setup.DMDD.spend_focus_one_blank_to_evade = form.dmdd_spend_focus_one_blank_to_evade_count;
+    setup.DMAD.hit_to_focus_no_reroll_count   = form.dmad_hit_to_focus_no_reroll_count;
 
     return setup;
 }
