@@ -3,7 +3,7 @@ import dice;
 
 import std.bitmanip;
 
-struct AdvancedForm
+align(1) struct AdvancedForm
 {
     // NOTE: DO NOT CHANGE SIZE/ORDER of these fields
     // The entire point in this structure is for consistent serialization
