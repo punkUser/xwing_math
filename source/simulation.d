@@ -43,6 +43,14 @@ struct SimulationSetup
 		int blank_to_hit_count = 0;
 		int blank_to_focus_count = 0;
 		int hit_to_crit_count = 0;
+
+        // Free change results depending on whether stress is present
+        int unstressed_focus_to_hit_count = 0;
+        int unstressed_focus_to_crit_count = 0;
+        int stressed_focus_to_hit_count = 0;
+        int stressed_focus_to_crit_count = 0;
+
+        // Spend tokens to change results
         int spend_focus_one_blank_to_hit = 0;
 
 		// NOTE: Single use abilities are treated as "tokens" (see TokenState)
@@ -260,7 +268,17 @@ class Simulation
 
 
 
-
+    // Utilities...
+    private int focus_to_hit_count(ref TokenState attack_tokens) const
+    {
+        return m_setup.AMAD.focus_to_hit_count + 
+            (attack_tokens.stress > 0 ? m_setup.AMAD.stressed_focus_to_hit_count : m_setup.AMAD.unstressed_focus_to_hit_count);
+    }
+    private int focus_to_crit_count(ref TokenState attack_tokens) const
+    {
+        return m_setup.AMAD.focus_to_crit_count + 
+            (attack_tokens.stress > 0 ? m_setup.AMAD.stressed_focus_to_crit_count : m_setup.AMAD.unstressed_focus_to_crit_count);
+    }
 
     // TODO: Needs a way to force rerolls eventually as well
     private void defender_modify_attack_dice(ref DiceState attack_dice,
@@ -292,7 +310,7 @@ class Simulation
 		// must be done "together" and which can be done separately and so on.
 		
 		// "Useful" focus results are ones we can turn into hits or crits
-		int useful_focus_results = (m_setup.AMAD.focus_to_hit_count + m_setup.AMAD.focus_to_crit_count);
+		int useful_focus_results = (focus_to_hit_count(attack_tokens) + m_setup.AMAD.focus_to_crit_count);
 		if (attack_tokens.focus > 0)			// Simplification since this involves spending a token, but good enough
 			useful_focus_results = k_all_dice_count;
 
@@ -377,8 +395,8 @@ class Simulation
 		attack_dice.change_dice(DieResult.Blank, DieResult.Crit,  m_setup.AMAD.blank_to_crit_count);
 		attack_dice.change_dice(DieResult.Blank, DieResult.Hit,   m_setup.AMAD.blank_to_hit_count);
 		attack_dice.change_dice(DieResult.Blank, DieResult.Focus, m_setup.AMAD.blank_to_focus_count);
-		attack_dice.change_dice(DieResult.Focus, DieResult.Crit,  m_setup.AMAD.focus_to_crit_count);
-		attack_dice.change_dice(DieResult.Focus, DieResult.Hit,   m_setup.AMAD.focus_to_hit_count);
+		attack_dice.change_dice(DieResult.Focus, DieResult.Crit,  focus_to_crit_count(attack_tokens));
+		attack_dice.change_dice(DieResult.Focus, DieResult.Hit,   focus_to_hit_count(attack_tokens));
 
 		// TODO: We should technically take one damage on hit and a bunch of details about
 		// the defender's maximum defense results into account here with respect to spending
@@ -396,8 +414,6 @@ class Simulation
         {
             int initial_focus_count = attack_tokens.focus;
 
-            writefln("Before: %s b, %s f, %s h, %s c   %s", attack_dice.count(DieResult.Blank), attack_dice.count(DieResult.Focus), attack_dice.count(DieResult.Hit), attack_dice.count(DieResult.Crit), attack_tokens.focus);
-
             // Regular focus effect
             if (attack_dice.change_dice(DieResult.Focus, DieResult.Hit) > 0)
                 --attack_tokens.focus;
@@ -414,8 +430,6 @@ class Simulation
                 // NOTE: Would need to modify this logic if we add additional complexity around "one damage on hit"
                 assert(attack_dice.count_mutable(DieResult.Focus) == 0);
             }
-
-            writefln("After: %s b, %s f, %s h, %s c   %s", attack_dice.count(DieResult.Blank), attack_dice.count(DieResult.Focus), attack_dice.count(DieResult.Hit), attack_dice.count(DieResult.Crit), attack_tokens.focus);
         }
 
 		// Modify any hit results (including those generated above) as appropriate

@@ -34,7 +34,7 @@ block form
                         .switch-mutex
                             - switch_control_t!"attack_dengar_1"       ("Dengar (1 reroll)");
                             - switch_control_t!"attack_dengar_2"       ("Dengar (2 rerolls)");
-                        //- switch_control_t!"attack_ezra_crew"          ("Ezra");
+                        - switch_control_t!"attack_ezra_crew"          ("Ezra");
                         - switch_control_t!"attack_finn"               ("Finn");
                         - switch_control_t!"attack_hotshot_copilot"    ("Hotshot Copilot");
                         - switch_control_t!"attack_mercenary_copilot"  ("Mercenary Copilot");
