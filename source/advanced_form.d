@@ -12,59 +12,60 @@ align(1) struct AdvancedForm
 
     // Boolean fields
     mixin(bitfields!(
-        bool, "attack_heavy_laser_cannon",    1,
-        bool, "attack_fire_control_system",   1,
-        bool, "attack_one_damage_on_hit",     1,
-        bool, "amad_accuracy_corrector",      1,
+        bool, "attack_heavy_laser_cannon",                  1,
+        bool, "attack_fire_control_system",                 1,
+        bool, "attack_one_damage_on_hit",                   1,
+        bool, "amad_accuracy_corrector",                    1,
 
-        bool, "amad_once_any_to_hit",         1,
-        bool, "amad_once_any_to_crit",        1,
-        bool, "attack_must_spend_focus",      1,
-        bool, "defense_must_spend_focus",     1,
+        bool, "amad_once_any_to_hit",                       1,
+        bool, "amad_once_any_to_crit",                      1,
+        bool, "attack_must_spend_focus",                    1,
+        bool, "defense_must_spend_focus",                   1,
 
-        uint, "",							  8,	// Padding/reserved space
+        ubyte, "attack_stress_count",                       4,
+        ubyte, "defense_stress_count",                      4,
         ));
 
     // Integer fields
     mixin(bitfields!(
-        ubyte, "attack_type",                 4,    // enum MultiAttackType
-        ubyte, "attack_dice",                 4,
-        ubyte, "attack_focus_token_count",    4,
-        ubyte, "attack_target_lock_count",    4,
+        ubyte, "attack_type",                               4,  // enum MultiAttackType
+        ubyte, "attack_dice",                               4,
+        ubyte, "attack_focus_token_count",                  4,
+        ubyte, "attack_target_lock_count",                  4,
 
-        ubyte, "amad_add_hit_count",          4,
-        ubyte, "amad_add_crit_count",         4,
-        ubyte, "amad_add_blank_count",        4,
-        ubyte, "amad_add_focus_count",        4,
+        ubyte, "amad_add_hit_count",                        4,
+        ubyte, "amad_add_crit_count",                       4,
+        ubyte, "amad_add_blank_count",                      4,
+        ubyte, "amad_add_focus_count",                      4,
 
-        ubyte, "amad_reroll_blank_count",     4,
-        ubyte, "amad_reroll_focus_count",     4,
-        ubyte, "amad_reroll_any_count",		  4,
-        ubyte, "amad_focus_to_crit_count",    4,
+        ubyte, "amad_reroll_blank_count",                   4,
+        ubyte, "amad_reroll_focus_count",                   4,
+        ubyte, "amad_reroll_any_count",		                4,
+        ubyte, "amad_focus_to_crit_count",                  4,
 
-        ubyte, "amad_focus_to_hit_count",     4,
-        ubyte, "amad_blank_to_crit_count",    4,
-        ubyte, "amad_blank_to_hit_count",     4,
-        ubyte, "amad_blank_to_focus_count",   4,
+        ubyte, "amad_focus_to_hit_count",                   4,
+        ubyte, "amad_blank_to_crit_count",                  4,
+        ubyte, "amad_blank_to_hit_count",                   4,
+        ubyte, "amad_blank_to_focus_count",                 4,
     ));
 
     mixin(bitfields!(
-        ubyte, "amad_hit_to_crit_count", 	  4,
-        ubyte, "amdd_evade_to_focus_count",   4,
-        ubyte, "defense_dice", 			      4,
-        ubyte, "defense_focus_token_count",   4,
+        ubyte, "amad_hit_to_crit_count", 	                4,
+        ubyte, "amdd_evade_to_focus_count",                 4,
+        ubyte, "defense_dice", 			                    4,
+        ubyte, "defense_focus_token_count",                 4,
 
-        ubyte, "defense_evade_token_count",   4,
-        ubyte, "dmdd_add_blank_count", 	      4,
-        ubyte, "dmdd_add_focus_count", 	      4,
-        ubyte, "dmdd_add_evade_count", 		  4,
+        ubyte, "defense_evade_token_count",                 4,
+        ubyte, "dmdd_add_blank_count", 	                    4,
+        ubyte, "dmdd_add_focus_count", 	                    4,
+        ubyte, "dmdd_add_evade_count", 		                4,
 
-        ubyte, "dmdd_reroll_blank_count", 	  4,
-        ubyte, "dmdd_reroll_focus_count", 	  4,
-        ubyte, "dmdd_reroll_any_count", 	  4,
-        ubyte, "dmdd_blank_to_evade_count",   4,
+        ubyte, "dmdd_reroll_blank_count", 	                4,
+        ubyte, "dmdd_reroll_focus_count", 	                4,
+        ubyte, "dmdd_reroll_any_count", 	                4,
+        ubyte, "dmdd_blank_to_evade_count",                 4,
 
-        ubyte, "dmdd_focus_to_evade_count",   4,
+        ubyte, "dmdd_focus_to_evade_count",                 4,
         ubyte, "dmad_hit_to_focus_no_reroll_count", 	    4,
         ubyte, "amad_spend_focus_one_blank_to_hit_count",   4,
         ubyte, "dmdd_spend_focus_one_blank_to_evade_count", 4,
@@ -72,9 +73,14 @@ align(1) struct AdvancedForm
 
     mixin(bitfields!(
         ubyte, "amad_unstressed_focus_to_hit_count",        4,
-        ubyte, "amad_unstressed_focus_to_crit_count",       4,
         ubyte, "amad_stressed_focus_to_hit_count",          4,
+        ubyte, "amad_unstressed_focus_to_crit_count",       4,
         ubyte, "amad_stressed_focus_to_crit_count",         4,
+
+        ubyte, "amad_unstressed_reroll_focus_count",        4,
+        ubyte, "amad_stressed_reroll_focus_count",          4,
+        ubyte, "dmdd_unstressed_reroll_focus_count",        4,
+        ubyte, "dmdd_stressed_reroll_focus_count",          4,
         ));
 
     // Can always add more on the end, so no need to reserve space explicitly
@@ -103,6 +109,7 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     setup.attack_dice                           = form.attack_dice;
     setup.attack_tokens.focus                   = form.attack_focus_token_count;
     setup.attack_tokens.target_lock             = form.attack_target_lock_count;
+    setup.attack_tokens.stress                  = form.attack_stress_count;
 
     // Once per turn abilities are treated like "tokens" for simulation purposes
     setup.attack_tokens.amad_any_to_hit         = form.amad_once_any_to_hit;
@@ -120,6 +127,9 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     setup.AMAD.reroll_blank_count               = form.amad_reroll_blank_count;
     setup.AMAD.reroll_focus_count               = form.amad_reroll_focus_count;
     setup.AMAD.reroll_any_count                 = form.amad_reroll_any_count;
+    setup.AMAD.unstressed_reroll_focus_count    = form.amad_unstressed_reroll_focus_count;
+    setup.AMAD.stressed_reroll_focus_count      = form.amad_stressed_reroll_focus_count;
+
     setup.AMAD.focus_to_crit_count              = form.amad_focus_to_crit_count;
     setup.AMAD.focus_to_hit_count               = form.amad_focus_to_hit_count;
     setup.AMAD.blank_to_crit_count              = form.amad_blank_to_crit_count;
@@ -142,6 +152,7 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     setup.defense_dice                          = form.defense_dice;
     setup.defense_tokens.focus                  = form.defense_focus_token_count;
     setup.defense_tokens.evade                  = form.defense_evade_token_count;
+    setup.defense_tokens.stress                 = form.defense_stress_count;
 
     setup.defense_must_spend_focus              = form.defense_must_spend_focus;
 
@@ -151,6 +162,9 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     setup.DMDD.reroll_blank_count               = form.dmdd_reroll_blank_count;
     setup.DMDD.reroll_focus_count               = form.dmdd_reroll_focus_count;
     setup.DMDD.reroll_any_count                 = form.dmdd_reroll_any_count;
+    setup.DMDD.unstressed_reroll_focus_count    = form.dmdd_unstressed_reroll_focus_count;
+    setup.DMDD.stressed_reroll_focus_count      = form.dmdd_stressed_reroll_focus_count;
+
     setup.DMDD.blank_to_evade_count             = form.dmdd_blank_to_evade_count;
     setup.DMDD.focus_to_evade_count             = form.dmdd_focus_to_evade_count;
     setup.DMDD.spend_focus_one_blank_to_evade   = form.dmdd_spend_focus_one_blank_to_evade_count;

@@ -19,16 +19,16 @@ public class WWWServer
         //settings.sessionStore = new MemorySessionStore();
         //settings.accessLogFile = m_config.http_server_log_file;
 
-		settings.accessLogToConsole = true;
+        settings.accessLogToConsole = true;
 
-	    auto router = new URLRouter;
+        auto router = new URLRouter;
     
         router.get("/", &basic);
-		router.get("/advanced/", &advanced);
+        router.get("/advanced/", &advanced);
         router.get("/faq/", &faq);
         router.post("/simulate_basic.json", &simulate_basic);
-		router.post("/simulate_advanced.json", &simulate_advanced);
-	
+        router.post("/simulate_advanced.json", &simulate_advanced);
+    
         debug
         {
             // Show routes in debug for convenience
@@ -49,18 +49,18 @@ public class WWWServer
 
         router.get("*", serveStaticFiles("./public/"));    
 
-	    listenHTTP(settings, router);
+        listenHTTP(settings, router);
     }
 
     // Handy utility for adding some robustness to routes
     // NOTE: Be careful with this for paths that might contain query strings or other nastiness
     private HTTPServerRequestDelegate redirect_append_slash(HTTPStatus status = HTTPStatus.found)
     {
-	    return (HTTPServerRequest req, HTTPServerResponse res) {
+        return (HTTPServerRequest req, HTTPServerResponse res) {
             req.path ~= "/";
             auto url = req.fullURL();
             res.redirect(url, status);
-	    };
+        };
     }
 
     private struct SimulationContent
@@ -83,35 +83,35 @@ public class WWWServer
     {
         //debug writeln(req.form.serializeToPrettyJson());
 
-		auto basic_form = create_form_from_fields!BasicForm(req.form);
-		string form_state_string = serialize_form_to_url(basic_form);
-		SimulationSetup setup = to_simulation_setup(basic_form);
+        auto basic_form = create_form_from_fields!BasicForm(req.form);
+        string form_state_string = serialize_form_to_url(basic_form);
+        SimulationSetup setup = to_simulation_setup(basic_form);
 
         simulate_response(req.peer, res, setup, form_state_string);
-	}
+    }
 
-	private void simulate_advanced(HTTPServerRequest req, HTTPServerResponse res)
+    private void simulate_advanced(HTTPServerRequest req, HTTPServerResponse res)
     {
-		//debug writeln(req.form.serializeToPrettyJson());
+        //debug writeln(req.form.serializeToPrettyJson());
 
-		auto advanced_form = create_form_from_fields!AdvancedForm(req.form);
-		string form_state_string = serialize_form_to_url(advanced_form);
-		SimulationSetup setup = to_simulation_setup(advanced_form);
+        auto advanced_form = create_form_from_fields!AdvancedForm(req.form);
+        string form_state_string = serialize_form_to_url(advanced_form);
+        SimulationSetup setup = to_simulation_setup(advanced_form);
 
         simulate_response(req.peer, res, setup, form_state_string);
-	}
+    }
 
-	private void simulate_response(string peer_address,		// Mostly for logging
-								   HTTPServerResponse res,
-								   ref const(SimulationSetup) setup,
+    private void simulate_response(string peer_address,		// Mostly for logging
+                                   HTTPServerResponse res,
+                                   ref const(SimulationSetup) setup,
                                    string form_state_string = "")
-	{
-		//writefln("Setup: %s", setup.serializeToPrettyJson());
+    {
+        //writefln("Setup: %s", setup.serializeToPrettyJson());
         //writeln(form_state_string);
 
         auto simulation = new Simulation(setup);
 
-		// Exhaustive search
+        // Exhaustive search
         {
             auto sw = StopWatch(AutoStart.yes);
 
@@ -184,7 +184,7 @@ public class WWWServer
         res.render!("basic.dt", form_values);
     }
 
-	private void advanced(HTTPServerRequest req, HTTPServerResponse res)
+    private void advanced(HTTPServerRequest req, HTTPServerResponse res)
     {
         // Load values from URL if present
         string form_state_string = req.query.get("q", "");
@@ -204,7 +204,7 @@ public class WWWServer
         // To be extra safe we avoid DB queries in the error page for now
         //auto recent_tournaments = m_data_store.tournaments(true);
 
-	    res.render!("error.dt", req, error);
+        res.render!("error.dt", req, error);
     }
 
 

@@ -10,6 +10,7 @@ block form
                     - stepper_control_t!"attack_dice"              ("Attack Dice",  0, 8);
                     - stepper_control_t!"attack_focus_token_count" ("Focus Tokens", 0, 2);
                     - stepper_control_t!"attack_target_lock_count" ("Target Locks", 0, 2);
+                    - stepper_control_t!"attack_stress_count"      ("Stress",       0, 2);
                             
                     fieldset.fieldset
                         legend Pilots
@@ -64,6 +65,7 @@ block form
                     - stepper_control_t!"defense_dice"              ("Defense Dice", 0, 6);
                     - stepper_control_t!"defense_focus_token_count" ("Focus Tokens", 0, 2);
                     - stepper_control_t!"defense_evade_token_count" ("Evade Tokens", 0, 2);
+                    - stepper_control_t!"defense_stress_count"      ("Stress",       0, 2);
                                
                     fieldset.fieldset
                         legend Pilots and Titles

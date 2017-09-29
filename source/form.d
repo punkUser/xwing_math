@@ -7,16 +7,16 @@ import vibe.d;
 // Handy utility from vibe.d
 private template isPublicMember(T, string M)
 {
-	import std.algorithm, std.typetuple : TypeTuple;
+    import std.algorithm, std.typetuple : TypeTuple;
 
-	static if (!__traits(compiles, TypeTuple!(__traits(getMember, T, M)))) enum isPublicMember = false;
-	else {
-		alias MEM = TypeTuple!(__traits(getMember, T, M));
-		static if (__traits(compiles, __traits(getProtection, MEM)))
-			enum isPublicMember = __traits(getProtection, MEM).among("public", "export");
-		else
-			enum isPublicMember = true;
-	}
+    static if (!__traits(compiles, TypeTuple!(__traits(getMember, T, M)))) enum isPublicMember = false;
+    else {
+        alias MEM = TypeTuple!(__traits(getMember, T, M));
+        static if (__traits(compiles, __traits(getProtection, MEM)))
+            enum isPublicMember = __traits(getProtection, MEM).among("public", "export");
+        else
+            enum isPublicMember = true;
+    }
 }
 
 

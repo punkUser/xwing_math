@@ -11,12 +11,13 @@ block form
                     - stepper_control_t!"attack_dice"              ("Attack Dice",  0, 8);
                     - stepper_control_t!"attack_focus_token_count" ("Focus Tokens", 0, 2);
                     - stepper_control_t!"attack_target_lock_count" ("Target Locks", 0, 2);
+                    - stepper_control_t!"attack_stress_count"      ("Stress",       0, 2);
 
                     fieldset.fieldset
                         legend Special Effects
                         - switch_control_t!"attack_fire_control_system" ("Fire Control System");
                         - switch_control_t!"attack_heavy_laser_cannon"  ("Heavy Laser Cannon");
-                        - switch_control_t!"attack_must_spend_focus"    ("Must Spend Focus");
+                        - switch_control_t!"attack_must_spend_focus"    ("Attacker Must Spend Focus");
                         - switch_control_t!"attack_one_damage_on_hit"   ("One Damage on Hit (TLT, Ion)");
                         
                 .callout.small.success
@@ -39,6 +40,12 @@ block form
                         - stepper_control_t!"amad_reroll_focus_count" ("Focus", 0, 15);
                         - stepper_control_t!"amad_reroll_any_count"   ("Any",   0, 15);
                     fieldset.fieldset
+                        legend If Unstressed, Reroll
+                        - stepper_control_t!"amad_unstressed_reroll_focus_count" ("Focus", 0, 15);
+                    fieldset.fieldset
+                        legend If Stressed, Reroll
+                        - stepper_control_t!"amad_stressed_reroll_focus_count" ("Focus", 0, 15);
+                    fieldset.fieldset
                         legend Change Results
                         - stepper_control_t!"amad_blank_to_focus_count" ("Blank to Focus", 0, 15);
                         - stepper_control_t!"amad_blank_to_hit_count"   ("Blank to Hit",   0, 15);
@@ -48,12 +55,12 @@ block form
                         - stepper_control_t!"amad_hit_to_crit_count"    ("Hit to Crit",    0, 15);
                     fieldset.fieldset
                         legend If Unstressed, Change
-                        - stepper_control_t!"amad_unstressed_focus_to_hit_count"   ("Focus to Hit",   0, 15);
-                        - stepper_control_t!"amad_unstressed_focus_to_crit_count"  ("Focus to Crit",  0, 15);
+                        - stepper_control_t!"amad_unstressed_focus_to_hit_count"   ("Focus to Hit",  0, 15);
+                        - stepper_control_t!"amad_unstressed_focus_to_crit_count"  ("Focus to Crit", 0, 15);
                     fieldset.fieldset
                         legend If Stressed, Change
-                        - stepper_control_t!"amad_stressed_focus_to_hit_count"   ("Focus to Hit",   0, 15);
-                        - stepper_control_t!"amad_stressed_focus_to_crit_count"  ("Focus to Crit",  0, 15);
+                        - stepper_control_t!"amad_stressed_focus_to_hit_count"   ("Focus to Hit",  0, 15);
+                        - stepper_control_t!"amad_stressed_focus_to_crit_count"  ("Focus to Crit", 0, 15);
                     fieldset.fieldset
                         legend Spend Focus to Change
                         - stepper_control_t!"amad_spend_focus_one_blank_to_hit_count"("One Blank to Hit", 0, 15);
@@ -70,10 +77,11 @@ block form
                     - stepper_control_t!"defense_dice"              ("Defense Dice", 0, 6);
                     - stepper_control_t!"defense_focus_token_count" ("Focus Tokens", 0, 2);
                     - stepper_control_t!"defense_evade_token_count" ("Evade Tokens", 0, 2);
+                    - stepper_control_t!"defense_stress_count"      ("Stress",       0, 2);
 
                     fieldset.fieldset
                         legend Special Effects
-                        - switch_control_t!"defense_must_spend_focus" ("Must Spend Focus");
+                        - switch_control_t!"defense_must_spend_focus" ("Defender Must Spend Focus");
 
                 .callout.small.alert
                     h3 Attacker Modify Defense Dice
@@ -94,9 +102,15 @@ block form
                         - stepper_control_t!"dmdd_reroll_focus_count" ("Focus", 0, 15);
                         - stepper_control_t!"dmdd_reroll_any_count"   ("Any",   0, 15);
                     fieldset.fieldset
+                        legend If Unstressed, Reroll
+                        - stepper_control_t!"dmdd_unstressed_reroll_focus_count" ("Focus", 0, 15);
+                    fieldset.fieldset
+                        legend If Stressed, Reroll
+                        - stepper_control_t!"dmdd_stressed_reroll_focus_count" ("Focus", 0, 15);
+                    fieldset.fieldset
                         legend Change Results
-                        - stepper_control_t!"dmdd_blank_to_evade_count" ("Blank to Evade",  0, 15);
-                        - stepper_control_t!"dmdd_focus_to_evade_count" ("Focus to Evade",  0, 15);
+                        - stepper_control_t!"dmdd_blank_to_evade_count" ("Blank to Evade", 0, 15);
+                        - stepper_control_t!"dmdd_focus_to_evade_count" ("Focus to Evade", 0, 15);
                     fieldset.fieldset
                         legend Spend Focus to Change
                         - stepper_control_t!"dmdd_spend_focus_one_blank_to_evade_count"("One Blank to Evade", 0, 15);

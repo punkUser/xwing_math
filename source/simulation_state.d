@@ -105,9 +105,9 @@ public struct TokenState
     ubyte target_lock = 0;
     ubyte stress = 0;
 
-	// Available once per turn abilities
-	bool amad_any_to_hit = false;
-	bool amad_any_to_crit = false;
+    // Available once per turn abilities
+    bool amad_any_to_hit = false;
+    bool amad_any_to_crit = false;
 
     int opCmp(ref const TokenState s) const
     {

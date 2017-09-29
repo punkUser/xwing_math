@@ -36,20 +36,20 @@ public struct DiceState
         final_results[] = 0;
     }
 
-	// "Finalize" dice state "final_results"
+    // "Finalize" dice state "final_results"
     // Converts all focus results into blanks but maintains the total dice count (for things like lightwight frame)
-	void finalize()
-	{
-		final_results[] += results[] + rerolled_results[];
+    void finalize()
+    {
+        final_results[] += results[] + rerolled_results[];
         final_results[DieResult.Blank] += final_results[DieResult.Focus];
-		final_results[DieResult.Focus] = 0;
+        final_results[DieResult.Focus] = 0;
 
         results[] = 0;
-		rerolled_results[] = 0;
-	}
+        rerolled_results[] = 0;
+    }
 
     // Utilities
-	pure int count(DieResult type) const
+    pure int count(DieResult type) const
     {
         return results[type] + rerolled_results[type] + final_results[type];
     }
@@ -79,7 +79,7 @@ public struct DiceState
     {
         if (max_count == 0)
             return 0;
-		assert(max_count > 0);
+        assert(max_count > 0);
 
         // Change rerolled dice first
         int changed_count = 0;
@@ -103,15 +103,15 @@ public struct DiceState
         return changed_count;
     }
 
-	// Prefers changing blanks, secondarily focus results
-	int change_blank_focus(DieResult to, int max_count = int.max)
-	{
-		int changed_results = change_dice(DieResult.Blank, to, max_count);
-		if (changed_results >= max_count) return changed_results;
+    // Prefers changing blanks, secondarily focus results
+    int change_blank_focus(DieResult to, int max_count = int.max)
+    {
+        int changed_results = change_dice(DieResult.Blank, to, max_count);
+        if (changed_results >= max_count) return changed_results;
 
-		changed_results += change_dice(DieResult.Focus, to, max_count - changed_results);
-		return changed_results;
-	}
+        changed_results += change_dice(DieResult.Focus, to, max_count - changed_results);
+        return changed_results;
+    }
 
     // Like above, but the changed dice cannot be rerolled
     // Because this is generally used when modifying *opponents* dice, we prefer
@@ -122,7 +122,7 @@ public struct DiceState
     {
         if (max_count == 0)
             return 0;
-		assert(max_count > 0);
+        assert(max_count > 0);
 
         // Change regular dice first
         int changed_count = 0;

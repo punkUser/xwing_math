@@ -65,6 +65,11 @@ align(1) struct BasicForm
         bool, "defense_hotshot_copilot",      1,
         ));
 
+    mixin(bitfields!(
+        ubyte, "attack_stress_count",         4,
+        ubyte, "defense_stress_count",        4,
+        ));
+
     // Can always add more on the end, so no need to reserve space explicitly
 
     static BasicForm defaults()
@@ -92,6 +97,7 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.attack_dice				            = form.attack_dice;
     setup.attack_tokens.focus                   = form.attack_focus_token_count;
     setup.attack_tokens.target_lock             = form.attack_target_lock_count;
+    setup.attack_tokens.stress                  = form.attack_stress_count;
 
     // Once per turn abilities are treated like "tokens" for simulation purposes
     setup.attack_tokens.amad_any_to_hit         = form.attack_guidance_chips_hit;
@@ -109,7 +115,7 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.AMAD.reroll_any_count                 += form.attack_rage                 ? 3 : 0;
     setup.AMAD.reroll_blank_count               += form.attack_lone_wolf            ? 1 : 0;
     setup.AMAD.reroll_blank_count               += form.attack_rey_pilot            ? 2 : 0;
-    setup.AMAD.reroll_focus_count               += form.attack_wired                ? k_all_dice_count : 0;
+    setup.AMAD.stressed_reroll_focus_count      += form.attack_wired                ? k_all_dice_count : 0;
 
     // Change results
     setup.AMAD.focus_to_crit_count              += form.attack_proton_torpedoes     ? 1 : 0;
@@ -126,8 +132,6 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
 
     setup.AMAD.accuracy_corrector               = form.attack_accuracy_corrector;
 
-    
-
     // Modify defense dice
     setup.AMDD.evade_to_focus_count             += form.attack_juke                 ? 1 : 0;
 
@@ -139,25 +143,27 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.attack_must_spend_focus               = form.defense_hotshot_copilot;    // NOTE: Affects the *other* person
     setup.defense_must_spend_focus              = form.attack_hotshot_copilot;     // NOTE: Affects the *other* person
 
+
     setup.defense_dice                          = form.defense_dice;
     setup.defense_tokens.focus                  = form.defense_focus_token_count;
     setup.defense_tokens.evade                  = form.defense_evade_token_count;
+    setup.defense_tokens.stress                 = form.defense_stress_count;
 
     // Add results
-    setup.DMDD.add_evade_count      += form.defense_concord_dawn        ? 1 : 0;
-    setup.DMDD.add_blank_count      += form.defense_finn                ? 1 : 0;
+    setup.DMDD.add_evade_count                  += form.defense_concord_dawn        ? 1 : 0;
+    setup.DMDD.add_blank_count                  += form.defense_finn                ? 1 : 0;
 
     // Rerolls
-    setup.DMDD.reroll_blank_count   += form.defense_lone_wolf           ? 1 : 0;
-    setup.DMDD.reroll_blank_count   += form.defense_rey_pilot           ? 2 : 0;
-    setup.DMDD.reroll_focus_count   += form.defense_wired               ? k_all_dice_count : 0;
+    setup.DMDD.reroll_blank_count               += form.defense_lone_wolf           ? 1 : 0;
+    setup.DMDD.reroll_blank_count               += form.defense_rey_pilot           ? 2 : 0;
+    setup.DMDD.stressed_reroll_focus_count      += form.defense_wired               ? k_all_dice_count : 0;
 
     // Change results
-    setup.DMDD.focus_to_evade_count += form.defense_luke_pilot          ? 1 : 0;
-    setup.DMDD.blank_to_evade_count += form.defense_autothrusters       ? 1 : 0;
+    setup.DMDD.focus_to_evade_count             += form.defense_luke_pilot          ? 1 : 0;
+    setup.DMDD.blank_to_evade_count             += form.defense_autothrusters       ? 1 : 0;
 
     // Modify attack dice
-    setup.DMAD.hit_to_focus_no_reroll_count += form.defense_sensor_jammer ? 1 : 0;
+    setup.DMAD.hit_to_focus_no_reroll_count     += form.defense_sensor_jammer ? 1 : 0;
 
     return setup;
 }
