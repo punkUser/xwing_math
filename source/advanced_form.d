@@ -24,6 +24,7 @@ align(1) struct AdvancedForm
 
         ubyte, "attack_stress_count",                       4,
         ubyte, "defense_stress_count",                      4,
+        // FULL, do not add any more or links will be invalidated
         ));
 
     // Integer fields
@@ -81,6 +82,10 @@ align(1) struct AdvancedForm
         ubyte, "amad_stressed_reroll_focus_count",          4,
         ubyte, "dmdd_unstressed_reroll_focus_count",        4,
         ubyte, "dmdd_stressed_reroll_focus_count",          4,
+
+        bool,  "dmdd_spend_attacker_stress_add_evade",      1,
+
+        uint, "",                                          31,
         ));
 
     // Can always add more on the end, so no need to reserve space explicitly
@@ -168,6 +173,9 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     setup.DMDD.blank_to_evade_count             = form.dmdd_blank_to_evade_count;
     setup.DMDD.focus_to_evade_count             = form.dmdd_focus_to_evade_count;
     setup.DMDD.spend_focus_one_blank_to_evade   = form.dmdd_spend_focus_one_blank_to_evade_count;
+
+    setup.DMDD.spend_attacker_stress_add_evade  = form.dmdd_spend_attacker_stress_add_evade;
+
     setup.DMAD.hit_to_focus_no_reroll_count     = form.dmad_hit_to_focus_no_reroll_count;
 
     return setup;

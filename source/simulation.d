@@ -109,6 +109,9 @@ struct SimulationSetup
         int blank_to_evade_count = 0;
         int focus_to_evade_count = 0;
         int spend_focus_one_blank_to_evade = 0;
+
+        // Misc stuff
+        bool spend_attacker_stress_add_evade = false;
     };
     DefenderModifyDefenseDice DMDD;
 
@@ -520,6 +523,7 @@ class Simulation
 
     void defender_modify_defense_dice_after_reroll(
         const(ubyte)[DieResult.Num] attack_results,
+        ref TokenState attack_tokens,
         ref DiceState defense_dice,
         ref TokenState defense_tokens) const
     {
@@ -611,12 +615,23 @@ class Simulation
         }
         
         // If we still have uncanceled hits, consider spending other tokens if possible)
-        if (uncanceled_hits > 0)
+
+        // Spend a focus each to convert a blank into an evade
+        if (uncanceled_hits > 0 && m_setup.DMDD.spend_focus_one_blank_to_evade > 0)
         {
-            // Spend a focus each to convert a blank into an evade
             int blank_to_evade_count = min(m_setup.DMDD.spend_focus_one_blank_to_evade, defense_tokens.focus);
-            defense_tokens.focus -= defense_dice.change_dice(DieResult.Blank, DieResult.Evade, blank_to_evade_count);
+            int blanks_changed = defense_dice.change_dice(DieResult.Blank, DieResult.Evade, blank_to_evade_count);
+            defense_tokens.focus -= blanks_changed;
+            uncanceled_hits -= blanks_changed;            
         }
+
+        // Spend attacker stress to add an evade?
+        if (uncanceled_hits > 0 && m_setup.DMDD.spend_attacker_stress_add_evade && attack_tokens.stress > 0)
+        {
+            --attack_tokens.stress;
+            ++defense_dice.results[DieResult.Evade];
+            --uncanceled_hits;
+        }        
 
         // If required and we didn't already spend focus, spend it now
         if (m_setup.defense_must_spend_focus && initial_focus_count > 0 && initial_focus_count == defense_tokens.focus)
@@ -809,13 +824,16 @@ class Simulation
             //writefln("Second attack for %s states.", second_attack_states.length);
 
             // Do the next attack for those states, then merge them into the other list
-            second_attack_states = simulate_single_attack(second_attack_states);
-
-            states = no_second_attack_states;
-            foreach (ref state, state_probability; second_attack_states)
+            if (second_attack_states.length > 0)
             {
-                assert(!(state in states));		// Should not be possible since attack index will be incremented
-                states[state] = state_probability;
+                second_attack_states = simulate_single_attack(second_attack_states);
+
+                states = no_second_attack_states;
+                foreach (ref state, state_probability; second_attack_states)
+                {
+                    assert(!(state in states));		// Should not be possible since attack index will be incremented
+                    states[state] = state_probability;
+                }
             }
         }
 
@@ -857,7 +875,7 @@ class Simulation
 
     private SimulationState defense_modify_after_reroll(SimulationState state)
     {
-        defender_modify_defense_dice_after_reroll(state.attack_dice.final_results, state.defense_dice, state.defense_tokens);
+        defender_modify_defense_dice_after_reroll(state.attack_dice.final_results, state.attack_tokens, state.defense_dice, state.defense_tokens);
 
         // Done modifying defense dice
         state.defense_dice.finalize();

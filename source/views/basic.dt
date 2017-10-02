@@ -82,6 +82,7 @@ block form
                         legend Crew
                         - switch_control_t!"defense_finn"               ("Finn");
                         - switch_control_t!"defense_hotshot_copilot"    ("Hotshot Copilot");
+                        - switch_control_t!"defense_latts_razzi"        ("Latts Razzi");
 
                     fieldset.fieldset
                         legend System Upgrades

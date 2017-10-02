@@ -68,6 +68,10 @@ align(1) struct BasicForm
     mixin(bitfields!(
         ubyte, "attack_stress_count",         4,
         ubyte, "defense_stress_count",        4,
+
+        bool,  "defense_latts_razzi",         1,
+
+        uint, "",                             7,
         ));
 
     // Can always add more on the end, so no need to reserve space explicitly
@@ -161,6 +165,8 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     // Change results
     setup.DMDD.focus_to_evade_count             += form.defense_luke_pilot          ? 1 : 0;
     setup.DMDD.blank_to_evade_count             += form.defense_autothrusters       ? 1 : 0;
+
+    setup.DMDD.spend_attacker_stress_add_evade   = form.defense_latts_razzi;
 
     // Modify attack dice
     setup.DMAD.hit_to_focus_no_reroll_count     += form.defense_sensor_jammer ? 1 : 0;

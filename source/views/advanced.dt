@@ -69,7 +69,7 @@ block form
                         - switch_control_t!"amad_once_any_to_hit"  ("Any to Hit");
                         - switch_control_t!"amad_once_any_to_crit" ("Any to Crit");
 
-                    - switch_control_t! "amad_accuracy_corrector"   ("Accuracy Corrector");
+                    - switch_control_t!"amad_accuracy_corrector"              ("Accuracy Corrector");
 
             .cell
                 .callout.small.success
@@ -114,6 +114,7 @@ block form
                     fieldset.fieldset
                         legend Spend Focus to Change
                         - stepper_control_t!"dmdd_spend_focus_one_blank_to_evade_count"("One Blank to Evade", 0, 15);
+                    - switch_control_t!"dmdd_spend_attacker_stress_add_evade" ("Spend Attacker Stress, Add Evade");
                             
                 .callout.small.primary
                     - import simulation : MultiAttackType;
