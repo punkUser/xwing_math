@@ -8,7 +8,7 @@
 		"vibe-d": "~>0.8.1",
 		"diet-ng": "~>1.2.1"
 	},	
-	"versions": ["VibeDisableCommandLineParsing", "VibeIdleCollect", "UseOpenSSL"],
+	"versions": ["VibeDisableCommandLineParsing", "UseOpenSSL"],
 	
 	"targetType": "executable",
 	"mainSourceFile": "source/main.d",

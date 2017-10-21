@@ -25,6 +25,8 @@ struct SimulationSetup
     int attack_dice = 0;
     TokenState attack_tokens;
 
+    // TODO: Perhaps clean up parameters that depend on tokens somewhat?
+    // Probably just with a simple structure with 3 params and utility function to query based on tokens
     struct AttackerModifyAttackDice
     {
         // Add results
@@ -40,7 +42,9 @@ struct SimulationSetup
 
         // Rerolls depending on whether stress is present
         int stressed_reroll_focus_count = 0;
+        int stressed_reroll_any_count = 0;
         int unstressed_reroll_focus_count = 0;
+        int unstressed_reroll_any_count = 0;
 
         // Change results
         int focus_to_crit_count = 0;
@@ -51,10 +55,10 @@ struct SimulationSetup
         int hit_to_crit_count = 0;
 
         // Free change results depending on whether stress is present
-        int unstressed_focus_to_hit_count = 0;
-        int unstressed_focus_to_crit_count = 0;
         int stressed_focus_to_hit_count = 0;
         int stressed_focus_to_crit_count = 0;
+        int unstressed_focus_to_hit_count = 0;
+        int unstressed_focus_to_crit_count = 0;
 
         // Spend tokens to change results
         int spend_focus_one_blank_to_hit = 0;
@@ -103,12 +107,18 @@ struct SimulationSetup
 
         // Rerolls depending on whether stress is present
         int stressed_reroll_focus_count = 0;
+        int stressed_reroll_any_count = 0;
         int unstressed_reroll_focus_count = 0;
+        int unstressed_reroll_any_count = 0;
 
         // Change results
         int blank_to_evade_count = 0;
         int focus_to_evade_count = 0;
         int spend_focus_one_blank_to_evade = 0;
+
+        // Free change results depending on whether stress is present
+        int stressed_focus_to_evade_count = 0;
+        int unstressed_focus_to_evade_count = 0;
 
         // Misc stuff
         bool spend_attacker_stress_add_evade = false;
@@ -292,6 +302,12 @@ class Simulation
         return m_setup.AMAD.focus_to_crit_count + 
             (attack_tokens.stress > 0 ? m_setup.AMAD.stressed_focus_to_crit_count : m_setup.AMAD.unstressed_focus_to_crit_count);
     }
+    private int dmdd_focus_to_evade_count(ref TokenState defense_tokens) const
+    {
+        return m_setup.DMDD.focus_to_evade_count + 
+            (defense_tokens.stress > 0 ? m_setup.DMDD.stressed_focus_to_evade_count : m_setup.DMDD.unstressed_focus_to_evade_count);
+    }
+
     private int amad_reroll_focus_count(ref TokenState attack_tokens) const
     {
         return m_setup.AMAD.reroll_focus_count +
@@ -301,6 +317,16 @@ class Simulation
     {
         return m_setup.DMDD.reroll_focus_count +
             (defense_tokens.stress > 0 ? m_setup.DMDD.stressed_reroll_focus_count : m_setup.DMDD.unstressed_reroll_focus_count);
+    }
+    private int amad_reroll_any_count(ref TokenState attack_tokens) const
+    {
+        return m_setup.AMAD.reroll_any_count +
+            (attack_tokens.stress > 0 ? m_setup.AMAD.stressed_reroll_any_count : m_setup.AMAD.unstressed_reroll_any_count);
+    }
+    private int dmdd_reroll_any_count(ref TokenState defense_tokens) const
+    {
+        return m_setup.DMDD.reroll_any_count +
+            (defense_tokens.stress > 0 ? m_setup.DMDD.stressed_reroll_any_count : m_setup.DMDD.unstressed_reroll_any_count);
     }
 
     // TODO: Needs a way to force rerolls eventually as well
@@ -362,7 +388,7 @@ class Simulation
         int blank_to_reroll = 0;
         int dice_to_reroll = do_free_rerolls(
             attack_dice, useful_focus_results, useful_blank_results,
-            m_setup.AMAD.reroll_blank_count, amad_reroll_focus_count(attack_tokens), m_setup.AMAD.reroll_any_count,
+            m_setup.AMAD.reroll_blank_count, amad_reroll_focus_count(attack_tokens), amad_reroll_any_count(attack_tokens),
             focus_to_reroll, blank_to_reroll);
         
         // Early out if we have nothing left to reroll
@@ -505,7 +531,7 @@ class Simulation
         defense_dice.results[DieResult.Evade] += m_setup.DMDD.add_evade_count;
 
         // "Useful" focus results are ones we can turn into evades
-        int useful_focus_results = m_setup.DMDD.focus_to_evade_count;
+        int useful_focus_results = dmdd_focus_to_evade_count(defense_tokens);
         if (defense_tokens.focus > 0)			// Simplification since this involves spending a token, but good enough
             useful_focus_results = k_all_dice_count;
         int useful_blank_results = m_setup.DMDD.blank_to_evade_count;
@@ -514,7 +540,7 @@ class Simulation
         int blank_to_reroll = 0;
         int dice_to_reroll = do_free_rerolls(
             defense_dice, useful_focus_results, useful_blank_results,
-            m_setup.DMDD.reroll_blank_count, dmdd_reroll_focus_count(defense_tokens), m_setup.DMDD.reroll_any_count,
+            m_setup.DMDD.reroll_blank_count, dmdd_reroll_focus_count(defense_tokens), dmdd_reroll_any_count(defense_tokens),
             focus_to_reroll, blank_to_reroll);
 
         // NOTE: We currently don't have any way to spend things to reroll defense dice, so we're done after the free rerolls
@@ -532,7 +558,7 @@ class Simulation
         // Change results
         // NOTE: Order matters here - do the most useful changes first
         defense_dice.change_dice(DieResult.Blank, DieResult.Evade, m_setup.DMDD.blank_to_evade_count);
-        defense_dice.change_dice(DieResult.Focus, DieResult.Evade, m_setup.DMDD.focus_to_evade_count);
+        defense_dice.change_dice(DieResult.Focus, DieResult.Evade, dmdd_focus_to_evade_count(defense_tokens));
 
         // Figure out if we should spend focus or evade tokens (regular effect)
         int uncanceled_hits = attack_results[DieResult.Hit] + attack_results[DieResult.Crit] - defense_dice.count(DieResult.Evade);
