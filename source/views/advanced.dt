@@ -42,9 +42,11 @@ block form
                     fieldset.fieldset
                         legend If Unstressed, Reroll
                         - stepper_control_t!"amad_unstressed_reroll_focus_count" ("Focus", 0, 15);
+                        - stepper_control_t!"amad_unstressed_reroll_any_count"   ("Any", 0, 15);
                     fieldset.fieldset
                         legend If Stressed, Reroll
                         - stepper_control_t!"amad_stressed_reroll_focus_count" ("Focus", 0, 15);
+                        - stepper_control_t!"amad_stressed_reroll_any_count"   ("Any", 0, 15);
                     fieldset.fieldset
                         legend Change Results
                         - stepper_control_t!"amad_blank_to_focus_count" ("Blank to Focus", 0, 15);
@@ -104,13 +106,21 @@ block form
                     fieldset.fieldset
                         legend If Unstressed, Reroll
                         - stepper_control_t!"dmdd_unstressed_reroll_focus_count" ("Focus", 0, 15);
+                        - stepper_control_t!"dmdd_unstressed_reroll_any_count" ("Any", 0, 15);
                     fieldset.fieldset
                         legend If Stressed, Reroll
                         - stepper_control_t!"dmdd_stressed_reroll_focus_count" ("Focus", 0, 15);
+                        - stepper_control_t!"dmdd_stressed_reroll_any_count" ("Any", 0, 15);
                     fieldset.fieldset
                         legend Change Results
                         - stepper_control_t!"dmdd_blank_to_evade_count" ("Blank to Evade", 0, 15);
                         - stepper_control_t!"dmdd_focus_to_evade_count" ("Focus to Evade", 0, 15);
+                    fieldset.fieldset
+                        legend If Unstressed, Change
+                        - stepper_control_t!"dmdd_unstressed_focus_to_evade_count" ("Focus to Evade",  0, 15);
+                    fieldset.fieldset
+                        legend If Stressed, Change
+                        - stepper_control_t!"dmdd_stressed_focus_to_evade_count" ("Focus to Evade",  0, 15);
                     fieldset.fieldset
                         legend Spend Focus to Change
                         - stepper_control_t!"dmdd_spend_focus_one_blank_to_evade_count"("One Blank to Evade", 0, 15);
