@@ -62,3 +62,5 @@ update.sh
 *.exe_cv
 
 xwing_math-test-application\.exe
+
+xwing_math-test-application
