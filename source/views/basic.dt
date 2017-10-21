@@ -3,6 +3,7 @@ extends form_layout
 block form
     form#simulate-form(action="/simulate_basic.json", method="POST", autocomplete="off")
         include controls.inc
+        - import basic_form;
         
         .grid-x.grid-margin-x.small-up-1.medium-up-2.large-up-2
             .cell
@@ -14,7 +15,9 @@ block form
                             
                     fieldset.fieldset
                         legend Pilots
-                        - switch_control_t!"attack_rey_pilot"          ("Rey");
+                        select(name="attack_pilot")
+                            - select_control_option_t!("attack_pilot") ("None", AttackPilot.None);
+                            - select_control_option_t!("attack_pilot") ("Rey",  AttackPilot.Rey);
 
                     fieldset.fieldset
                         legend Elite Pilot Talents
@@ -69,9 +72,11 @@ block form
                                
                     fieldset.fieldset
                         legend Pilots and Titles
+                        select(name="defense_pilot")
+                            - select_control_option_t!("defense_pilot") ("None", DefensePilot.None);
+                            - select_control_option_t!("defense_pilot") ("Luke", DefensePilot.Luke);
+                            - select_control_option_t!("defense_pilot") ("Rey",  DefensePilot.Rey);
                         - switch_control_t!"defense_concord_dawn"       ("Concord Dawn Protector");
-                        - switch_control_t!"defense_luke_pilot"         ("Luke");
-                        - switch_control_t!"defense_rey_pilot"          ("Rey");
 
                     fieldset.fieldset
                         legend Elite Pilot Talents

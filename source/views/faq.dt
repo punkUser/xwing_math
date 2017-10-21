@@ -17,10 +17,49 @@ block content
             div.accordion-content(data-tab-content)
                 p Stuffs!
 
-    //- Can you add X? [Advanced form, things with too many decisions/combinations, UI complexities]
-        
-    //- Attacker tries to maximize hits
-    //- Rerolls all done at once
+        li.accordion-item(data-accordion-item)
+            a.accordion-title(href="#") What strategies do the attacker and defender use?
+            div.accordion-content(data-tab-content)
+                p.
+                    The attacker tries to maximize the number of hits/crits. It will opportunistically prefer crits,
+                    but will not greedily "crit chase" by trying to reroll hits into crits.
 
-    //- Defender tries to avoid being hit
-    //- Defense token spending (prefer evades or focus)
+                p.
+                    The defender tries to minimize or entirely avoid taking hits. In cases where there are token spending choices,
+                    the defender will prefer to keep tokens that are more useful on defense in case there is a second attack.
+                    For instance, if the defender can spend either a focus or evade to fully evade an attack, it will normally
+                    prefer to spend the focus and hang onto the evade unless the attacker has Juke, in which case it's normally
+                    better to hang on to the focus instead.
+                    
+
+        li.accordion-item(data-accordion-item)
+            a.accordion-title(href="#") Do the attacker and defender play optimally?
+            div.accordion-content(data-tab-content)
+                p The short answer: in most realistic cases, yes.
+
+                p The longer answer is that it depends how you define "optimal".
+
+                p Rerolling all at once.
+
+                p Complex reasoning around multi-attack. "Intentionally trying to miss", etc.
+
+                p One damage on hit.
+
+                p Check the code for details!
+
+        li.accordion-item(data-accordion-item)
+            a.accordion-title(href="#") Can you add [insert feature or effect] to the simulator?
+            div.accordion-content(data-tab-content)
+                p.
+                    Anything can be added given the proper time and resources. Generally things that aren't yet implemented fall
+                    into a couple of categories.
+
+                p Things with too many decisions/combinations, or where the optimal strategy would be highly non-obvious.
+
+                p Things with too many UI complexities or too much context.
+
+                p.
+                    Things with unclear rules interactions. This includes cases where card combinations aren't possible in X-Wing
+                    today (due to lacking specific upgrade slot combinations or faction limitations), or cases that are possible
+                    but rarely used and thus have never received needed clarification in the FAQ.
+       

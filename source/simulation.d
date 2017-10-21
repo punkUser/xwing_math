@@ -966,3 +966,63 @@ class Simulation
     private immutable SimulationSetup m_setup;
 };
 
+
+
+
+unittest
+{
+    import std.math;
+
+    static bool nearly_equal_p(double v, double expected)
+    {
+        assert(v >= 0.0 && v <= 1.0 && expected >= 0.0 && expected <= 1.0);
+
+        // If we expect exactly 0 probability, we require it exactly (i.e. not a single trial went that route)        
+        if (expected == 0.0)
+            return v == 0.0;
+        else
+            return ((abs(v - expected) / expected) < 1e-7);    // Relative error
+    }
+
+    static void assert_hits_pdf(ref const(SimulationSetup) setup, const(float)[] expected_p)
+    {
+        auto simulation = new Simulation(setup);
+        simulation.simulate_attack();
+        auto total_hits_pdf = simulation.total_hits_pdf();
+        auto total_sum = simulation.total_sum();
+
+        assert(total_hits_pdf.length >= expected_p.length);
+
+        foreach (int i; 0 .. expected_p.length)
+        {
+            bool matches = nearly_equal_p(total_hits_pdf[i].probability, expected_p[i]);
+            //writefln("hits[%s]: %.15f %s %.15f", i, matches ? "==" : "!=", total_hits_pdf[i].probability, expected_p[i]);
+            assert(nearly_equal_p(total_hits_pdf[i].probability, expected_p[i]));
+        }
+
+        foreach (int i; expected_p.length .. total_hits_pdf.length)
+        {
+            assert(total_hits_pdf[i].probability == 0.0);
+        }
+    }
+
+    // Basic sanity checks
+    {
+        SimulationSetup setup;
+        setup.attack_dice = 3;
+        setup.defense_dice = 3;
+        assert_hits_pdf(setup, [0.53369140625, 0.289306640625, 0.146484375, 0.030517578125]);
+
+        setup.attack_tokens.focus = 1;
+        setup.attack_tokens.target_lock = 1;
+        setup.defense_tokens.focus = 1;
+        setup.defense_tokens.evade = 1;
+        assert_hits_pdf(setup, [0.730598926544189, 0.225949287414551, 0.043451786041259, 0.0]);
+
+        setup.type = MultiAttackType.SecondaryPerformTwice;
+        assert_hits_pdf(setup, [0.419614922167966, 0.295413697109325, 0.191800311527913, 0.076275200204690, 0.016023014264646, 0.000872854725457]);
+        // Same as above as no "after attack" triggers are present
+        setup.type = MultiAttackType.AfterAttack;
+        assert_hits_pdf(setup, [0.419614922167966, 0.295413697109325, 0.191800311527913, 0.076275200204690, 0.016023014264646, 0.000872854725457]);
+    }
+}

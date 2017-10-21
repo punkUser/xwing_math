@@ -138,14 +138,14 @@ public class WWWServer
         foreach (i; 0 .. max_hits)
             content.pdf_x_labels[i] = to!string(i);
 
-        // Compute PDF
+        // Compute PDF for graph
         content.hit_pdf     = new float[max_hits];
         content.crit_pdf    = new float[max_hits];
         content.hit_inv_cdf = new float[max_hits];
         foreach (i; 0 .. max_hits)
         {
-            float total = total_hits_pdf[i].hits + total_hits_pdf[i].crits;
-            float fraction_crits = total > 0.0f ? total_hits_pdf[i].crits / total : 0.0f;
+            float total_probability = total_hits_pdf[i].hits + total_hits_pdf[i].crits;
+            float fraction_crits = total_probability > 0.0f ? total_hits_pdf[i].crits / total_probability : 0.0f;
             float fraction_hits  = 1.0f - fraction_crits;
 
             content.hit_pdf[i]  = 100.0f * fraction_hits  * total_hits_pdf[i].probability;

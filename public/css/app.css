@@ -39,6 +39,10 @@ label {
 	font-size: 100%;
 }
 
+select {
+	margin-bottom: 0.3rem;
+}
+
 #content {
 	padding: 20px 0;
 }

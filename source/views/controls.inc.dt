@@ -11,8 +11,6 @@
                 - else
                     input.switch-input(id="#{name}", name="#{name}", type="checkbox")
                 label.switch-paddle(for="#{name}")
-                    //- span.switch-active(aria-hidden="true") All
-                    //- span.switch-inactive(aria-hidden="true") #
 
 - void stepper_control_t(alias name)(string label, int min, int max)
     - import std.algorithm.comparison;
@@ -43,3 +41,10 @@
                 - else
                     input.switch-input(id="#{value}", name="#{name}", value="#{value}", type="radio", required)
                 label.switch-paddle(for="#{value}")
+
+- void select_control_option_t(alias select_name)(string label, int value)
+    - mixin("int init_value = form_values." ~ select_name ~ ";");
+    - if (init_value == value)
+        option(value="#{value}", selected) #{label}
+    - else
+        option(value="#{value}") #{label}
