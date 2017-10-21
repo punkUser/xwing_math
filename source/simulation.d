@@ -1019,14 +1019,14 @@ unittest
 
         assert(total_hits_pdf.length >= expected_p.length);
 
-        foreach (int i; 0 .. expected_p.length)
+        foreach (i; 0 .. expected_p.length)
         {
             bool matches = nearly_equal_p(total_hits_pdf[i].probability, expected_p[i]);
             //writefln("hits[%s]: %.15f %s %.15f", i, matches ? "==" : "!=", total_hits_pdf[i].probability, expected_p[i]);
             assert(nearly_equal_p(total_hits_pdf[i].probability, expected_p[i]));
         }
 
-        foreach (int i; expected_p.length .. total_hits_pdf.length)
+        foreach (i; expected_p.length .. total_hits_pdf.length)
         {
             assert(total_hits_pdf[i].probability == 0.0);
         }
