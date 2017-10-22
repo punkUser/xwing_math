@@ -2,8 +2,7 @@ import dice;
 
 import std.math;
 import core.stdc.string;
-
-import vibe.utils.hashmap;
+import std.bitmanip;
 
 // TODO: Can generalize this but okay for now
 // Do it in floating point since for our purposes we always end up converting immediately anyways
@@ -106,8 +105,12 @@ public struct TokenState
     ubyte stress = 0;
 
     // Available once per turn abilities
-    bool amad_any_to_hit = false;
-    bool amad_any_to_crit = false;
+    // Bitfield since it's important this structure remain small as it is part of the hashes...
+    mixin(bitfields!(
+         bool, "amad_any_to_hit",       1,
+         bool, "amad_any_to_crit",      1,
+         bool, "sunny_bounder",         1,      // Both attack and defense
+         ubyte, "",                     5));
 
     int opCmp(ref const TokenState s) const
     {

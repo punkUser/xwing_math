@@ -16,9 +16,10 @@ block form
                     fieldset.fieldset
                         legend Special Effects
                         - switch_control_t!"attack_must_spend_focus"    ("Attacker Must Spend Focus");
-                        - switch_control_t!"attack_fire_control_system" ("Fire Control System");
+                        - switch_control_t!"attack_sunny_bounder"       ("Sunny Bounder");
                         - switch_control_t!"attack_heavy_laser_cannon"  ("Heavy Laser Cannon");
                         - switch_control_t!"attack_one_damage_on_hit"   ("One Damage on Hit (TLT, Ion)");
+                        - switch_control_t!"attack_fire_control_system" ("Fire Control System");
                         
                 .callout.small.success
                     h3 Defender Modify Attack Dice
@@ -84,6 +85,7 @@ block form
                     fieldset.fieldset
                         legend Special Effects
                         - switch_control_t!"defense_must_spend_focus" ("Defender Must Spend Focus");
+                        - switch_control_t!"defense_sunny_bounder"    ("Sunny Bounder");
 
                 .callout.small.alert
                     h3 Attacker Modify Defense Dice

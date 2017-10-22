@@ -22,6 +22,7 @@ block form
                             - select_control_option_t!("attack_pilot") ("Ibtisam",                  AttackPilot.Ibtisam);
                             - select_control_option_t!("attack_pilot") ("Rear Admiral Chiraneau",   AttackPilot.RearAdmiralChiraneau);
                             - select_control_option_t!("attack_pilot") ("Rey",                      AttackPilot.Rey);
+                            - select_control_option_t!("attack_pilot") ("Sunny Bounder",            AttackPilot.SunnyBounder);
 
                     fieldset.fieldset
                         legend Elite Pilot Talents
@@ -83,6 +84,7 @@ block form
                             - select_control_option_t!("defense_pilot") ("Luke Skywalker",          DefensePilot.LukeSkywalker);
                             - select_control_option_t!("defense_pilot") ("Rey",                     DefensePilot.Rey);
                             - select_control_option_t!("defense_pilot") ("Sabine Wren (Lancer)",    DefensePilot.SabineWrenLancer);
+                            - select_control_option_t!("defense_pilot") ("Sunny Bounder",           DefensePilot.SunnyBounder);
 
                     fieldset.fieldset
                         legend Elite Pilot Talents

@@ -84,8 +84,8 @@ align(1) struct AdvancedForm
         ubyte, "dmdd_stressed_reroll_focus_count",          4,
 
         bool,  "dmdd_spend_attacker_stress_add_evade",      1,
-        bool,  "_unused_1",                                 1,
-        bool,  "_unused_2",                                 1,
+        bool,  "attack_sunny_bounder",                      1,
+        bool,  "defense_sunny_bounder",                     1,
         bool,  "_unused_3",                                 1,
 
         ubyte, "amad_unstressed_reroll_any_count",          4,
@@ -130,6 +130,7 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     // Once per turn abilities are treated like "tokens" for simulation purposes
     setup.attack_tokens.amad_any_to_hit         = form.amad_once_any_to_hit;
     setup.attack_tokens.amad_any_to_crit        = form.amad_once_any_to_crit;
+    setup.attack_tokens.sunny_bounder           = form.attack_sunny_bounder;
     
     setup.attack_fire_control_system            = form.attack_fire_control_system;
     setup.attack_heavy_laser_cannon             = form.attack_heavy_laser_cannon;
@@ -171,6 +172,7 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     setup.defense_tokens.focus                  = form.defense_focus_token_count;
     setup.defense_tokens.evade                  = form.defense_evade_token_count;
     setup.defense_tokens.stress                 = form.defense_stress_count;
+    setup.defense_tokens.sunny_bounder          = form.defense_sunny_bounder;
 
     setup.defense_must_spend_focus              = form.defense_must_spend_focus;
 

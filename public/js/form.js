@@ -74,10 +74,10 @@ window.onload = function()
 							if (tooltipItem.datasetIndex > 0)
 								sum += data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
 						});
-						return sum.toFixed(1) + '%';
+						return sum.toFixed(2) + '%';
 					},
 					label: function(tooltipItem, data) {
-						return data.datasets[tooltipItem.datasetIndex].label + ': ' + tooltipItem.yLabel.toFixed(1) + '%';
+						return data.datasets[tooltipItem.datasetIndex].label + ': ' + tooltipItem.yLabel.toFixed(2) + '%';
 					},
 				},
 			},
@@ -142,7 +142,7 @@ function simulateUpdate(updateHistory = false)
 		pdf_chart_data.datasets[0].data = data.hit_inv_cdf;
 		pdf_chart_data.datasets[1].data = data.hit_pdf;
 		pdf_chart_data.datasets[2].data = data.crit_pdf;
-		window.pdf_chart.options.title.text = "Expected Total Hits: " + data.expected_total_hits.toFixed(2);
+		window.pdf_chart.options.title.text = "Expected Total Hits: " + data.expected_total_hits.toFixed(3);
 		window.pdf_chart.update();
 		
 		token_chart_data.labels = data.exp_token_labels;

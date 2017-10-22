@@ -1,7 +1,7 @@
 {
 	"name": "xwing_math",
 	"targetType": "executable",
-	"description": "X-Wing Math Simulator",
+	"description": "X-Wing Miniatures Probability Simulator",
 	"copyright": "Copyright © 2016, Andrew Lauritzen",
 	"authors": ["Andrew Lauritzen"],
 	"dependencies": {

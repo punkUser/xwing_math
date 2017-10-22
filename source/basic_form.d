@@ -11,6 +11,7 @@ enum AttackPilot : ubyte
     Ibtisam,
     RearAdmiralChiraneau,
     Rey,
+    SunnyBounder,
 
     // TODO
     // NorraWexley
@@ -53,6 +54,7 @@ enum DefensePilot : ubyte
     LukeSkywalker,
     Rey,
     SabineWrenLancer,
+    SunnyBounder,
 
     // TODO
     // DarkCurse
@@ -169,6 +171,13 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     // Once per turn abilities are treated like "tokens" for simulation purposes
     setup.attack_tokens.amad_any_to_hit         = form.attack_guidance_chips_hit;
     setup.attack_tokens.amad_any_to_crit        = form.attack_guidance_chips_crit;
+    setup.attack_tokens.sunny_bounder           = form.attack_pilot == AttackPilot.SunnyBounder;
+
+    // Special effects...
+    setup.attack_heavy_laser_cannon             = form.attack_heavy_laser_cannon;
+    setup.attack_fire_control_system            = form.attack_fire_control_system;
+    setup.attack_one_damage_on_hit              = form.attack_one_damage_on_hit;
+    setup.attack_must_spend_focus               = form.defense_hotshot_copilot;    // NOTE: Affects the *other* person
 
     // Add results
     setup.AMAD.add_hit_count                    += form.attack_fearlessness                     ? 1 : 0;
@@ -197,28 +206,27 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.AMAD.hit_to_crit_count                += form.attack_bistan                           ? 1 : 0;
     setup.AMAD.hit_to_crit_count                += form.attack_mercenary_copilot                ? 1 : 0;
     setup.AMAD.hit_to_crit_count                += form.attack_mangler_cannon                   ? 1 : 0;
-
     setup.AMAD.unstressed_focus_to_hit_count    += form.attack_expertise                        ? k_all_dice_count : 0;
     setup.AMAD.stressed_focus_to_crit_count     += form.attack_ezra_crew                        ? 1 : 0;
-
-    setup.AMAD.accuracy_corrector               = form.attack_accuracy_corrector;
+    setup.AMAD.accuracy_corrector                = form.attack_accuracy_corrector;
 
     // Modify defense dice
     setup.AMDD.evade_to_focus_count             += form.attack_juke                             ? 1 : 0;
+    
 
-    // Special effects...
-    setup.attack_heavy_laser_cannon             = form.attack_heavy_laser_cannon;
-    setup.attack_fire_control_system            = form.attack_fire_control_system;
-    setup.attack_one_damage_on_hit              = form.attack_one_damage_on_hit;
-
-    setup.attack_must_spend_focus               = form.defense_hotshot_copilot;    // NOTE: Affects the *other* person
-    setup.defense_must_spend_focus              = form.attack_hotshot_copilot;     // NOTE: Affects the *other* person
-
+    
+    // ****************************************************************************************************************
 
     setup.defense_dice                          = form.defense_dice;
     setup.defense_tokens.focus                  = form.defense_focus_token_count;
     setup.defense_tokens.evade                  = form.defense_evade_token_count;
     setup.defense_tokens.stress                 = form.defense_stress_count;
+
+    // Once per turn abilities are treated like "tokens" for simulation purposes
+    setup.defense_tokens.sunny_bounder          = form.defense_pilot == DefensePilot.SunnyBounder;
+
+    // Special effects
+    setup.defense_must_spend_focus              = form.attack_hotshot_copilot;     // NOTE: Affects the *other* person
 
     // Add results
     setup.DMDD.add_evade_count                  += form.defense_concord_dawn                        ? 1 : 0;

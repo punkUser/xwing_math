@@ -78,10 +78,10 @@ struct SimulationSetup
     AttackerModifyDefenseDice AMDD;
 
     // Special effects    
-    bool attack_fire_control_system = false;       // Get a target lock after attack (only affects multi-attack)
-    bool attack_heavy_laser_cannon = false;        // After initial roll, change all crits->hits
-    bool attack_one_damage_on_hit = false;         // If attack hits, 1 damage (TLT, Ion, etc)
-    bool attack_must_spend_focus = false;          // Attacker must spend focus (hotshot copilot on defender)
+    bool attack_must_spend_focus = false;           // Attacker must spend focus (hotshot copilot on defender)
+    bool attack_fire_control_system = false;        // Get a target lock after attack (only affects multi-attack)
+    bool attack_heavy_laser_cannon = false;         // After initial roll, change all crits->hits
+    bool attack_one_damage_on_hit = false;          // If attack hits, 1 damage (TLT, Ion, etc)
 
     // Defense tokens
     int defense_dice = 0;
@@ -126,7 +126,7 @@ struct SimulationSetup
     DefenderModifyDefenseDice DMDD;
 
     // Special effects
-    bool defense_must_spend_focus = false;         // Defender must spend focus (hotshot copilot on attacker)
+    bool defense_must_spend_focus = false;          // Defender must spend focus (hotshot copilot on attacker)
 
     // TODO: Autoblaster (hit results cannot be canceled)
 
@@ -292,41 +292,68 @@ class Simulation
 
 
     // Utilities...
-    private int amad_focus_to_hit_count(ref TokenState attack_tokens) const
+    private pure int amad_focus_to_hit_count(ref TokenState attack_tokens) const
     {
         return m_setup.AMAD.focus_to_hit_count + 
             (attack_tokens.stress > 0 ? m_setup.AMAD.stressed_focus_to_hit_count : m_setup.AMAD.unstressed_focus_to_hit_count);
     }
-    private int amad_focus_to_crit_count(ref TokenState attack_tokens) const
+    private pure int amad_focus_to_crit_count(ref TokenState attack_tokens) const
     {
         return m_setup.AMAD.focus_to_crit_count + 
             (attack_tokens.stress > 0 ? m_setup.AMAD.stressed_focus_to_crit_count : m_setup.AMAD.unstressed_focus_to_crit_count);
     }
-    private int dmdd_focus_to_evade_count(ref TokenState defense_tokens) const
+    private pure int dmdd_focus_to_evade_count(ref TokenState defense_tokens) const
     {
         return m_setup.DMDD.focus_to_evade_count + 
             (defense_tokens.stress > 0 ? m_setup.DMDD.stressed_focus_to_evade_count : m_setup.DMDD.unstressed_focus_to_evade_count);
     }
 
-    private int amad_reroll_focus_count(ref TokenState attack_tokens) const
+    private pure int amad_reroll_focus_count(ref TokenState attack_tokens) const
     {
         return m_setup.AMAD.reroll_focus_count +
             (attack_tokens.stress > 0 ? m_setup.AMAD.stressed_reroll_focus_count : m_setup.AMAD.unstressed_reroll_focus_count);
     }
-    private int dmdd_reroll_focus_count(ref TokenState defense_tokens) const
+    private pure int dmdd_reroll_focus_count(ref TokenState defense_tokens) const
     {
         return m_setup.DMDD.reroll_focus_count +
             (defense_tokens.stress > 0 ? m_setup.DMDD.stressed_reroll_focus_count : m_setup.DMDD.unstressed_reroll_focus_count);
     }
-    private int amad_reroll_any_count(ref TokenState attack_tokens) const
+    private pure int amad_reroll_any_count(ref TokenState attack_tokens) const
     {
         return m_setup.AMAD.reroll_any_count +
             (attack_tokens.stress > 0 ? m_setup.AMAD.stressed_reroll_any_count : m_setup.AMAD.unstressed_reroll_any_count);
     }
-    private int dmdd_reroll_any_count(ref TokenState defense_tokens) const
+    private pure int dmdd_reroll_any_count(ref TokenState defense_tokens) const
     {
         return m_setup.DMDD.reroll_any_count +
             (defense_tokens.stress > 0 ? m_setup.DMDD.stressed_reroll_any_count : m_setup.DMDD.unstressed_reroll_any_count);
+    }
+
+    // If all dice match, add another one
+    // Returns true if the ability is still available, i.e. if it was *not* used
+    private static bool do_sunny_bounder(ref DiceState dice)
+    {
+        // This algorithm allows common cases to early out which is desirable
+        int seen_result = DieResult.Num;
+        foreach (int result; 0 .. DieResult.Num)
+        {
+            if (dice.count(cast(DieResult)result) > 0)
+            {
+                if (seen_result == DieResult.Num)
+                    seen_result = result;
+                else
+                    return true;     // Seen two different results
+            }
+        }
+
+        // If we only saw one unique result, add another of that type!
+        if (seen_result != DieResult.Num)
+        {
+            ++dice.results[seen_result];
+            return false;
+        }
+
+        return true;
     }
 
     // TODO: Needs a way to force rerolls eventually as well
@@ -652,6 +679,9 @@ class Simulation
         }
 
         // Spend attacker stress to add an evade?
+        // NOTE: There are some edge cases where it's actually better to spend the attacker stress even
+        // if we don't need the evade, as it may be enabling passive mods for a future attack.
+        // These are pretty esoteric though, so we'll stick to the more intuitive logic for now.
         if (uncanceled_hits > 0 && m_setup.DMDD.spend_attacker_stress_add_evade && attack_tokens.stress > 0)
         {
             --attack_tokens.stress;
@@ -818,7 +848,7 @@ class Simulation
     }
 
     public void simulate_attack()
-    {		
+    {
         // First attack
         auto states = simulate_single_attack(m_setup.attack_tokens, m_setup.defense_tokens);
 
@@ -873,8 +903,11 @@ class Simulation
     private SimulationState attack_modify_before_reroll(SimulationState state)
     {
         // "After rolling" events
+        // These can be done in any order so order them in a way that is advantageous to the attacker where possible
         if (m_setup.attack_heavy_laser_cannon)
             state.attack_dice.change_dice(DieResult.Crit, DieResult.Hit);
+        if (state.attack_tokens.sunny_bounder)
+            state.attack_tokens.sunny_bounder = do_sunny_bounder(state.attack_dice);
 
         defender_modify_attack_dice(state.attack_dice, state.attack_tokens);
         state.dice_to_reroll = attacker_modify_attack_dice_before_reroll(state.attack_dice, state.attack_tokens);
@@ -883,17 +916,25 @@ class Simulation
 
     private SimulationState attack_modify_after_reroll(SimulationState state)
     {
+        // "After rerolling" events
+        if (state.dice_to_reroll > 0 && state.attack_tokens.sunny_bounder)
+            state.attack_tokens.sunny_bounder = do_sunny_bounder(state.attack_dice);
+
         attacker_modify_attack_dice_after_reroll(state.attack_dice, state.attack_tokens);
 
         // Done modifying attack dice
         state.attack_dice.finalize();
-        state.dice_to_reroll = 0;		
+        state.dice_to_reroll = 0;
 
         return state;
     }
 
     private SimulationState defense_modify_before_reroll(SimulationState state)
     {
+        // "After rolling" events
+        if (state.defense_tokens.sunny_bounder)
+            state.defense_tokens.sunny_bounder = do_sunny_bounder(state.defense_dice);
+
         attacker_modify_defense_dice(state.attack_dice.final_results, state.defense_dice, state.defense_tokens);
         state.dice_to_reroll = defender_modify_defense_dice_before_reroll(state.attack_dice.final_results, state.defense_dice, state.defense_tokens);
         return state;
@@ -901,6 +942,10 @@ class Simulation
 
     private SimulationState defense_modify_after_reroll(SimulationState state)
     {
+        // "After rerolling" events
+        if (state.dice_to_reroll > 0 && state.defense_tokens.sunny_bounder)
+            state.defense_tokens.sunny_bounder = do_sunny_bounder(state.defense_dice);
+
         defender_modify_defense_dice_after_reroll(state.attack_dice.final_results, state.attack_tokens, state.defense_dice, state.defense_tokens);
 
         // Done modifying defense dice

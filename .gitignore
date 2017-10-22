@@ -49,6 +49,7 @@ Temporary Items
 
 
 .dub
+.vs
 *.suo
 dub.selections.json
 *.dll
