@@ -136,3 +136,9 @@ block form
                     - radio_switch_control_t!"attack_type" ("After Attack",              MultiAttackType.AfterAttack,           MultiAttackType.Max-1);
                     .text-center
                         button#simulate.button.large.simulate-button Simulate
+
+    .grid-x.grid-margin-x.small-up-1.medium-up-2.large-up-2
+        .cell
+            canvas#pdf-canvas(height="300")
+        .cell
+            canvas#token-canvas(height="300")

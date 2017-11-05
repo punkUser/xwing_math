@@ -83,7 +83,7 @@ align(1) struct BasicForm
         ubyte, "defense_dice", 			      4,
         ubyte, "defense_focus_token_count",   4,
         ubyte, "defense_evade_token_count",   4,
-        bool, "_deprecated_attack_rey_pilot", 1, // deprecated
+        bool, "attack_linked_battery",        1,
         bool, "attack_expertise",             1,
         bool, "attack_fearlessness",          1,
         bool, "attack_juke",                  1,
@@ -116,7 +116,7 @@ align(1) struct BasicForm
         bool, "attack_guidance_chips_hit",    1,
         bool, "attack_guidance_chips_crit",   1,
         bool, "defense_concord_dawn",         1,
-        bool, "_dep_defense_luke_pilot",      1, // deprecated
+        bool, "attack_wookie_commandos",      1,
 
         bool, "defense_latts_razzi",          1,
         bool, "defense_lone_wolf",            1,
@@ -138,6 +138,17 @@ align(1) struct BasicForm
 
         ubyte, "",                            8,
         ));
+
+    // TODO (near term):
+    // Tactition
+    // 4-LOM
+    // Bossk (crew)
+    // C-3PO (crew)
+    // Captain Rex (crew)
+    // Palpatine?
+    // Zuckuss
+    // Autoblaster
+    // Synced Turret (2/3)?
 
     // Can always add more on the end, so no need to reserve space explicitly
 
@@ -190,9 +201,11 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.AMAD.reroll_any_count                 += form.attack_predator_1                       ? 1 : 0;
     setup.AMAD.reroll_any_count                 += form.attack_predator_2                       ? 2 : 0;
     setup.AMAD.reroll_any_count                 += form.attack_rage                             ? 3 : 0;
+    setup.AMAD.reroll_any_count                 += form.attack_linked_battery                   ? 1 : 0;
     setup.AMAD.reroll_blank_count               += form.attack_lone_wolf                        ? 1 : 0;
     setup.AMAD.reroll_blank_count               += form.attack_pilot == AttackPilot.Rey         ? 2 : 0;
     setup.AMAD.reroll_blank_count               += form.attack_pilot == AttackPilot.HortonSalm  ? k_all_dice_count : 0;
+    setup.AMAD.reroll_focus_count               += form.attack_wookie_commandos                 ? k_all_dice_count : 0;
     setup.AMAD.stressed_reroll_focus_count      += form.attack_wired                            ? k_all_dice_count : 0;
     setup.AMAD.stressed_reroll_any_count        += form.attack_pilot == AttackPilot.Ibtisam     ? 1 : 0;
 

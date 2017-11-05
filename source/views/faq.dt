@@ -5,39 +5,62 @@ block content
 
     h1 Frequently Asked Questions
 
-    ul.accordion(data-accordion, data-multi-expand="true", data-allow-all-closed="true")
+    ul.accordion(data-accordion, data-allow-all-closed="true")
 
         li.accordion-item(data-accordion-item)
             a.accordion-title(href="#") What's the difference between "Basic" and "Advanced"?
             div.accordion-content(data-tab-content)
-                p Stuffs!
+                p.
+                    Both the basic and advanced forms use the same underlying simulation. The only difference is in how the
+                    simulation parameters are presented in the user interface.
+                p.
+                    The basic form uses card and ability names directly from the game, so it should be intuitive for most people.
+                    The attackers and defenders tokens and upgrade cards are grouped in two separate sections.
+                    While it's possible to test out illegal card combinations (the form does nothing to prevent this), you are
+                    generally limited to the effects present on the available cards. A few concessions are made for clarity;
+                    for instance, the type of attack (single, multi) is set directly rather than implicitly via upgrade cards
+                    (gunner, etc).
+                p.
+                    The advanced form is a more direct interface to the parameters of the simulation. It can express a superset of
+                    the basic form, including a wide variety of options that are not currently possible in the game. Simulation
+                    parameters are organized according to where they occur in the timing chart. A few "special effects" still
+                    reference card names when it is more concise to do so versus spelling out the underlying effect.
 
         li.accordion-item(data-accordion-item)
             a.accordion-title(href="#") Which effects and triggers are active?
             div.accordion-content(data-tab-content)
-                p Stuffs!
+                p.
+                    In general, any effect that you enable is considered to be "active". Any conditions outside of tokens (such
+                    as being in arc or at a given range) are assumed to be satisfied if you enable the effect.
+                p.
+                    Since tokens can change over the coarse of an attack (particularly in multi-attack situations), effects do
+                    respect conditions related to tokens. For instance, Expertise will only be active if the owner does not have
+                    any stress tokens, while Wired will be active if the owner has one or more stress tokens.
+                p.
+                    If a weapon or effect requires spending tokens to enable the attack (for instance, many munitions require
+                    the attacker to discard a target lock to fire) do <em>not</em> include those tokens in the simulation. The
+                    simulation effectively begins at the attacker's initial dice roll, so that is the point in which you should
+                    set the token state.
 
         li.accordion-item(data-accordion-item)
-            a.accordion-title(href="#") What strategies do the attacker and defender use?
+            a.accordion-title(href="#") What strategies do the attacker and defender employ?
             div.accordion-content(data-tab-content)
                 p.
                     The attacker tries to maximize the number of hits/crits. It will opportunistically prefer crits,
                     but will not greedily "crit chase" by trying to reroll hits into crits.
-
                 p.
                     The defender tries to minimize or entirely avoid taking hits. In cases where there are token spending choices,
                     the defender will prefer to keep tokens that are more useful on defense in case there is a second attack.
                     For instance, if the defender can spend either a focus or evade to fully evade an attack, it will normally
-                    prefer to spend the focus and hang onto the evade unless the attacker has Juke, in which case it's normally
-                    better to hang on to the focus instead.
-                    
+                    prefer to spend the focus and hang onto the evade unless the attacker has Juke, in which case it will hang
+                    on to the focus instead.                    
 
         li.accordion-item(data-accordion-item)
             a.accordion-title(href="#") Do the attacker and defender play optimally?
             div.accordion-content(data-tab-content)
-                p The short answer: in most realistic cases, yes.
+                p Short answer: in most realistic cases, yes.
 
-                p The longer answer is that it depends how you define "optimal".
+                p Longer answer: it depends how you define "optimally".
 
                 p Rerolling all at once.
 
