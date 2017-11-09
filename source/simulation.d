@@ -450,7 +450,8 @@ class Simulation
 
     // Removes rerolled dice from pool; returns number of dice to reroll
     private void attacker_modify_attack_dice_after_reroll(ref DiceState attack_dice,
-                                                          ref TokenState attack_tokens) const
+                                                          ref TokenState attack_tokens,
+                                                          bool final_attack) const
     {
         // Handle accuracy corrector... we cache the token state here before doing other modification -
         // namely focus spending - because we assume at this point that the player could determine if it's
@@ -508,14 +509,22 @@ class Simulation
             }
         }
 
-        // Modify any hit results (including those generated above) as appropriate
-        attack_dice.change_dice(DieResult.Hit, DieResult.Crit, m_setup.AMAD.hit_to_crit_count);
-
         // Spend "once per turn" abilities if present
         if (attack_tokens.amad_any_to_crit)
+        {
             attack_tokens.amad_any_to_crit = (attack_dice.change_blank_focus(DieResult.Crit, 1) == 0);
+            
+            // If this is the final attack, might as well change a hit to a crit also
+            if (attack_tokens.amad_any_to_crit && final_attack)
+            {
+                attack_tokens.amad_any_to_crit = (attack_dice.change_dice(DieResult.Hit, DieResult.Crit, 1) == 0);
+            }
+        }
         if (attack_tokens.amad_any_to_hit)
             attack_tokens.amad_any_to_hit  = (attack_dice.change_blank_focus(DieResult.Hit,  1) == 0);
+
+        // Modify any hit results (including those generated above) as appropriate
+        attack_dice.change_dice(DieResult.Hit, DieResult.Crit, m_setup.AMAD.hit_to_crit_count);
 
         // Use accuracy corrector in the following cases:
         // a) We ended up with less than 2 hits/crits
@@ -903,11 +912,11 @@ class Simulation
     private SimulationState attack_modify_before_reroll(SimulationState state)
     {
         // "After rolling" events
-        // These can be done in any order so order them in a way that is advantageous to the attacker where possible
-        if (m_setup.attack_heavy_laser_cannon)
-            state.attack_dice.change_dice(DieResult.Crit, DieResult.Hit);
+        // NOTE: FAQ says sunny triggers before HLC (just because...)
         if (state.attack_tokens.sunny_bounder)
             state.attack_tokens.sunny_bounder = do_sunny_bounder(state.attack_dice);
+        if (m_setup.attack_heavy_laser_cannon)
+            state.attack_dice.change_dice(DieResult.Crit, DieResult.Hit);
 
         defender_modify_attack_dice(state.attack_dice, state.attack_tokens);
         state.dice_to_reroll = attacker_modify_attack_dice_before_reroll(state.attack_dice, state.attack_tokens);
@@ -920,7 +929,8 @@ class Simulation
         if (state.dice_to_reroll > 0 && state.attack_tokens.sunny_bounder)
             state.attack_tokens.sunny_bounder = do_sunny_bounder(state.attack_dice);
 
-        attacker_modify_attack_dice_after_reroll(state.attack_dice, state.attack_tokens);
+        bool final_attack = (m_setup.type == MultiAttackType.Single || state.completed_attack_count == 1);
+        attacker_modify_attack_dice_after_reroll(state.attack_dice, state.attack_tokens, final_attack);
 
         // Done modifying attack dice
         state.attack_dice.finalize();

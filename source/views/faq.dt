@@ -5,11 +5,11 @@ block content
 
     h1 Frequently Asked Questions
 
-    ul.accordion(data-accordion, data-allow-all-closed="true")
+    ul#faq.accordion(data-accordion, data-allow-all-closed="true", data-deep-link="true")
 
         li.accordion-item(data-accordion-item)
-            a.accordion-title(href="#") What's the difference between "Basic" and "Advanced"?
-            div.accordion-content(data-tab-content)
+            a.accordion-title(href="#forms") What's the difference between "Basic" and "Advanced"?
+            #forms.accordion-content(data-tab-content)
                 p.
                     Both the basic and advanced forms use the same underlying simulation. The only difference is in how the
                     simulation parameters are presented in the user interface.
@@ -27,8 +27,8 @@ block content
                     reference card names when it is more concise to do so versus spelling out the underlying effect.
 
         li.accordion-item(data-accordion-item)
-            a.accordion-title(href="#") Which effects and triggers are active?
-            div.accordion-content(data-tab-content)
+            a.accordion-title(href="#triggers") Which effects and triggers are active?
+            #triggers.accordion-content(data-tab-content)
                 p.
                     In general, any effect that you enable is considered to be "active". Any conditions outside of tokens (such
                     as being in arc or at a given range) are assumed to be satisfied if you enable the effect.
@@ -43,8 +43,8 @@ block content
                     set the token state.
 
         li.accordion-item(data-accordion-item)
-            a.accordion-title(href="#") What strategies do the attacker and defender employ?
-            div.accordion-content(data-tab-content)
+            a.accordion-title(href="#strategies") What strategies do the attacker and defender employ?
+            #strategies.accordion-content(data-tab-content)
                 p.
                     The attacker tries to maximize the number of hits/crits. It will opportunistically prefer crits,
                     but will not greedily "crit chase" by trying to reroll hits into crits.
@@ -56,8 +56,8 @@ block content
                     on to the focus instead.                    
 
         li.accordion-item(data-accordion-item)
-            a.accordion-title(href="#") Do the attacker and defender play optimally?
-            div.accordion-content(data-tab-content)
+            a.accordion-title(href="#optimal") Do the attacker and defender play optimally?
+            #optimal.accordion-content(data-tab-content)
                 p Short answer: in most realistic cases, yes.
 
                 p Longer answer: it depends how you define "optimally".
@@ -71,8 +71,8 @@ block content
                 p Check the code for details!
 
         li.accordion-item(data-accordion-item)
-            a.accordion-title(href="#") Can you add [insert feature or effect] to the simulator?
-            div.accordion-content(data-tab-content)
+            a.accordion-title(href="#features") Can you add [insert feature or effect] to the simulator?
+            #features.accordion-content(data-tab-content)
                 p.
                     Anything can be added given the proper time and resources. Generally things that aren't yet implemented fall
                     into a couple of categories.
