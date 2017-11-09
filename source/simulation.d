@@ -926,6 +926,7 @@ class Simulation
     private SimulationState attack_modify_after_reroll(SimulationState state)
     {
         // "After rerolling" events
+        // TODO: Wackiness of spending target lock to reroll "0" dice? And sort out what that means for passive mods?
         if (state.dice_to_reroll > 0 && state.attack_tokens.sunny_bounder)
             state.attack_tokens.sunny_bounder = do_sunny_bounder(state.attack_dice);
 
@@ -977,7 +978,6 @@ class Simulation
 
         // Simplify state in case of further iteration
         // Keep tokens and final results, discard the rest
-        state.dice_to_reroll = 0;
         state.attack_dice.cancel_all();
         state.defense_dice.cancel_all();
 

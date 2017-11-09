@@ -126,7 +126,8 @@ public struct SimulationState
     TokenState attack_tokens;
     TokenState defense_tokens;
 
-    // Information for next stage of iteration
+    // Information for next stage
+    // NOTE: Remember to reset this between stages as appropriate!
     int dice_to_reroll = 0;
 
     // Final results (multi-attack, etc)
@@ -186,7 +187,6 @@ public SimulationStateMap roll_attack_dice(bool initial_roll)(
 
                     // Add dice to the relevant pool
                     SimulationState new_state = state;
-                    new_state.dice_to_reroll = 0;
                     if (initial_roll)
                     {
                         new_state.attack_dice.results[DieResult.Crit]  += crit;
@@ -241,7 +241,6 @@ public SimulationStateMap roll_defense_dice(bool initial_roll)(
 
                 // Add dice to the relevant pool
                 SimulationState new_state = state;
-                new_state.dice_to_reroll = 0;
                 if (initial_roll)
                 {
                     new_state.defense_dice.results[DieResult.Evade] += evade;
