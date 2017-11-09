@@ -68,6 +68,8 @@ block content
 
                 p One damage on hit.
 
+                p Edge cases like Sunny Bounder rerolling crit to try and trigger ability, etc.
+
                 p Check the code for details!
 
         li.accordion-item(data-accordion-item)
