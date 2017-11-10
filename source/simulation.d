@@ -133,7 +133,7 @@ struct SimulationSetup
     // TODO: Crack shot? (gets a little bit complex as presence affects defender logic and as well)
     // TODO: Zuckuss Crew
     // TODO: 4-LOM Crew
-    // TODO: Bossk Crew (gets weird/hard...)
+    // TODO: Bossk Crew
     // TODO: Captain rex (only affects multi-attack)
     // TODO: Operations specialist? Again only multi-attack
 
@@ -144,7 +144,6 @@ struct SimulationSetup
 
     // TODO: Elusiveness
     // TODO: C-3PO (always guess 0 probably the most relevant)
-    // TODO: Latts? Gets a bit weird/complex
     // TODO: Lightweight frame
 };
 

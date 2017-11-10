@@ -52,6 +52,11 @@ select {
 	font-weight: bold;
 }
 
+ul.faq ul {
+	margin-top: 1.25rem;
+	margin-bottom: 1.25rem;
+}
+
 
 /************************* NAV BAR *********************/
 .top-bar {

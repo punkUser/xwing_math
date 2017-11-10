@@ -15,13 +15,13 @@ block content
         Rather than rely on random simulation, this tool calculates probabilities directly via an exhaustive search of
         all possible outcomes. This runs extremely fast (a couple milliseconds for most realistic cases) and produces
         accurate and repeatable results.
-
-    //-p. open source
-
+    p.
+        Source code for the tool is <a href="https://github.com/punkUser/xwing_math">available on Github</a> under the MIT license.
+        Please feel free to browse the code, fork and/or submit issues and pull requests!
     
     h1 Frequently Asked Questions
 
-    ul#faq.accordion(data-accordion, data-allow-all-closed="true", data-deep-link="true")
+    ul#faq.faq.accordion(data-accordion, data-allow-all-closed="true", data-deep-link="true")
 
         li.accordion-item(data-accordion-item)
             a.accordion-title(href="#forms") What's the difference between "Basic" and "Advanced"?
@@ -57,6 +57,13 @@ block content
                     the attacker to discard a target lock to fire) do <em>not</em> include those tokens in the simulation. The
                     simulation effectively begins at the attacker's initial dice roll, so that is the point in which you should
                     set the token state.
+
+        li.accordion-item(data-accordion-item)
+            a.accordion-title(href="#links") How can I link or bookmark a specific result?
+            #links.accordion-content(data-tab-content)
+                p.
+                    When you press "Simulate" the address bar will be updated with a link that can be bookmarked or shared to
+                    get right back to a given result. This is also a convenient way of comparing results between tabs or windows.
 
         li.accordion-item(data-accordion-item)
             a.accordion-title(href="#strategies") What strategies do the attacker and defender employ?
@@ -111,19 +118,25 @@ block content
                     code!
 
         li.accordion-item(data-accordion-item)
-            a.accordion-title(href="#features") Can you add [insert feature or effect] to the simulator?
+            a.accordion-title(href="#features") Can you add [some upgrade] to the simulator?
             #features.accordion-content(data-tab-content)
                 p.
                     Anything can be added given the proper time and resources. Generally things that aren't yet implemented fall
                     into a couple of categories.
                 ul
                     li.
-                        Things with too many decisions/combinations, or where the optimal strategy would be highly non-obvious.
-                    li.
                         Things with too many UI complexities or too much context.
+                    li.
+                        Things with too many decisions, or where the optimal strategy would be highly non-obvious. Many of the "spend
+                        token to do something" cards fall into this category. Deciding between multiple ways to best spend a 
+                        token in multi-attack situations can be quite complicated, and results from the tool generally need to be
+                        understood in the context of the strategy employed.
                     li.
                         Things with unclear rules interactions. This includes cases where card combinations aren't possible in X-Wing
                         today (due to lacking specific upgrade slot combinations or faction limitations), or cases that are possible
                         but rarely used and thus have never received needed clarification in the FAQ.
-       
-
+                    li.
+                        Rarely used upgrades, particularly in combination with another one of the downsides.
+                p.
+                    If you want a specific upgrade prioritized, please feel free to
+                    <a href="https://github.com/punkUser/xwing_math/issues">upvote or file an issue on Github</a>.
