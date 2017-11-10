@@ -10,7 +10,7 @@ viewed at http://xwing.gateofstorms.net/.
 
 Development
 -----------
-xwing_math is written in the [D Programming Languag](https://dlang.org/) and uses the [vibe.d](http://vibed.org/)
+xwing_math is written in the [D Programming Language](https://dlang.org/) and uses the [vibe.d](http://vibed.org/)
 library to host the web interface. It currently supports Windows and Linux (Ubuntu and likely others).
 
 Install the [D compiler](https://dlang.org/download.html) and [DUB](http://code.dlang.org/download) on your platform
