@@ -25,7 +25,7 @@ public class WWWServer
     
         router.get("/", &basic);
         router.get("/advanced/", &advanced);
-        router.get("/faq/", &faq);
+        router.get("/about/", &about);
         router.post("/simulate_basic.json", &simulate_basic);
         router.post("/simulate_advanced.json", &simulate_advanced);
     
@@ -192,9 +192,9 @@ public class WWWServer
         res.render!("advanced.dt", form_values);
     }
 
-    private void faq(HTTPServerRequest req, HTTPServerResponse res)
+    private void about(HTTPServerRequest req, HTTPServerResponse res)
     {
-        res.render!("faq.dt");
+        res.render!("about.dt");
     }
 
     // *************************************** ERROR ************************************************

@@ -10,7 +10,7 @@ html(class="no-js", lang="en")
         meta(http-equiv="x-ua-compatible", content="ie=edge")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
         
-        title X-Wing Probability Simulator
+        title X-Wing Probability Calculator
         
         link(rel="stylesheet", href="/css/foundation.css?v=#{file_version}")
         link(rel="stylesheet", href="/css/app.css?v=#{file_version}")
@@ -18,13 +18,19 @@ html(class="no-js", lang="en")
     body
         nav.top-bar
             .top-bar-left
-                ul(class="dropdown menu", data-dropdown-menu)
+                ul.dropdown.menu(data-dropdown-menu)
                     li
                         a(href="/") Basic
                     li.divider
                     li
                         a(href="/advanced/") Advanced
                     li.divider
+
+            .top-bar-right
+                ul.dropdown.menu(data-dropdown-menu)
+                    li.divider
+                    li
+                        a(href="/about/") About
 
         #content
             .grid-container
