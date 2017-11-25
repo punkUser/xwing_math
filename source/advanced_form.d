@@ -91,13 +91,17 @@ align(1) struct AdvancedForm
         ubyte, "amad_unstressed_reroll_any_count",          4,
         ubyte, "amad_stressed_reroll_any_count",            4,
         ubyte, "dmdd_unstressed_reroll_any_count",          4,
-        ubyte, "dmdd_stressed_reroll_any_count",            4,
 
+        ubyte, "dmdd_stressed_reroll_any_count",            4,
         ubyte, "dmdd_unstressed_focus_to_evade_count",      4,
         ubyte, "dmdd_stressed_focus_to_evade_count",        4,
-
-        uint, "",                                           4,
+        ubyte, "dmdd_focused_focus_to_evade_count",         4,
         ));
+
+    mixin(bitfields!(
+        ubyte, "amad_focused_focus_to_hit_count",           4,
+        ubyte, "",                                          4,
+    ));
 
     // Can always add more on the end, so no need to reserve space explicitly
 
@@ -127,7 +131,7 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     setup.attack_tokens.target_lock             = form.attack_target_lock_count;
     setup.attack_tokens.stress                  = form.attack_stress_count;
 
-    // Once per turn abilities are treated like "tokens" for simulation purposes
+    // Once per round abilities are treated like "tokens" for simulation purposes
     setup.attack_tokens.amad_any_to_hit         = form.amad_once_any_to_hit;
     setup.attack_tokens.amad_any_to_crit        = form.amad_once_any_to_crit;
     setup.attack_tokens.sunny_bounder           = form.attack_sunny_bounder;
@@ -155,6 +159,7 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     setup.AMAD.focus_to_hit_count.always        = form.amad_focus_to_hit_count;
     setup.AMAD.focus_to_hit_count.unstressed    = form.amad_unstressed_focus_to_hit_count;
     setup.AMAD.focus_to_hit_count.stressed      = form.amad_stressed_focus_to_hit_count;
+    setup.AMAD.focus_to_hit_count.focused       = form.amad_focused_focus_to_hit_count;
     setup.AMAD.blank_to_crit_count              = form.amad_blank_to_crit_count;
     setup.AMAD.blank_to_hit_count               = form.amad_blank_to_hit_count;
     setup.AMAD.blank_to_focus_count             = form.amad_blank_to_focus_count;
@@ -190,6 +195,7 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     setup.DMDD.focus_to_evade_count.always      = form.dmdd_focus_to_evade_count;
     setup.DMDD.focus_to_evade_count.unstressed  = form.dmdd_unstressed_focus_to_evade_count;
     setup.DMDD.focus_to_evade_count.stressed    = form.dmdd_stressed_focus_to_evade_count;
+    setup.DMDD.focus_to_evade_count.focused     = form.dmdd_focused_focus_to_evade_count;
 
     setup.DMDD.spend_focus_one_blank_to_evade   = form.dmdd_spend_focus_one_blank_to_evade_count;
     setup.DMDD.spend_attacker_stress_add_evade  = form.dmdd_spend_attacker_stress_add_evade;

@@ -65,10 +65,13 @@ block form
                         - stepper_control_t!"amad_stressed_focus_to_hit_count"   ("Focus to Hit",  0, 15);
                         - stepper_control_t!"amad_stressed_focus_to_crit_count"  ("Focus to Crit", 0, 15);
                     fieldset.fieldset
+                        legend If Have Focus, Change
+                        - stepper_control_t!"amad_focused_focus_to_hit_count"    ("Focus to Hit",  0, 15);
+                    fieldset.fieldset
                         legend Spend Focus to Change
                         - stepper_control_t!"amad_spend_focus_one_blank_to_hit_count"("One Blank to Hit", 0, 15);
                     fieldset.fieldset
-                        legend Once Per Turn, Change
+                        legend Once Per Round, Change
                         - switch_control_t!"amad_once_any_to_hit"  ("Any to Hit");
                         - switch_control_t!"amad_once_any_to_crit" ("Any to Crit");
 
@@ -123,6 +126,9 @@ block form
                     fieldset.fieldset
                         legend If Stressed, Change
                         - stepper_control_t!"dmdd_stressed_focus_to_evade_count" ("Focus to Evade",  0, 15);
+                    fieldset.fieldset
+                        legend If Have Focus, Change
+                        - stepper_control_t!"dmdd_focused_focus_to_evade_count"  ("Focus to Evade",  0, 15);
                     fieldset.fieldset
                         legend Spend Focus to Change
                         - stepper_control_t!"dmdd_spend_focus_one_blank_to_evade_count"("One Blank to Evade", 0, 15);

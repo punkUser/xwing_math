@@ -20,6 +20,7 @@ block form
                             - select_control_option_t!("attack_pilot") ("Backdraft",                AttackPilot.Backdraft);
                             - select_control_option_t!("attack_pilot") ("Horton Salm",              AttackPilot.HortonSalm);
                             - select_control_option_t!("attack_pilot") ("Ibtisam",                  AttackPilot.Ibtisam);
+                            - select_control_option_t!("attack_pilot") ("Poe Dameron",              AttackPilot.PoeDameron);
                             - select_control_option_t!("attack_pilot") ("Rear Admiral Chiraneau",   AttackPilot.RearAdmiralChiraneau);
                             - select_control_option_t!("attack_pilot") ("Rey",                      AttackPilot.Rey);
                             - select_control_option_t!("attack_pilot") ("Sunny Bounder",            AttackPilot.SunnyBounder);
@@ -83,7 +84,8 @@ block form
                             - select_control_option_t!("defense_pilot") ("None",                    DefensePilot.None);
                             - select_control_option_t!("defense_pilot") ("Ezra Bridger",            DefensePilot.EzraBridger);
                             - select_control_option_t!("defense_pilot") ("Ibtisam",                 DefensePilot.Ibtisam);
-                            - select_control_option_t!("defense_pilot") ("Luke Skywalker",          DefensePilot.LukeSkywalker);
+                            - select_control_option_t!("defense_pilot") ("Luke Skywalker",          DefensePilot.LukeSkywalker);                            
+                            - select_control_option_t!("defense_pilot") ("Poe Dameron",             DefensePilot.PoeDameron);
                             - select_control_option_t!("defense_pilot") ("Rey",                     DefensePilot.Rey);
                             - select_control_option_t!("defense_pilot") ("Sabine Wren (Lancer)",    DefensePilot.SabineWrenLancer);
                             - select_control_option_t!("defense_pilot") ("Sunny Bounder",           DefensePilot.SunnyBounder);

@@ -12,6 +12,7 @@ enum AttackPilot : ubyte
     RearAdmiralChiraneau,
     Rey,
     SunnyBounder,
+    PoeDameron,
 
     // TODO
     // NorraWexley
@@ -38,7 +39,6 @@ enum AttackPilot : ubyte
     // Bossk
     // KeyanFarlander
     // TenNumb
-    // PoeDameron
 
     // Aura abilities that probably don't belong in this enum
     // Howlrunner... also another ship ability
@@ -55,6 +55,7 @@ enum DefensePilot : ubyte
     Rey,
     SabineWrenLancer,
     SunnyBounder,
+    PoeDameron,
 
     // TODO
     // DarkCurse
@@ -179,7 +180,7 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.attack_tokens.target_lock             = form.attack_target_lock_count;
     setup.attack_tokens.stress                  = form.attack_stress_count;
 
-    // Once per turn abilities are treated like "tokens" for simulation purposes
+    // Once per round abilities are treated like "tokens" for simulation purposes
     setup.attack_tokens.amad_any_to_hit         = form.attack_guidance_chips_hit;
     setup.attack_tokens.amad_any_to_crit        = form.attack_guidance_chips_crit;
     setup.attack_tokens.sunny_bounder           = form.attack_pilot == AttackPilot.SunnyBounder;
@@ -216,6 +217,7 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.AMAD.focus_to_crit_count.always       += form.attack_marksmanship                     ? 1 : 0;
     setup.AMAD.focus_to_hit_count.always        += form.attack_marksmanship                     ? k_all_dice_count : 0;
     setup.AMAD.focus_to_hit_count.unstressed    += form.attack_expertise                        ? k_all_dice_count : 0;
+    setup.AMAD.focus_to_hit_count.focused       += form.attack_pilot == AttackPilot.PoeDameron  ? 1 : 0;
     setup.AMAD.blank_to_hit_count               += form.attack_concussion_missiles              ? 1 : 0;
     setup.AMAD.blank_to_focus_count             += form.attack_adv_proton_torpedoes             ? 3 : 0;
     setup.AMAD.hit_to_crit_count                += form.attack_bistan                           ? 1 : 0;
@@ -235,7 +237,7 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.defense_tokens.evade                  = form.defense_evade_token_count;
     setup.defense_tokens.stress                 = form.defense_stress_count;
 
-    // Once per turn abilities are treated like "tokens" for simulation purposes
+    // Once per round abilities are treated like "tokens" for simulation purposes
     setup.defense_tokens.sunny_bounder          = form.defense_pilot == DefensePilot.SunnyBounder;
 
     // Special effects
@@ -255,6 +257,7 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     // Change results
     setup.DMDD.focus_to_evade_count.always      += form.defense_pilot == DefensePilot.LukeSkywalker ? 1 : 0;
     setup.DMDD.focus_to_evade_count.stressed    += form.defense_pilot == DefensePilot.EzraBridger   ? 2 : 0;
+    setup.DMDD.focus_to_evade_count.focused     += form.defense_pilot == DefensePilot.PoeDameron    ? 1 : 0;
     setup.DMDD.blank_to_evade_count             += form.defense_autothrusters                       ? 1 : 0;
 
     setup.DMDD.spend_attacker_stress_add_evade   = form.defense_latts_razzi;

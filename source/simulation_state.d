@@ -104,7 +104,7 @@ public struct TokenState
     ubyte target_lock = 0;
     ubyte stress = 0;
 
-    // Available once per turn abilities
+    // Available once per round abilities
     // Bitfield since it's important this structure remain small as it is part of the hashes...
     mixin(bitfields!(
          bool, "amad_any_to_hit",       1,

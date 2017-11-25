@@ -384,7 +384,7 @@ class Simulation
         {
             // Take into account our ability to freely change "any" results before spending target lock.
             // If we can change everything to hits/crits just with those abilities, don't spend the lock.
-            // Otherwise it's usually best to reroll everything since it could save us from using the once per turn.
+            // Otherwise it's usually best to reroll everything since it could save us from using the once per round.
             int change_any_count =
                 (attack_tokens.amad_any_to_crit ? 1 : 0) +
                 (attack_tokens.amad_any_to_hit  ? 1 : 0);
@@ -434,7 +434,7 @@ class Simulation
 
         // TODO: We should technically take one damage on hit and a bunch of details about
         // the defender's maximum defense results into account here with respect to spending
-        // tokens and once per turn abilities. i.e. in certain situations there's no need to
+        // tokens and once per round abilities. i.e. in certain situations there's no need to
         // over-spend if there's no possible way the defender can dodge the shot already.
         //
         // That said, this logic can actually get pretty non-trivial in the general case.
@@ -466,7 +466,7 @@ class Simulation
             }
         }
 
-        // Spend "once per turn" abilities if present
+        // Spend "once per round" abilities if present
         if (attack_tokens.amad_any_to_crit)
         {
             attack_tokens.amad_any_to_crit = (attack_dice.change_blank_focus(DieResult.Crit, 1) == 0);
@@ -664,8 +664,15 @@ class Simulation
             assert(uncanceled_hits == 0 || defense_dice.count_mutable(DieResult.Focus) == 0);
         }
 
-        // Sanity
-        assert(uncanceled_hits <= 0 || ((!can_spend_focus || spent_focus) && (!can_spend_evade || spent_evade)));
+        // Sanity checks (RECALL: no point in canceling excess when one damage on hit)
+        if (uncanceled_hits > 0 && !m_setup.attack_one_damage_on_hit)
+        {
+            if (can_spend_focus && !spent_focus)
+                writeln("Whaaat");
+            assert(!can_spend_focus || spent_focus);
+            assert(!can_spend_evade || spent_evade);
+        }
+        
         assert(defense_tokens.evade >= 0);
         assert(defense_tokens.focus >= 0);
     }
