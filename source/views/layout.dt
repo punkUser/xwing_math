@@ -25,10 +25,6 @@ html(class="no-js", lang="en")
                     li
                         a(href="/advanced/") Advanced
                     li.divider
-
-            .top-bar-right
-                ul.dropdown.menu(data-dropdown-menu)
-                    li.divider
                     li
                         a(href="/about/") About
 

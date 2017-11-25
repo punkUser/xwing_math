@@ -141,25 +141,24 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     setup.AMAD.add_crit_count                   = form.amad_add_crit_count;
     setup.AMAD.add_blank_count                  = form.amad_add_blank_count;
     setup.AMAD.add_focus_count                  = form.amad_add_focus_count;
-    setup.AMAD.reroll_blank_count               = form.amad_reroll_blank_count;
-    setup.AMAD.reroll_focus_count               = form.amad_reroll_focus_count;
-    setup.AMAD.reroll_any_count                 = form.amad_reroll_any_count;
-    setup.AMAD.unstressed_reroll_focus_count    = form.amad_unstressed_reroll_focus_count;
-    setup.AMAD.stressed_reroll_focus_count      = form.amad_stressed_reroll_focus_count;
-    setup.AMAD.unstressed_reroll_any_count      = form.amad_unstressed_reroll_any_count;
-    setup.AMAD.stressed_reroll_any_count        = form.amad_stressed_reroll_any_count;
+    setup.AMAD.reroll_blank_count.always        = form.amad_reroll_blank_count;
+    setup.AMAD.reroll_focus_count.always        = form.amad_reroll_focus_count;
+    setup.AMAD.reroll_any_count.always          = form.amad_reroll_any_count;
+    setup.AMAD.reroll_focus_count.unstressed    = form.amad_unstressed_reroll_focus_count;
+    setup.AMAD.reroll_focus_count.stressed      = form.amad_stressed_reroll_focus_count;
+    setup.AMAD.reroll_any_count.unstressed      = form.amad_unstressed_reroll_any_count;
+    setup.AMAD.reroll_any_count.stressed        = form.amad_stressed_reroll_any_count;
 
-    setup.AMAD.focus_to_crit_count              = form.amad_focus_to_crit_count;
-    setup.AMAD.focus_to_hit_count               = form.amad_focus_to_hit_count;
+    setup.AMAD.focus_to_crit_count.always       = form.amad_focus_to_crit_count;
+    setup.AMAD.focus_to_crit_count.unstressed   = form.amad_unstressed_focus_to_crit_count;
+    setup.AMAD.focus_to_crit_count.stressed     = form.amad_stressed_focus_to_crit_count;
+    setup.AMAD.focus_to_hit_count.always        = form.amad_focus_to_hit_count;
+    setup.AMAD.focus_to_hit_count.unstressed    = form.amad_unstressed_focus_to_hit_count;
+    setup.AMAD.focus_to_hit_count.stressed      = form.amad_stressed_focus_to_hit_count;
     setup.AMAD.blank_to_crit_count              = form.amad_blank_to_crit_count;
     setup.AMAD.blank_to_hit_count               = form.amad_blank_to_hit_count;
     setup.AMAD.blank_to_focus_count             = form.amad_blank_to_focus_count;
     setup.AMAD.hit_to_crit_count                = form.amad_hit_to_crit_count;
-
-    setup.AMAD.unstressed_focus_to_hit_count    = form.amad_unstressed_focus_to_hit_count;
-    setup.AMAD.unstressed_focus_to_crit_count   = form.amad_unstressed_focus_to_crit_count;
-    setup.AMAD.stressed_focus_to_hit_count      = form.amad_stressed_focus_to_hit_count;
-    setup.AMAD.stressed_focus_to_crit_count     = form.amad_stressed_focus_to_crit_count;
 
     setup.AMAD.spend_focus_one_blank_to_hit     = form.amad_spend_focus_one_blank_to_hit_count;
 
@@ -179,18 +178,18 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     setup.DMDD.add_blank_count                  = form.dmdd_add_blank_count;
     setup.DMDD.add_focus_count                  = form.dmdd_add_focus_count;
     setup.DMDD.add_evade_count                  = form.dmdd_add_evade_count;
-    setup.DMDD.reroll_blank_count               = form.dmdd_reroll_blank_count;
-    setup.DMDD.reroll_focus_count               = form.dmdd_reroll_focus_count;
-    setup.DMDD.reroll_any_count                 = form.dmdd_reroll_any_count;
-    setup.DMDD.unstressed_reroll_focus_count    = form.dmdd_unstressed_reroll_focus_count;
-    setup.DMDD.stressed_reroll_focus_count      = form.dmdd_stressed_reroll_focus_count;
-    setup.DMDD.unstressed_reroll_any_count      = form.dmdd_unstressed_reroll_any_count;
-    setup.DMDD.stressed_reroll_any_count        = form.dmdd_stressed_reroll_any_count;
+    setup.DMDD.reroll_blank_count.always        = form.dmdd_reroll_blank_count;
+    setup.DMDD.reroll_focus_count.always        = form.dmdd_reroll_focus_count;
+    setup.DMDD.reroll_any_count.always          = form.dmdd_reroll_any_count;
+    setup.DMDD.reroll_focus_count.unstressed    = form.dmdd_unstressed_reroll_focus_count;
+    setup.DMDD.reroll_focus_count.stressed      = form.dmdd_stressed_reroll_focus_count;
+    setup.DMDD.reroll_any_count.unstressed      = form.dmdd_unstressed_reroll_any_count;
+    setup.DMDD.reroll_any_count.stressed        = form.dmdd_stressed_reroll_any_count;
 
     setup.DMDD.blank_to_evade_count             = form.dmdd_blank_to_evade_count;
-    setup.DMDD.focus_to_evade_count             = form.dmdd_focus_to_evade_count;
-    setup.DMDD.unstressed_focus_to_evade_count  = form.dmdd_unstressed_focus_to_evade_count;
-    setup.DMDD.stressed_focus_to_evade_count    = form.dmdd_stressed_focus_to_evade_count;
+    setup.DMDD.focus_to_evade_count.always      = form.dmdd_focus_to_evade_count;
+    setup.DMDD.focus_to_evade_count.unstressed  = form.dmdd_unstressed_focus_to_evade_count;
+    setup.DMDD.focus_to_evade_count.stressed    = form.dmdd_stressed_focus_to_evade_count;
 
     setup.DMDD.spend_focus_one_blank_to_evade   = form.dmdd_spend_focus_one_blank_to_evade_count;
     setup.DMDD.spend_attacker_stress_add_evade  = form.dmdd_spend_attacker_stress_add_evade;

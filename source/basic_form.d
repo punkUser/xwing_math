@@ -196,31 +196,31 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.AMAD.add_blank_count                  += form.attack_finn                             ? 1 : 0;
 
     // Rerolls
-    setup.AMAD.reroll_any_count                 += form.attack_dengar_1                         ? 1 : 0;
-    setup.AMAD.reroll_any_count                 += form.attack_dengar_2                         ? 2 : 0;
-    setup.AMAD.reroll_any_count                 += form.attack_predator_1                       ? 1 : 0;
-    setup.AMAD.reroll_any_count                 += form.attack_predator_2                       ? 2 : 0;
-    setup.AMAD.reroll_any_count                 += form.attack_rage                             ? 3 : 0;
-    setup.AMAD.reroll_any_count                 += form.attack_linked_battery                   ? 1 : 0;
-    setup.AMAD.reroll_blank_count               += form.attack_lone_wolf                        ? 1 : 0;
-    setup.AMAD.reroll_blank_count               += form.attack_pilot == AttackPilot.Rey         ? 2 : 0;
-    setup.AMAD.reroll_blank_count               += form.attack_pilot == AttackPilot.HortonSalm  ? k_all_dice_count : 0;
-    setup.AMAD.reroll_focus_count               += form.attack_wookie_commandos                 ? k_all_dice_count : 0;
-    setup.AMAD.stressed_reroll_focus_count      += form.attack_wired                            ? k_all_dice_count : 0;
-    setup.AMAD.stressed_reroll_any_count        += form.attack_pilot == AttackPilot.Ibtisam     ? 1 : 0;
+    setup.AMAD.reroll_any_count.always          += form.attack_dengar_1                         ? 1 : 0;
+    setup.AMAD.reroll_any_count.always          += form.attack_dengar_2                         ? 2 : 0;
+    setup.AMAD.reroll_any_count.always          += form.attack_predator_1                       ? 1 : 0;
+    setup.AMAD.reroll_any_count.always          += form.attack_predator_2                       ? 2 : 0;
+    setup.AMAD.reroll_any_count.always          += form.attack_rage                             ? 3 : 0;
+    setup.AMAD.reroll_any_count.always          += form.attack_linked_battery                   ? 1 : 0;
+    setup.AMAD.reroll_blank_count.always        += form.attack_lone_wolf                        ? 1 : 0;
+    setup.AMAD.reroll_blank_count.always        += form.attack_pilot == AttackPilot.Rey         ? 2 : 0;
+    setup.AMAD.reroll_blank_count.always        += form.attack_pilot == AttackPilot.HortonSalm  ? k_all_dice_count : 0;
+    setup.AMAD.reroll_focus_count.always        += form.attack_wookie_commandos                 ? k_all_dice_count : 0;
+    setup.AMAD.reroll_focus_count.stressed      += form.attack_wired                            ? k_all_dice_count : 0;
+    setup.AMAD.reroll_any_count.stressed        += form.attack_pilot == AttackPilot.Ibtisam     ? 1 : 0;
 
     // Change results
-    setup.AMAD.focus_to_crit_count              += form.attack_proton_torpedoes                 ? 1 : 0;
-    setup.AMAD.focus_to_crit_count              += form.attack_pilot == AttackPilot.RearAdmiralChiraneau ? 1 : 0;
-    setup.AMAD.focus_to_crit_count              += form.attack_marksmanship                     ? 1 : 0;
-    setup.AMAD.focus_to_hit_count               += form.attack_marksmanship                     ? k_all_dice_count : 0;
+    setup.AMAD.focus_to_crit_count.always       += form.attack_proton_torpedoes                 ? 1 : 0;
+    setup.AMAD.focus_to_crit_count.always       += form.attack_pilot == AttackPilot.RearAdmiralChiraneau ? 1 : 0;
+    setup.AMAD.focus_to_crit_count.stressed     += form.attack_ezra_crew                        ? 1 : 0;
+    setup.AMAD.focus_to_crit_count.always       += form.attack_marksmanship                     ? 1 : 0;
+    setup.AMAD.focus_to_hit_count.always        += form.attack_marksmanship                     ? k_all_dice_count : 0;
+    setup.AMAD.focus_to_hit_count.unstressed    += form.attack_expertise                        ? k_all_dice_count : 0;
     setup.AMAD.blank_to_hit_count               += form.attack_concussion_missiles              ? 1 : 0;
     setup.AMAD.blank_to_focus_count             += form.attack_adv_proton_torpedoes             ? 3 : 0;
     setup.AMAD.hit_to_crit_count                += form.attack_bistan                           ? 1 : 0;
     setup.AMAD.hit_to_crit_count                += form.attack_mercenary_copilot                ? 1 : 0;
     setup.AMAD.hit_to_crit_count                += form.attack_mangler_cannon                   ? 1 : 0;
-    setup.AMAD.unstressed_focus_to_hit_count    += form.attack_expertise                        ? k_all_dice_count : 0;
-    setup.AMAD.stressed_focus_to_crit_count     += form.attack_ezra_crew                        ? 1 : 0;
     setup.AMAD.accuracy_corrector                = form.attack_accuracy_corrector;
 
     // Modify defense dice
@@ -247,14 +247,14 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.DMDD.add_blank_count                  += form.defense_finn                                ? 1 : 0;
 
     // Rerolls
-    setup.DMDD.reroll_blank_count               += form.defense_lone_wolf                           ? 1 : 0;
-    setup.DMDD.reroll_blank_count               += form.defense_pilot == DefensePilot.Rey           ? 2 : 0;
-    setup.DMDD.stressed_reroll_focus_count      += form.defense_wired                               ? k_all_dice_count : 0;
-    setup.DMDD.stressed_reroll_any_count        += form.defense_pilot == DefensePilot.Ibtisam       ? 1 : 0;
+    setup.DMDD.reroll_blank_count.always        += form.defense_lone_wolf                           ? 1 : 0;
+    setup.DMDD.reroll_blank_count.always        += form.defense_pilot == DefensePilot.Rey           ? 2 : 0;
+    setup.DMDD.reroll_focus_count.stressed      += form.defense_wired                               ? k_all_dice_count : 0;
+    setup.DMDD.reroll_any_count.stressed        += form.defense_pilot == DefensePilot.Ibtisam       ? 1 : 0;
 
     // Change results
-    setup.DMDD.focus_to_evade_count             += form.defense_pilot == DefensePilot.LukeSkywalker ? 1 : 0;
-    setup.DMDD.stressed_focus_to_evade_count    += form.defense_pilot == DefensePilot.EzraBridger   ? 2 : 0;
+    setup.DMDD.focus_to_evade_count.always      += form.defense_pilot == DefensePilot.LukeSkywalker ? 1 : 0;
+    setup.DMDD.focus_to_evade_count.stressed    += form.defense_pilot == DefensePilot.EzraBridger   ? 2 : 0;
     setup.DMDD.blank_to_evade_count             += form.defense_autothrusters                       ? 1 : 0;
 
     setup.DMDD.spend_attacker_stress_add_evade   = form.defense_latts_razzi;
