@@ -29,8 +29,8 @@ struct PassiveModifier
     int opCall(TokenState tokens) const
     {
         return always +
-            tokens.stress > 0 ? stressed : unstressed +
-            tokens.focus > 0 ? focused : 0;
+            (tokens.stress > 0 ? stressed : unstressed) +
+            (tokens.focus > 0 ? focused : 0);
     }
 };
 
