@@ -65,3 +65,5 @@ update.sh
 xwing_math-test-application\.exe
 
 xwing_math-test-application
+
+*.log

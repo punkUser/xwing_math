@@ -19,7 +19,9 @@ public class WWWServer
         //settings.sessionStore = new MemorySessionStore();
         //settings.accessLogFile = m_config.http_server_log_file;
 
-        settings.accessLogToConsole = true;
+        settings.accessLogFile = "access.log";
+        settings.accessLogFormat = "%h - %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\" %D";
+        settings.accessLogToConsole = false;
 
         auto router = new URLRouter;
     
@@ -87,7 +89,7 @@ public class WWWServer
         string form_state_string = serialize_form_to_url(basic_form);
         SimulationSetup setup = to_simulation_setup(basic_form);
 
-        simulate_response(req.peer, res, setup, form_state_string);
+        simulate_response(req, res, setup, form_state_string);
     }
 
     private void simulate_advanced(HTTPServerRequest req, HTTPServerResponse res)
@@ -98,10 +100,10 @@ public class WWWServer
         string form_state_string = serialize_form_to_url(advanced_form);
         SimulationSetup setup = to_simulation_setup(advanced_form);
 
-        simulate_response(req.peer, res, setup, form_state_string);
+        simulate_response(req, res, setup, form_state_string);
     }
 
-    private void simulate_response(string peer_address,		// Mostly for logging
+    private void simulate_response(HTTPServerRequest req,		// Mostly for logging
                                    HTTPServerResponse res,
                                    ref const(SimulationSetup) setup,
                                    string form_state_string = "")
@@ -117,7 +119,11 @@ public class WWWServer
 
             simulation.simulate_attack();
 
-            writefln("%s: Simulated %d evaluations in %s msec", peer_address,
+            // NOTE: This is kinda similar to the access log, but convenient for now
+            writefln("%s - %s - %s: Simulated %d evaluations in %s msec",
+                     req.peer,
+                     req.timeCreated.toSimpleString(),
+                     req.path ~ "?q=" ~ form_state_string,
                      simulation.total_sum().evaluation_count, sw.peek().msecs());
         }
 
