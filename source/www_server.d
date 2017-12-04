@@ -17,11 +17,9 @@ public class WWWServer
         settings.port = 80;
 
         //settings.sessionStore = new MemorySessionStore();
-        //settings.accessLogFile = m_config.http_server_log_file;
 
-        settings.accessLogFile = "access.log";
-        settings.accessLogFormat = "%h - %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\" %D";
-        settings.accessLogToConsole = false;
+        //settings.accessLogFormat = "%h - %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\" %D";
+        //settings.accessLogToConsole = true;
 
         auto router = new URLRouter;
     
