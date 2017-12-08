@@ -78,6 +78,9 @@ struct SimulationSetup
 
     struct AttackerModifyDefenseDice
     {
+        // Rerolls
+        PassiveModifier reroll_evade_gain_stress_count;     // Gain stress for each reroll
+
         // Change results
         int evade_to_focus_count = 0;
     };
@@ -311,16 +314,20 @@ class Simulation
         return true;
     }
 
-    // TODO: Needs a way to force rerolls eventually as well
-    private void defender_modify_attack_dice(ref DiceState attack_dice,
-                                             ref TokenState attack_tokens) const
+    private int dmad_before_reroll(ref DiceState attack_dice, ref TokenState attack_tokens) const
+    {
+        // Nothing to do here yet
+        return 0;
+    }
+
+    private void dmad_after_reroll(ref DiceState attack_dice, ref TokenState attack_tokens) const
     {
         attack_dice.change_dice_no_reroll(DieResult.Hit, DieResult.Focus, m_setup.DMAD.hit_to_focus_no_reroll_count);
     }
 
     // Removes rerolled dice from pool; returns number of dice to reroll
-    private int attacker_modify_attack_dice_before_reroll(ref DiceState attack_dice,
-                                                          ref TokenState attack_tokens) const
+    private int amad_before_reroll(ref DiceState attack_dice,
+                                   ref TokenState attack_tokens) const
     {
         // Add free results
         attack_dice.results[DieResult.Hit]   += m_setup.AMAD.add_hit_count;
@@ -406,9 +413,9 @@ class Simulation
     }
 
     // Removes rerolled dice from pool; returns number of dice to reroll
-    private void attacker_modify_attack_dice_after_reroll(ref DiceState attack_dice,
-                                                          ref TokenState attack_tokens,
-                                                          bool final_attack) const
+    private void amad_after_reroll(ref DiceState attack_dice,
+                                   ref TokenState attack_tokens,
+                                   bool final_attack) const
     {
         // Handle accuracy corrector... we cache the token state here before doing other modification -
         // namely focus spending - because we assume at this point that the player could determine if it's
@@ -504,8 +511,24 @@ class Simulation
         // No more modification after AC!
     }
 
-    void attacker_modify_defense_dice(
-        ubyte[DieResult.Num] attack_results,
+    int amdd_before_reroll(
+        ref const(ubyte)[DieResult.Num] attack_results,
+        ref TokenState attack_tokens,
+        ref DiceState defense_dice,
+        ref TokenState defense_tokens) const
+    {
+        int dice_to_reroll = 0;
+
+        int rerolled_evade_count = defense_dice.remove_dice_for_reroll(DieResult.Evade, m_setup.AMDD.reroll_evade_gain_stress_count(attack_tokens));
+        attack_tokens.stress += rerolled_evade_count;
+        dice_to_reroll += rerolled_evade_count;
+
+        return dice_to_reroll;
+    }
+
+    void amdd_after_reroll(
+        ref const(ubyte)[DieResult.Num] attack_results,
+        ref TokenState attack_tokens,
         ref DiceState defense_dice,
         ref TokenState defense_tokens) const
     {
@@ -513,8 +536,8 @@ class Simulation
         defense_dice.change_dice(DieResult.Evade, DieResult.Focus, m_setup.AMDD.evade_to_focus_count);
     }
 
-    int defender_modify_defense_dice_before_reroll(
-        const(ubyte)[DieResult.Num] attack_results,
+    int dmdd_before_reroll(
+        ref const(ubyte)[DieResult.Num] attack_results,
         ref DiceState defense_dice,
         ref TokenState defense_tokens) const
     {
@@ -542,7 +565,7 @@ class Simulation
         return dice_to_reroll;
     }
 
-    void defender_modify_defense_dice_after_reroll(
+    void dmdd_after_reroll(
         const(ubyte)[DieResult.Num] attack_results,
         ref TokenState attack_tokens,
         ref DiceState defense_dice,
@@ -718,11 +741,111 @@ class Simulation
 
 
 
+    private SimulationState attack_dice_before_defender_reroll(SimulationState state)
+    {
+        // "After rolling" events
+        // NOTE: FAQ says sunny triggers before HLC (just because...)
+        if (state.attack_tokens.sunny_bounder)
+            state.attack_tokens.sunny_bounder = do_sunny_bounder(state.attack_dice);
+        if (m_setup.attack_heavy_laser_cannon)
+            state.attack_dice.change_dice(DieResult.Crit, DieResult.Hit);
+
+        // Defender rerolls attack dice
+        state.dice_to_reroll = cast(ubyte)dmad_before_reroll(state.attack_dice, state.attack_tokens);
+        return state;
+    }
+
+    private SimulationState attack_dice_before_attacker_reroll(SimulationState state)
+    {
+        dmad_after_reroll(state.attack_dice, state.attack_tokens);
+
+        // Attacker rerolls attack dice
+        state.dice_to_reroll = cast(ubyte)amad_before_reroll(state.attack_dice, state.attack_tokens);
+        return state;
+    }    
+
+    private SimulationState attack_dice_after_reroll(SimulationState state)
+    {
+        // "After rerolling" events for attacker
+        // TODO: Wackiness of spending target lock to reroll "0" dice? And sort out what that means for passive mods?
+        if (state.dice_to_reroll > 0 && state.attack_tokens.sunny_bounder)
+            state.attack_tokens.sunny_bounder = do_sunny_bounder(state.attack_dice);
+
+        bool final_attack = (m_setup.type == MultiAttackType.Single || state.completed_attack_count == 1);
+        amad_after_reroll(state.attack_dice, state.attack_tokens, final_attack);
+
+        // Done modifying attack dice
+        state.attack_dice.finalize();
+        state.dice_to_reroll = 0;
+
+        return state;
+    }
+
+    private SimulationState defense_dice_before_attacker_reroll(SimulationState state)
+    {
+        // "After rolling" events
+        if (state.defense_tokens.sunny_bounder)
+            state.defense_tokens.sunny_bounder = do_sunny_bounder(state.defense_dice);
+
+        // Attacker reroll defense dice
+        state.dice_to_reroll = cast(ubyte)amdd_before_reroll(state.attack_dice.final_results, state.attack_tokens, state.defense_dice, state.defense_tokens);
+        return state;
+    }
+
+    private SimulationState defense_dice_before_defender_reroll(SimulationState state)
+    {
+        amdd_after_reroll(state.attack_dice.final_results, state.attack_tokens, state.defense_dice, state.defense_tokens);
+
+        // Defender reroll defense dice
+        state.dice_to_reroll = cast(ubyte)dmdd_before_reroll(state.attack_dice.final_results, state.defense_dice, state.defense_tokens);
+        return state;
+    }
+
+    private SimulationState defense_dice_after_reroll(SimulationState state)
+    {
+        // "After rerolling" events for defender
+        if (state.dice_to_reroll > 0 && state.defense_tokens.sunny_bounder)
+            state.defense_tokens.sunny_bounder = do_sunny_bounder(state.defense_dice);
+
+        dmdd_after_reroll(state.attack_dice.final_results, state.attack_tokens, state.defense_dice, state.defense_tokens);
+
+        // Done modifying defense dice
+        state.defense_dice.finalize();
+        state.dice_to_reroll = 0;
+
+        // Compare results
+        auto attack_results = compare_results(state.attack_dice.final_results, state.defense_dice.final_results);
+
+        // "After attack" abilities do not trigger on the first of a "secondary perform twice" attack
+        if (state.completed_attack_count > 0 || m_setup.type != MultiAttackType.SecondaryPerformTwice)
+        {
+            after_attack(state.attack_tokens, state.defense_tokens);
+        }
+
+        state.final_hits  += attack_results[DieResult.Hit];
+        state.final_crits += attack_results[DieResult.Crit];
+        ++state.completed_attack_count;
+
+        // Simplify state in case of further iteration
+        // Keep tokens and final results, discard the rest
+        state.attack_dice.cancel_all();
+        state.defense_dice.cancel_all();
+
+        // TODO: Maybe assert only the relevant states are set on output here
+
+        return state;
+    }
+
+
+
+
+
+
     // Returns full set of states after result comparison (results put into state.final_hits, etc)
     // Does not directly accumulate as this may be part of a multi-attack sequence.
     public SimulationStateMap simulate_single_attack(TokenState attack_tokens,
                                                      TokenState defense_tokens,
-                                                     int completed_attack_count = 0)
+                                                     ubyte completed_attack_count = 0)
     {
         SimulationState initial_state;
         initial_state.attack_tokens  = attack_tokens;
@@ -733,12 +856,14 @@ class Simulation
         states[initial_state] = 1.0f;
 
         // Roll and modify attack dice
-        states = roll_attack_dice!(true)(states, &attack_modify_before_reroll, m_setup.attack_dice);
-        states = roll_attack_dice!(false)(states, &attack_modify_after_reroll);
+        states = roll_attack_dice!(true)(states,  &attack_dice_before_defender_reroll, cast(ubyte)m_setup.attack_dice);
+        states = roll_attack_dice!(false)(states, &attack_dice_before_attacker_reroll);
+        states = roll_attack_dice!(false)(states, &attack_dice_after_reroll);
 
         // Roll and modify defense dice, and compare results
-        states = roll_defense_dice!(true)(states, &defense_modify_before_reroll, m_setup.defense_dice);
-        states = roll_defense_dice!(false)(states, &defense_modify_after_reroll);
+        states = roll_defense_dice!(true)(states,  &defense_dice_before_defender_reroll, cast(ubyte)m_setup.defense_dice);
+        states = roll_defense_dice!(false)(states, &defense_dice_before_attacker_reroll);
+        states = roll_defense_dice!(false)(states, &defense_dice_after_reroll);
 
         return states;
     }
@@ -874,90 +999,6 @@ class Simulation
             accumulate(state_probability, state.final_hits, state.final_crits, state.attack_tokens, state.defense_tokens);
         }
     }
-
-    private SimulationState attack_modify_before_reroll(SimulationState state)
-    {
-        // "After rolling" events
-        // NOTE: FAQ says sunny triggers before HLC (just because...)
-        if (state.attack_tokens.sunny_bounder)
-            state.attack_tokens.sunny_bounder = do_sunny_bounder(state.attack_dice);
-        if (m_setup.attack_heavy_laser_cannon)
-            state.attack_dice.change_dice(DieResult.Crit, DieResult.Hit);
-
-        defender_modify_attack_dice(state.attack_dice, state.attack_tokens);
-        state.dice_to_reroll = attacker_modify_attack_dice_before_reroll(state.attack_dice, state.attack_tokens);
-        return state;
-    }
-
-    private SimulationState attack_modify_after_reroll(SimulationState state)
-    {
-        // "After rerolling" events
-        // TODO: Wackiness of spending target lock to reroll "0" dice? And sort out what that means for passive mods?
-        if (state.dice_to_reroll > 0 && state.attack_tokens.sunny_bounder)
-            state.attack_tokens.sunny_bounder = do_sunny_bounder(state.attack_dice);
-
-        bool final_attack = (m_setup.type == MultiAttackType.Single || state.completed_attack_count == 1);
-        attacker_modify_attack_dice_after_reroll(state.attack_dice, state.attack_tokens, final_attack);
-
-        // Done modifying attack dice
-        state.attack_dice.finalize();
-        state.dice_to_reroll = 0;
-
-        return state;
-    }
-
-    private SimulationState defense_modify_before_reroll(SimulationState state)
-    {
-        // "After rolling" events
-        if (state.defense_tokens.sunny_bounder)
-            state.defense_tokens.sunny_bounder = do_sunny_bounder(state.defense_dice);
-
-        attacker_modify_defense_dice(state.attack_dice.final_results, state.defense_dice, state.defense_tokens);
-        state.dice_to_reroll = defender_modify_defense_dice_before_reroll(state.attack_dice.final_results, state.defense_dice, state.defense_tokens);
-        return state;
-    }
-
-    private SimulationState defense_modify_after_reroll(SimulationState state)
-    {
-        // "After rerolling" events
-        if (state.dice_to_reroll > 0 && state.defense_tokens.sunny_bounder)
-            state.defense_tokens.sunny_bounder = do_sunny_bounder(state.defense_dice);
-
-        defender_modify_defense_dice_after_reroll(state.attack_dice.final_results, state.attack_tokens, state.defense_dice, state.defense_tokens);
-
-        // Done modifying defense dice
-        state.defense_dice.finalize();
-        state.dice_to_reroll = 0;
-
-        // Compare results
-        auto attack_results = compare_results(state.attack_dice.final_results, state.defense_dice.final_results);
-
-        // "After attack" abilities do not trigger on the first of a "secondary perform twice" attack
-        if (state.completed_attack_count > 0 || m_setup.type != MultiAttackType.SecondaryPerformTwice)
-        {
-            after_attack(state.attack_tokens, state.defense_tokens);
-        }
-
-        state.final_hits  += attack_results[DieResult.Hit];
-        state.final_crits += attack_results[DieResult.Crit];
-        ++state.completed_attack_count;
-
-        // Simplify state in case of further iteration
-        // Keep tokens and final results, discard the rest
-        state.attack_dice.cancel_all();
-        state.defense_dice.cancel_all();
-
-        // TODO: Maybe assert only the relevant states are set on output here
-
-        return state;
-    }
-
-    
-
-
-
-
-
 
     private void accumulate(double probability, int hits, int crits, TokenState attack_tokens, TokenState defense_tokens)
     {

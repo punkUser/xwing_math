@@ -5,6 +5,7 @@ import advanced_form;
 
 import std.stdio;
 import std.datetime;
+import std.datetime.stopwatch : StopWatch, AutoStart;
 
 import vibe.d;
 
@@ -122,7 +123,7 @@ public class WWWServer
                      req.peer,
                      req.timeCreated.toSimpleString(),
                      req.path ~ "?q=" ~ form_state_string,
-                     simulation.total_sum().evaluation_count, sw.peek().msecs());
+                     simulation.total_sum().evaluation_count, sw.peek().total!"msecs");
         }
 
         auto total_hits_pdf = simulation.total_hits_pdf();

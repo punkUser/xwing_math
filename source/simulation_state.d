@@ -128,12 +128,12 @@ public struct SimulationState
 
     // Information for next stage
     // NOTE: Remember to reset this between stages as appropriate!
-    int dice_to_reroll = 0;
+    ubyte dice_to_reroll = 0;
 
     // Final results (multi-attack, etc)
-    int completed_attack_count = 0;
-    int final_hits = 0;
-    int final_crits = 0;
+    ubyte completed_attack_count = 0;
+    ubyte final_hits = 0;
+    ubyte final_crits = 0;
 
     // TODO: Since this is such an important part of the simulation process now, we should compress
     // the size of this structure and implement (and test!) a proper custom hash function.
@@ -168,10 +168,10 @@ public void append_state(ref SimulationStateMap map, SimulationState state, doub
 public SimulationStateMap roll_attack_dice(bool initial_roll)(
     ref const(SimulationStateMap) prev_states,
     ForkDiceDelegate cb,
-    int initial_roll_dice = 0)
+    ubyte initial_roll_dice = 0)
 {
     SimulationStateMap next_states;
-    foreach (state, state_probability; prev_states)
+    foreach (ref state, state_probability; prev_states)
     {
         int count = initial_roll ? initial_roll_dice : state.dice_to_reroll;
 
@@ -224,10 +224,11 @@ public SimulationStateMap roll_attack_dice(bool initial_roll)(
 public SimulationStateMap roll_defense_dice(bool initial_roll)(
     ref const(SimulationStateMap) prev_states,
     ForkDiceDelegate cb, 
-    int initial_roll_dice = 0)
+    ubyte initial_roll_dice = 0)
 {
     SimulationStateMap next_states;
-    foreach (state, state_probability; prev_states)
+
+    foreach (ref state, state_probability; prev_states)
     {
         int count = initial_roll ? initial_roll_dice : state.dice_to_reroll;
 
