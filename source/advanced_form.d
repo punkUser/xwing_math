@@ -99,8 +99,8 @@ align(1) struct AdvancedForm
         ));
 
     mixin(bitfields!(
-        ubyte, "amad_focused_focus_to_hit_count",           4,
-        ubyte, "",                                          4,
+        ubyte, "amad_focused_focus_to_hit_count",                   4,
+        ubyte, "amdd_unstressed_reroll_evade_gain_stress_count",    4,
     ));
 
     // Can always add more on the end, so no need to reserve space explicitly
@@ -169,6 +169,7 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
 
     setup.AMAD.accuracy_corrector               = form.amad_accuracy_corrector;
 
+    setup.AMDD.reroll_evade_gain_stress_count.unstressed = form.amdd_unstressed_reroll_evade_gain_stress_count;
     setup.AMDD.evade_to_focus_count             = form.amdd_evade_to_focus_count;
 
 

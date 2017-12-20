@@ -137,7 +137,10 @@ align(1) struct BasicForm
         ubyte, "attack_pilot",                8, // AttackPilot enum
         ubyte, "defense_pilot",               8, // DefensePilot enum
 
-        ubyte, "",                            8,
+        bool, "attack_zuckuss_1_evade",       1,
+        bool, "attack_zuckuss_all_evade",     1,
+
+        ubyte, "",                            6,
         ));
 
     // TODO (near term):
@@ -226,6 +229,8 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.AMAD.accuracy_corrector                = form.attack_accuracy_corrector;
 
     // Modify defense dice
+    setup.AMDD.reroll_evade_gain_stress_count.unstressed += form.attack_zuckuss_1_evade         ? 1 : 0;
+    setup.AMDD.reroll_evade_gain_stress_count.unstressed += form.attack_zuckuss_all_evade       ? k_all_dice_count : 0;
     setup.AMDD.evade_to_focus_count             += form.attack_juke                             ? 1 : 0;
     
 

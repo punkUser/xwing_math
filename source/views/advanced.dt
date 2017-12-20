@@ -25,7 +25,7 @@ block form
                     h3 Defender Modify Attack Dice
                     fieldset.fieldset
                         legend Change Results
-                        - stepper_control_t!"dmad_hit_to_focus_no_reroll_count" ("Hit to Focus (No Reroll)",  0, 20);
+                        - stepper_control_t!"dmad_hit_to_focus_no_reroll_count" ("Hit to Focus (No Reroll)",  0, 15);
 
                 .callout.small.alert
                     h3 Attacker Modify Attack Dice
@@ -75,7 +75,7 @@ block form
                         - switch_control_t!"amad_once_any_to_hit"  ("Any to Hit");
                         - switch_control_t!"amad_once_any_to_crit" ("Any to Crit");
 
-                    - switch_control_t!"amad_accuracy_corrector"              ("Accuracy Corrector");
+                    - switch_control_t!"amad_accuracy_corrector" ("Accuracy Corrector");
 
             .cell
                 .callout.small.success
@@ -93,8 +93,10 @@ block form
                 .callout.small.alert
                     h3 Attacker Modify Defense Dice
                     fieldset.fieldset
+                        legend If Unstressed, Reroll
+                        - stepper_control_t!"amdd_unstressed_reroll_evade_gain_stress_count" ("Evade, Gain Stress",  0, 15);
                         legend Change Results
-                        - stepper_control_t!"amdd_evade_to_focus_count" ("Evade to Focus",  0, 20);
+                        - stepper_control_t!"amdd_evade_to_focus_count" ("Evade to Focus",  0, 15);
 
                 .callout.small.success
                     h3 Defender Modify Defense Dice

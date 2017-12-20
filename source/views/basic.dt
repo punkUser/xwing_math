@@ -49,6 +49,9 @@ block form
                         - switch_control_t!"attack_hotshot_copilot"    ("Hotshot Copilot");
                         - switch_control_t!"attack_mercenary_copilot"  ("Mercenary Copilot");
                         - switch_control_t!"attack_wookie_commandos"   ("Wookie Commandos");
+                        .switch-mutex
+                            - switch_control_t!"attack_zuckuss_1_evade"   ("Zuckuss (reroll 1 evade)");
+                            - switch_control_t!"attack_zuckuss_all_evade" ("Zuckuss (reroll all evades)");
 
                     fieldset.fieldset
                         legend Secondary Weapons
