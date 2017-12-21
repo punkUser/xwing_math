@@ -19,6 +19,7 @@ block form
                         - switch_control_t!"attack_sunny_bounder"       ("Sunny Bounder");
                         - switch_control_t!"attack_heavy_laser_cannon"  ("Heavy Laser Cannon");
                         - switch_control_t!"attack_one_damage_on_hit"   ("One Damage on Hit (TLT, Ion)");
+                        - switch_control_t!"attack_lose_stress_on_hit"  ("Lose Stress On Hit (Maul)");
                         - switch_control_t!"attack_fire_control_system" ("Fire Control System");
                         
                 .callout.small.success
