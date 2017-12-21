@@ -59,7 +59,7 @@ window.onload = function()
 			title: {
 				display: true,
 				text: 'Total Hit Probability Distribution',
-				fontSize: 24,
+				fontSize: 22,
 			},
 			legend: {
 				onClick: (e) => e.stopPropagation()
@@ -106,7 +106,7 @@ window.onload = function()
 			title: {
 				display: true,
 				text: 'Expected Token Delta',
-				fontSize: 24,
+				fontSize: 22,
 			},
 			legend: {
 				position: 'top',
@@ -142,7 +142,12 @@ function simulateUpdate(updateHistory = false)
 		pdf_chart_data.datasets[0].data = data.hit_inv_cdf;
 		pdf_chart_data.datasets[1].data = data.hit_pdf;
 		pdf_chart_data.datasets[2].data = data.crit_pdf;
-		window.pdf_chart.options.title.text = "Expected Total Hits: " + data.expected_total_hits.toFixed(3);
+				
+		window.pdf_chart.options.title.text = [
+			("Expected Total Hits: " + data.expected_total_hits.toFixed(3)),
+			("At Least One Crit: " + data.at_least_one_crit.toFixed(2)) + "%"
+			];
+		
 		window.pdf_chart.update();
 		
 		token_chart_data.labels = data.exp_token_labels;

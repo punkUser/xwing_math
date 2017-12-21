@@ -132,7 +132,6 @@ struct SimulationSetup
     // TODO: Autoblaster (hit results cannot be canceled)
 
     // TODO: Crack shot? (gets a little bit complex as presence affects defender logic and as well)
-    // TODO: Zuckuss Crew
     // TODO: 4-LOM Crew
     // TODO: Bossk Crew
     // TODO: Captain rex (only affects multi-attack)
@@ -1078,6 +1077,10 @@ class Simulation
         if (total_hits >= m_total_hits_pdf.length)
             m_total_hits_pdf.length = total_hits + 1;
         m_total_hits_pdf[total_hits] = accumulate_result(m_total_hits_pdf[total_hits], result);
+
+        // If there was at least one uncanceled crit, accumulate probability
+        if (crits > 0)
+            m_at_least_one_crit_probability += probability;
     }
 
     public SimulationResult[] total_hits_pdf() const
@@ -1090,9 +1093,15 @@ class Simulation
         return m_total_sum;
     }
 
+    public double at_least_one_crit_probability() const
+    {
+        return m_at_least_one_crit_probability;
+    }
+
     // Accumulated results
     private SimulationResult[] m_total_hits_pdf;
     private SimulationResult m_total_sum;
+    private double m_at_least_one_crit_probability = 0.0;
 
     private immutable SimulationSetup m_setup;
 };
@@ -1115,7 +1124,7 @@ unittest
             return ((abs(v - expected) / expected) < 1e-7);    // Relative error
     }
 
-    static void assert_hits_pdf(ref const(SimulationSetup) setup, const(float)[] expected_p)
+    static void assert_hits_pdf(ref const(SimulationSetup) setup, const(double)[] expected_p)
     {
         auto simulation = new Simulation(setup);
         simulation.simulate_attack();

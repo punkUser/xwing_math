@@ -69,15 +69,16 @@ public class WWWServer
         // Query string that can be used in the URL to get back to the form state that generated this
         string form_state_string;
 
-        float expected_total_hits;
+        double expected_total_hits;
+        double at_least_one_crit;       // Percent
         string[] pdf_x_labels;
-        float[] hit_pdf;
-        float[] crit_pdf;
-        float[] hit_inv_cdf;
+        double[] hit_pdf;               // Percent
+        double[] crit_pdf;              // Percent
+        double[] hit_inv_cdf;           // Percent
 
         string[4] exp_token_labels;
-        float[4] exp_attack_tokens;
-        float[4] exp_defense_tokens;
+        double[4] exp_attack_tokens;
+        double[4] exp_defense_tokens;
     };
 
     private void simulate_basic(HTTPServerRequest req, HTTPServerResponse res)
@@ -135,8 +136,8 @@ public class WWWServer
         SimulationContent content;
         content.form_state_string = form_state_string;
         
-        // Expected values
         content.expected_total_hits = (total_sum.hits + total_sum.crits);
+        content.at_least_one_crit = 100.0 * simulation.at_least_one_crit_probability();
 
         // Set up X labels on the total hits graph
         content.pdf_x_labels = new string[max_hits];
@@ -144,17 +145,17 @@ public class WWWServer
             content.pdf_x_labels[i] = to!string(i);
 
         // Compute PDF for graph
-        content.hit_pdf     = new float[max_hits];
-        content.crit_pdf    = new float[max_hits];
-        content.hit_inv_cdf = new float[max_hits];
+        content.hit_pdf     = new double[max_hits];
+        content.crit_pdf    = new double[max_hits];
+        content.hit_inv_cdf = new double[max_hits];
         foreach (i; 0 .. max_hits)
         {
-            float total_probability = total_hits_pdf[i].hits + total_hits_pdf[i].crits;
-            float fraction_crits = total_probability > 0.0f ? total_hits_pdf[i].crits / total_probability : 0.0f;
-            float fraction_hits  = 1.0f - fraction_crits;
+            double total_probability = total_hits_pdf[i].hits + total_hits_pdf[i].crits;
+            double fraction_crits = total_probability > 0.0 ? total_hits_pdf[i].crits / total_probability : 0.0;
+            double fraction_hits  = 1.0 - fraction_crits;
 
-            content.hit_pdf[i]  = 100.0f * fraction_hits  * total_hits_pdf[i].probability;
-            content.crit_pdf[i] = 100.0f * fraction_crits * total_hits_pdf[i].probability;
+            content.hit_pdf[i]  = 100.0 * fraction_hits  * total_hits_pdf[i].probability;
+            content.crit_pdf[i] = 100.0 * fraction_crits * total_hits_pdf[i].probability;
         }
 
         // Compute inverse CDF P(at least X hits)
