@@ -42,8 +42,9 @@ block form
                         - stepper_control_t!"amad_reroll_any_count"   ("Any",   0, 15);
                     fieldset.fieldset
                         legend If Unstressed, Reroll
-                        - stepper_control_t!"amad_unstressed_reroll_focus_count" ("Focus", 0, 15);
-                        - stepper_control_t!"amad_unstressed_reroll_any_count"   ("Any", 0, 15);
+                        - stepper_control_t!"amad_unstressed_reroll_focus_count"			("Focus", 0, 15);
+                        - stepper_control_t!"amad_unstressed_reroll_any_count"				("Any", 0, 15);
+                        - stepper_control_t!"amad_unstressed_reroll_any_gain_stress_count"  ("Any (Gain Stress)", 0, 15);
                     fieldset.fieldset
                         legend If Stressed, Reroll
                         - stepper_control_t!"amad_stressed_reroll_focus_count" ("Focus", 0, 15);

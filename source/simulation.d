@@ -57,6 +57,7 @@ struct SimulationSetup
         PassiveModifier reroll_any_count;
         PassiveModifier reroll_blank_count;
         PassiveModifier reroll_focus_count;
+        PassiveModifier reroll_any_gain_stress_count;
 
         // Change results
         PassiveModifier focus_to_crit_count;
@@ -91,6 +92,7 @@ struct SimulationSetup
     bool attack_fire_control_system = false;        // Get a target lock after attack (only affects multi-attack)
     bool attack_heavy_laser_cannon = false;         // After initial roll, change all crits->hits
     bool attack_one_damage_on_hit = false;          // If attack hits, 1 damage (TLT, Ion, etc)
+    bool attack_lose_stress_on_hit = false;         // If attack hits, lose one stress
 
     // Defense tokens
     int defense_dice = 0;
@@ -386,27 +388,58 @@ class Simulation
         if (focus_to_reroll == 0 && blank_to_reroll == 0)
             return dice_to_reroll;
 
+        // Take into account our ability to freely change "any" results before spending tokens.
+        // If we can change everything to hits/crits just with those abilities, don't spend anything.
+        // Otherwise it's usually best to reroll everything since it could save us from using the once per round.
+        int change_any_count =
+            (attack_tokens.amad_any_to_crit ? 1 : 0) +
+            (attack_tokens.amad_any_to_hit  ? 1 : 0);
+
+        if ((focus_to_reroll + blank_to_reroll) <= change_any_count)
+            return dice_to_reroll;
+
         // If we have a target lock, we can reroll the additional stuff
         if (attack_tokens.target_lock > 0)
         {
-            // Take into account our ability to freely change "any" results before spending target lock.
-            // If we can change everything to hits/crits just with those abilities, don't spend the lock.
-            // Otherwise it's usually best to reroll everything since it could save us from using the once per round.
-            int change_any_count =
-                (attack_tokens.amad_any_to_crit ? 1 : 0) +
-                (attack_tokens.amad_any_to_hit  ? 1 : 0);
-            
-            if ((focus_to_reroll + blank_to_reroll) > change_any_count)
-            {
-                int rerolled_count = attack_dice.remove_dice_for_reroll(DieResult.Blank, blank_to_reroll);
-                rerolled_count    += attack_dice.remove_dice_for_reroll(DieResult.Focus, focus_to_reroll);
+            int rerolled_count = attack_dice.remove_dice_for_reroll(DieResult.Blank, blank_to_reroll);
+            rerolled_count    += attack_dice.remove_dice_for_reroll(DieResult.Focus, focus_to_reroll);
 
-                if (rerolled_count > 0)
-                {
-                    --attack_tokens.target_lock;
-                    dice_to_reroll += rerolled_count;
-                }
+            if (rerolled_count > 0)
+            {
+                --attack_tokens.target_lock;
+                dice_to_reroll += rerolled_count;
             }
+        }
+        // Can we gain stress to reroll?
+        else if (m_setup.AMAD.reroll_any_gain_stress_count(attack_tokens) > 0)
+        {
+            // Ok this gets a bit tricky as now we're intentionally gaining stress to do rerolls, which can
+            // effect whether other passive modifiers are active or not. Examples: Expertise, Wired, etc.
+            // There's not a perfect way to handle this in the arbitrary case.
+            // Remember that we've computed the dice we want to reroll based on our analysis of the current
+            // token set and active modifiers above.
+
+            // Note that there are cases where gaining stress is desirable to turn on mods even if we don't
+            // need to reroll anything (or have instead spent a TL to reroll), but that analysis also gets
+            // a bit tricky in the arbitrary case, so we're sticking to the simpler logic that we will
+            // prefer not gaining stress where possible.
+
+            // For now, since there's currently no way to lost stress in the Modify Attack Dice phase (only
+            // after an attack), it's safe to assume that any passive dice mods that depend on being unstressed
+            // can (and should) be used now before gaining the additional stress. Otherwise we'd have to try
+            // and track which effects we've used between the phases which implies we also need to split
+            // out and separately track each card which turns into a UI nightmare.
+
+            // NOTE: Use *only* the "unstressed" effects as we're going to be turning those off anyways
+            attack_dice.change_dice(DieResult.Focus, DieResult.Crit,  m_setup.AMAD.focus_to_crit_count.unstressed);
+            attack_dice.change_dice(DieResult.Focus, DieResult.Hit,   m_setup.AMAD.focus_to_hit_count.unstressed);
+
+            int total_rerolls = m_setup.AMAD.reroll_any_gain_stress_count(attack_tokens);
+            int rerolled_count  = attack_dice.remove_dice_for_reroll(DieResult.Blank, min(blank_to_reroll, total_rerolls));
+            rerolled_count     += attack_dice.remove_dice_for_reroll(DieResult.Focus, min(focus_to_reroll, total_rerolls - rerolled_count));
+
+            attack_tokens.stress += rerolled_count;
+            dice_to_reroll += rerolled_count;
         }
 
         return dice_to_reroll;
@@ -701,7 +734,9 @@ class Simulation
     }
 
     private ubyte[DieResult.Num] compare_results(
+        ref TokenState attack_tokens,                              
         ubyte[DieResult.Num] attack_results,
+        ref TokenState defense_tokens,
         ubyte[DieResult.Num] defense_results) const
     {
         // Compare results
@@ -726,6 +761,13 @@ class Simulation
             attack_results[DieResult.Hit] = 1;
             attack_results[DieResult.Crit] = 0;
         }
+
+        if (attack_hit && m_setup.attack_lose_stress_on_hit)
+        {
+            if (attack_tokens.stress > 0)
+                --attack_tokens.stress;
+        }
+
         return attack_results;
     }
 
@@ -814,7 +856,8 @@ class Simulation
         state.dice_to_reroll = 0;
 
         // Compare results
-        auto attack_results = compare_results(state.attack_dice.final_results, state.defense_dice.final_results);
+        auto attack_results = compare_results(state.attack_tokens, state.attack_dice.final_results, 
+                                              state.defense_tokens, state.defense_dice.final_results);
 
         // "After attack" abilities do not trigger on the first of a "secondary perform twice" attack
         if (state.completed_attack_count > 0 || m_setup.type != MultiAttackType.SecondaryPerformTwice)
@@ -1084,7 +1127,7 @@ unittest
         foreach (i; 0 .. expected_p.length)
         {
             bool matches = nearly_equal_p(total_hits_pdf[i].probability, expected_p[i]);
-            //writefln("hits[%s]: %.15f %s %.15f", i, matches ? "==" : "!=", total_hits_pdf[i].probability, expected_p[i]);
+            //writefln("hits[%s]: %.15f %s %.15f", i, total_hits_pdf[i].probability, matches ? "==" : "!=", expected_p[i]);
             assert(nearly_equal_p(total_hits_pdf[i].probability, expected_p[i]));
         }
 
@@ -1112,5 +1155,21 @@ unittest
         // Same as above as no "after attack" triggers are present
         setup.type = MultiAttackType.AfterAttack;
         assert_hits_pdf(setup, [0.419614922167966, 0.295413697109325, 0.191800311527913, 0.076275200204690, 0.016023014264646, 0.000872854725457]);
+    }
+
+    // Maul rerolling any ~ target lock
+    {
+        SimulationSetup setup;
+        setup.attack_dice = 3;
+        setup.defense_dice = 0;
+
+        setup.attack_tokens.focus = 1;
+        setup.attack_tokens.target_lock = 1;
+        assert_hits_pdf(setup, [0.000244140625000, 0.010986328125000, 0.164794921875000, 0.823974609375000]);
+
+        setup.attack_tokens.focus = 1;
+        setup.attack_tokens.target_lock = 0;
+        setup.AMAD.reroll_any_gain_stress_count.unstressed = setup.attack_dice;
+        assert_hits_pdf(setup, [0.000244140625000, 0.010986328125000, 0.164794921875000, 0.823974609375000]);
     }
 }

@@ -47,6 +47,9 @@ block form
                         - switch_control_t!"attack_ezra_crew"          ("Ezra Bridger");
                         - switch_control_t!"attack_finn"               ("Finn");
                         - switch_control_t!"attack_hotshot_copilot"    ("Hotshot Copilot");
+                        .switch-mutex
+                            - switch_control_t!"attack_maul_1"         ("Maul (1 reroll)");
+                            - switch_control_t!"attack_maul_all"       ("Maul (all rerolls)");
                         - switch_control_t!"attack_mercenary_copilot"  ("Mercenary Copilot");
                         - switch_control_t!"attack_wookie_commandos"   ("Wookie Commandos");
                         .switch-mutex
