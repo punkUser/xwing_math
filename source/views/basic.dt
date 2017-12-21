@@ -85,7 +85,7 @@ block form
                     - stepper_control_t!"defense_stress_count"      ("Stress",       0, 2);
                                
                     fieldset.fieldset
-                        legend Pilots and Titles
+                        legend Pilots
                         select(name="defense_pilot")
                             - select_control_option_t!("defense_pilot") ("None",                    DefensePilot.None);
                             - select_control_option_t!("defense_pilot") ("Ezra Bridger",            DefensePilot.EzraBridger);
