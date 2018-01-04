@@ -722,8 +722,6 @@ class Simulation
         // Sanity checks (RECALL: no point in canceling excess when one damage on hit)
         if (uncanceled_hits > 0 && !m_setup.attack_one_damage_on_hit)
         {
-            if (can_spend_focus && !spent_focus)
-                writeln("Whaaat");
             assert(!can_spend_focus || spent_focus);
             assert(!can_spend_evade || spent_evade);
         }

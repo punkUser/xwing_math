@@ -2,6 +2,7 @@ import simulation;
 import form;
 import basic_form;
 import advanced_form;
+import log;
 
 import std.stdio;
 import std.datetime;
@@ -120,9 +121,8 @@ public class WWWServer
             simulation.simulate_attack();
 
             // NOTE: This is kinda similar to the access log, but convenient for now
-            writefln("%s - %s - %s: Simulated %d evaluations in %s msec",
+            log_message("%s %s Simulated %d evaluations in %s msec",
                      req.peer,
-                     req.timeCreated.toSimpleString(),
                      req.path ~ "?q=" ~ form_state_string,
                      simulation.total_sum().evaluation_count, sw.peek().total!"msecs");
         }
