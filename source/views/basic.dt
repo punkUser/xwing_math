@@ -67,9 +67,10 @@ block form
                         - switch_control_t!"attack_proton_torpedoes"     ("Proton Torpedoes");
                                 
                     fieldset.fieldset
-                        legend System Upgrades
+                        legend System Upgrades and Tech
                         - switch_control_t!"attack_accuracy_corrector"  ("Accuracy Corrector");
                         - switch_control_t!"attack_fire_control_system" ("Fire Control System");
+                        - switch_control_t!"attack_weapons_guidance"    ("Weapons Guidance");
 
                     fieldset.fieldset
                         legend Modifications
@@ -108,7 +109,8 @@ block form
                         - switch_control_t!"defense_latts_razzi"        ("Latts Razzi");
 
                     fieldset.fieldset
-                        legend System Upgrades
+                        legend System Upgrades and Tech
+                        - switch_control_t!"defense_sensor_cluster"     ("Sensor Cluster");
                         - switch_control_t!"defense_sensor_jammer"      ("Sensor Jammer");
 
                     fieldset.fieldset

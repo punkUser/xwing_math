@@ -142,7 +142,10 @@ align(1) struct BasicForm
         bool, "attack_maul_1",                1,
         bool, "attack_maul_all",              1,
 
-        ubyte, "",                            4,
+        bool, "attack_weapons_guidance",      1,
+        bool, "defense_sensor_cluster",       1,
+
+        ubyte, "",                            2,
         ));
 
     // TODO (near term):
@@ -233,6 +236,8 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.AMAD.hit_to_crit_count                            += form.attack_mangler_cannon                   ? 1 : 0;
     setup.AMAD.accuracy_corrector                            = form.attack_accuracy_corrector;
 
+    setup.AMAD.spend_focus_one_blank_to_hit                 += form.attack_weapons_guidance                 ? 1 : 0;
+
     // Modify defense dice
     setup.AMDD.reroll_evade_gain_stress_count.unstressed    += form.attack_zuckuss_1_evade                  ? 1 : 0;
     setup.AMDD.reroll_evade_gain_stress_count.unstressed    += form.attack_zuckuss_all_evade                ? k_all_dice_count : 0;
@@ -269,6 +274,8 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.DMDD.focus_to_evade_count.stressed    += form.defense_pilot == DefensePilot.EzraBridger   ? 2 : 0;
     setup.DMDD.focus_to_evade_count.focused     += form.defense_pilot == DefensePilot.PoeDameron    ? 1 : 0;
     setup.DMDD.blank_to_evade_count             += form.defense_autothrusters                       ? 1 : 0;
+
+    setup.DMDD.spend_focus_one_blank_to_evade   += form.defense_sensor_cluster                      ? 1 : 0;
 
     setup.DMDD.spend_attacker_stress_add_evade   = form.defense_latts_razzi;
 

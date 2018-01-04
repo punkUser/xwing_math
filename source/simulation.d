@@ -130,6 +130,8 @@ struct SimulationSetup
     bool defense_must_spend_focus = false;          // Defender must spend focus (hotshot copilot on attacker)
 
     // TODO: Autoblaster (hit results cannot be canceled)
+    // TODO: C-3PO (always guess 0 probably the most relevant)
+    // TODO: Lightweight frame
 
     // TODO: Crack shot? (gets a little bit complex as presence affects defender logic and as well)
     // TODO: 4-LOM Crew
@@ -143,8 +145,6 @@ struct SimulationSetup
     // TODO: R4 Agromech (after spending focus, gain TL that can be used in same attack)
 
     // TODO: Elusiveness
-    // TODO: C-3PO (always guess 0 probably the most relevant)
-    // TODO: Lightweight frame
 };
 
 
