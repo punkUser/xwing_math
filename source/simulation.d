@@ -759,22 +759,23 @@ class Simulation
             attack_results[DieResult.Crit] = 0;
         }
 
-        if (attack_hit && m_setup.attack_lose_stress_on_hit)
-        {
-            if (attack_tokens.stress > 0)
-                --attack_tokens.stress;
-        }
-
         return attack_results;
     }
 
-    private void after_attack(ref TokenState attack_tokens, ref TokenState defense_tokens) const
+    private void after_attack(ref TokenState attack_tokens, ref TokenState defense_tokens, bool attack_hit) const
     {
         // Update any abilities that trigger "after attacking" or "after defending"
         if (m_setup.attack_fire_control_system)
         {
             // TODO: Handle multi-target-lock stuff... really only an issue with Redline and so on
             if (attack_tokens.target_lock < 1) attack_tokens.target_lock = 1;
+        }
+
+        // TODO: This needs to move to after_attack, and track if either attack hit for secondary perform twice!
+        if (attack_hit && m_setup.attack_lose_stress_on_hit)
+        {
+            if (attack_tokens.stress > 0)
+                --attack_tokens.stress;
         }
     }
 
@@ -856,15 +857,21 @@ class Simulation
         auto attack_results = compare_results(state.attack_tokens, state.attack_dice.final_results, 
                                               state.defense_tokens, state.defense_dice.final_results);
 
-        // "After attack" abilities do not trigger on the first of a "secondary perform twice" attack
-        if (state.completed_attack_count > 0 || m_setup.type != MultiAttackType.SecondaryPerformTwice)
-        {
-            after_attack(state.attack_tokens, state.defense_tokens);
-        }
-
         state.final_hits  += attack_results[DieResult.Hit];
         state.final_crits += attack_results[DieResult.Crit];
         ++state.completed_attack_count;
+
+        // "After attack" abilities do not trigger on the first of a "secondary perform twice" attack
+        if (state.completed_attack_count > 1 || m_setup.type != MultiAttackType.SecondaryPerformTwice)
+        {
+            // NOTE: If there's any "final" damage over the two "secondary perform twice" attacks,
+            // the combined attack is considered to have hit
+            bool attack_hit = (state.final_hits > 0 || state.final_crits > 0);
+
+            after_attack(state.attack_tokens, state.defense_tokens, attack_hit);
+        }
+
+        
 
         // Simplify state in case of further iteration
         // Keep tokens and final results, discard the rest
