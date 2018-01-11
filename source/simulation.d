@@ -87,7 +87,7 @@ struct SimulationSetup
     };
     AttackerModifyDefenseDice AMDD;
 
-    // Special effects    
+    // Special effects
     bool attack_must_spend_focus = false;           // Attacker must spend focus (hotshot copilot on defender)
     bool attack_fire_control_system = false;        // Get a target lock after attack (only affects multi-attack)
     bool attack_heavy_laser_cannon = false;         // After initial roll, change all crits->hits
@@ -128,6 +128,7 @@ struct SimulationSetup
 
     // Special effects
     bool defense_must_spend_focus = false;          // Defender must spend focus (hotshot copilot on attacker)
+    int defense_guess_evades = 0;                   // If initially roll this many evades, add another evade (C-3P0). Once per turn so see related token
 
     // TODO: Autoblaster (hit results cannot be canceled)
     // TODO: C-3PO (always guess 0 probably the most relevant)
@@ -198,8 +199,7 @@ class Simulation
     {
         m_setup  = setup;
 
-        // We always show at least 0..6 labels on the graph as this looks nice
-        m_total_hits_pdf = new SimulationResult[7];
+        m_total_hits_pdf = new SimulationResult[1];
         foreach (ref i; m_total_hits_pdf)
             i = SimulationResult.init;
     }
@@ -573,6 +573,19 @@ class Simulation
         ref DiceState defense_dice,
         ref TokenState defense_tokens) const
     {
+        // If there aren't actually any hits from the attacker, early out
+        if (attack_results[DieResult.Hit] == 0 && attack_results[DieResult.Crit] == 0)
+            return 0;
+
+        // Use our "guess evade results" (C-3P0) if available
+        if (defense_tokens.defense_guess_evades)
+        {
+            if (m_setup.defense_guess_evades == defense_dice.count(DieResult.Evade))
+                ++defense_dice.results[DieResult.Evade];
+            // Used
+            defense_tokens.defense_guess_evades = false;
+        }
+
         // Add free results
         defense_dice.results[DieResult.Blank] += m_setup.DMDD.add_blank_count;
         defense_dice.results[DieResult.Focus] += m_setup.DMDD.add_focus_count;
@@ -870,8 +883,6 @@ class Simulation
 
             after_attack(state.attack_tokens, state.defense_tokens, attack_hit);
         }
-
-        
 
         // Simplify state in case of further iteration
         // Keep tokens and final results, discard the rest

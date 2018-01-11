@@ -4,11 +4,14 @@ import basic_form;
 import advanced_form;
 import log;
 
+import std.array;
 import std.stdio;
 import std.datetime;
 import std.datetime.stopwatch : StopWatch, AutoStart;
+import std.algorithm;
 
 import vibe.d;
+import diet.html;
 
 public class WWWServer
 {
@@ -65,7 +68,7 @@ public class WWWServer
         };
     }
 
-    private struct SimulationContent
+    private struct SimulateJsonContent
     {
         // Query string that can be used in the URL to get back to the form state that generated this
         string form_state_string;
@@ -80,6 +83,10 @@ public class WWWServer
         string[4] exp_token_labels;
         double[4] exp_attack_tokens;
         double[4] exp_defense_tokens;
+
+        // HTML string of table contents
+        string pdf_table_html;
+        string token_table_html;
     };
 
     private void simulate_basic(HTTPServerRequest req, HTTPServerResponse res)
@@ -130,25 +137,26 @@ public class WWWServer
         auto total_hits_pdf = simulation.total_hits_pdf();
         auto total_sum = simulation.total_sum();
 
-        int max_hits = cast(int)total_hits_pdf.length;
+        // Always nice to show at least 0..6 hits on the graph
+        int graph_max_hits = max(7, cast(int)total_hits_pdf.length);
 
         // Setup page content
-        SimulationContent content;
+        SimulateJsonContent content;
         content.form_state_string = form_state_string;
         
         content.expected_total_hits = (total_sum.hits + total_sum.crits);
         content.at_least_one_crit = 100.0 * simulation.at_least_one_crit_probability();
 
         // Set up X labels on the total hits graph
-        content.pdf_x_labels = new string[max_hits];
-        foreach (i; 0 .. max_hits)
+        content.pdf_x_labels = new string[graph_max_hits];
+        foreach (i; 0 .. graph_max_hits)
             content.pdf_x_labels[i] = to!string(i);
 
         // Compute PDF for graph
-        content.hit_pdf     = new double[max_hits];
-        content.crit_pdf    = new double[max_hits];
-        content.hit_inv_cdf = new double[max_hits];
-        foreach (i; 0 .. max_hits)
+        content.hit_pdf     = new double[graph_max_hits];
+        content.crit_pdf    = new double[graph_max_hits];
+        content.hit_inv_cdf = new double[graph_max_hits];
+        foreach (i; 0 .. total_hits_pdf.length)
         {
             double total_probability = total_hits_pdf[i].hits + total_hits_pdf[i].crits;
             double fraction_crits = total_probability > 0.0 ? total_hits_pdf[i].crits / total_probability : 0.0;
@@ -159,8 +167,8 @@ public class WWWServer
         }
 
         // Compute inverse CDF P(at least X hits)
-        content.hit_inv_cdf[max_hits-1] = content.hit_pdf[max_hits-1] + content.crit_pdf[max_hits-1];
-        for (int i = max_hits-2; i >= 0; --i)
+        content.hit_inv_cdf[graph_max_hits-1] = content.hit_pdf[graph_max_hits-1] + content.crit_pdf[graph_max_hits-1];
+        for (int i = graph_max_hits-2; i >= 0; --i)
         {
             content.hit_inv_cdf[i] = content.hit_inv_cdf[i+1] + content.hit_pdf[i] + content.crit_pdf[i];
         }
@@ -177,6 +185,18 @@ public class WWWServer
             0.0f,
             total_sum.defense_delta_evade_tokens,
             total_sum.defense_delta_stress];
+
+        // Render HTML for tables
+        {
+            auto pdf_html = appender!string();
+            pdf_html.compileHTMLDietFile!("pdf_table.dt", total_hits_pdf);
+            content.pdf_table_html = pdf_html.data;
+        }
+        {
+            auto token_html = appender!string();
+            token_html.compileHTMLDietFile!("token_table.dt", total_sum);
+            content.token_table_html = token_html.data;
+        }
 
         res.writeJsonBody(content);
     }

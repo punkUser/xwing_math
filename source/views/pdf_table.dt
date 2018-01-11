@@ -1,0 +1,14 @@
+thead
+    tr
+        th Total Hits
+        th Probability
+        th Crit Fraction
+tbody
+    - import std.format;
+    - foreach(i, total; total_hits_pdf)
+        - double total_probability = total.hits + total.crits;
+        - double crit_fraction = total_probability > 0.0 ? total.crits / total_probability : 0.0;
+        tr
+            td= i
+            td #{format("%.9f", total.probability)}
+            td #{format("%.9f", crit_fraction)}

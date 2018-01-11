@@ -154,11 +154,14 @@ function simulateUpdate(updateHistory = false)
 		token_chart_data.datasets[0].data = data.exp_attack_tokens;
 		token_chart_data.datasets[1].data = data.exp_defense_tokens;
 		window.token_chart.update();
+		
+		$("#pdf-table").html(data.pdf_table_html);
+		$("#token-table").html(data.token_table_html);	
 
 		if (updateHistory && window.history.pushState && data.form_state_string.length > 0)
 		{
 			window.history.pushState(null, null, "?q="+data.form_state_string);
-		}		
+		}
 	}, 'json');
 }
 
