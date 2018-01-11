@@ -1140,8 +1140,10 @@ unittest
             return ((abs(v - expected) / expected) < 1e-7);    // Relative error
     }
 
-    static void assert_hits_pdf(ref const(SimulationSetup) setup, const(double)[] expected_p)
+    static void assert_hits_pdf(string name, ref const(SimulationSetup) setup, const(double)[] expected_p)
     {
+        writefln("RUNNING TEST %s...", name);
+
         auto simulation = new Simulation(setup);
         simulation.simulate_attack();
         auto total_hits_pdf = simulation.total_hits_pdf();
@@ -1152,8 +1154,11 @@ unittest
         foreach (i; 0 .. expected_p.length)
         {
             bool matches = nearly_equal_p(total_hits_pdf[i].probability, expected_p[i]);
-            //writefln("hits[%s]: %.15f %s %.15f", i, total_hits_pdf[i].probability, matches ? "==" : "!=", expected_p[i]);
-            assert(nearly_equal_p(total_hits_pdf[i].probability, expected_p[i]));
+            if (!matches)
+            {
+                writefln("hits[%s]: %.15f %s %.15f", i, total_hits_pdf[i].probability, matches ? "==" : "!=", expected_p[i]);
+                assert(false);
+            }
         }
 
         foreach (i; expected_p.length .. total_hits_pdf.length)
@@ -1167,22 +1172,22 @@ unittest
         SimulationSetup setup;
         setup.attack_dice = 3;
         setup.defense_dice = 3;
-        assert_hits_pdf(setup, [0.53369140625, 0.289306640625, 0.146484375, 0.030517578125]);
+        assert_hits_pdf("basic_3_3", setup, [0.53369140625, 0.289306640625, 0.146484375, 0.030517578125]);
 
         setup.attack_tokens.focus = 1;
         setup.attack_tokens.target_lock = 1;
         setup.defense_tokens.focus = 1;
         setup.defense_tokens.evade = 1;
-        assert_hits_pdf(setup, [0.730598926544189, 0.225949287414551, 0.043451786041259, 0.0]);
+        assert_hits_pdf("basic_3_3_tokens", setup, [0.730598926544189, 0.225949287414551, 0.043451786041259]);
 
         setup.type = MultiAttackType.SecondaryPerformTwice;
-        assert_hits_pdf(setup, [0.419614922167966, 0.295413697109325, 0.191800311527913, 0.076275200204690, 0.016023014264646, 0.000872854725457]);
+        assert_hits_pdf("basic_secondary_perform_twice",setup, [0.419614922167966, 0.295413697109325, 0.191800311527913, 0.076275200204690, 0.016023014264646, 0.000872854725457]);
         // Same as above as no "after attack" triggers are present
         setup.type = MultiAttackType.AfterAttack;
-        assert_hits_pdf(setup, [0.419614922167966, 0.295413697109325, 0.191800311527913, 0.076275200204690, 0.016023014264646, 0.000872854725457]);
+        assert_hits_pdf("basic_after_attack", setup, [0.419614922167966, 0.295413697109325, 0.191800311527913, 0.076275200204690, 0.016023014264646, 0.000872854725457]);
     }
 
-    // Maul rerolling any ~ target lock
+    // Maul rerolling any = target lock
     {
         SimulationSetup setup;
         setup.attack_dice = 3;
@@ -1190,11 +1195,11 @@ unittest
 
         setup.attack_tokens.focus = 1;
         setup.attack_tokens.target_lock = 1;
-        assert_hits_pdf(setup, [0.000244140625000, 0.010986328125000, 0.164794921875000, 0.823974609375000]);
+        assert_hits_pdf("target_lock_reroll", setup, [0.000244140625000, 0.010986328125000, 0.164794921875000, 0.823974609375000]);
 
         setup.attack_tokens.focus = 1;
         setup.attack_tokens.target_lock = 0;
         setup.AMAD.reroll_any_gain_stress_count.unstressed = setup.attack_dice;
-        assert_hits_pdf(setup, [0.000244140625000, 0.010986328125000, 0.164794921875000, 0.823974609375000]);
+        assert_hits_pdf("maul_reroll", setup, [0.000244140625000, 0.010986328125000, 0.164794921875000, 0.823974609375000]);
     }
 }
