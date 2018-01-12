@@ -102,8 +102,7 @@ align(1) struct AdvancedForm
         ubyte, "amad_focused_focus_to_hit_count",                   4,
         ubyte, "amdd_unstressed_reroll_evade_gain_stress_count",    4,
         ubyte, "amad_unstressed_reroll_any_gain_stress_count",      4,
-
-        uint, "",                                                   4,
+        byte,  "defense_guess_evades",                              4,      // <0 is no guess/disabled
     ));
 
     // Can always add more on the end, so no need to reserve space explicitly
@@ -116,6 +115,8 @@ align(1) struct AdvancedForm
         defaults.attack_type = MultiAttackType.Single;
         defaults.attack_dice = 3;
         defaults.defense_dice = 3;
+
+        defaults.defense_guess_evades = -1;
 
         return defaults;
     }
@@ -183,7 +184,9 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     setup.defense_tokens.evade                              = form.defense_evade_token_count;
     setup.defense_tokens.stress                             = form.defense_stress_count;
     setup.defense_tokens.sunny_bounder                      = form.defense_sunny_bounder;
-
+    setup.defense_tokens.defense_guess_evades               = (form.defense_guess_evades >= 0);
+    
+    setup.defense_guess_evades                              = form.defense_guess_evades;
     setup.defense_must_spend_focus                          = form.defense_must_spend_focus;
 
     setup.DMDD.add_blank_count                              = form.dmdd_add_blank_count;

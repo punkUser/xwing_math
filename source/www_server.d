@@ -156,6 +156,11 @@ public class WWWServer
         content.hit_pdf     = new double[graph_max_hits];
         content.crit_pdf    = new double[graph_max_hits];
         content.hit_inv_cdf = new double[graph_max_hits];
+
+        content.hit_pdf[] = 0.0;
+        content.crit_pdf[] = 0.0;
+        content.hit_inv_cdf[] = 0.0;
+
         foreach (i; 0 .. total_hits_pdf.length)
         {
             double total_probability = total_hits_pdf[i].hits + total_hits_pdf[i].crits;

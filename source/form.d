@@ -37,8 +37,8 @@ public void update_form_fields(T)(const(FormFields) fields, ref T form)
                 else
                     alias m_type = Parameters!m[0];
                 
-                // Should only have uints and bools in these structures for now
-                static if (is(m_type == ubyte) || is(m_type == ushort) || is(m_type == uint))
+                // Should only have ints and bools in these structures for now
+                static if (is(m_type == ubyte) || is(m_type == ushort) || is(m_type == uint) || is(m_type == byte) || is(m_type == int))
                 {
                     mixin("form." ~ member ~ " = to!m_type(fields.get(\"" ~ member ~ "\", to!string(form." ~ member ~ ")));");
                 }

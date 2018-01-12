@@ -104,6 +104,9 @@ block form
                         
                     fieldset.fieldset
                         legend Crew
+                        .switch-mutex
+                            - switch_control_t!"defense_c3p0_0"         ("C-3P0 (guess 0)");
+                            - switch_control_t!"defense_c3p0_1"         ("C-3P0 (guess 1)");
                         - switch_control_t!"defense_finn"               ("Finn");
                         - switch_control_t!"defense_hotshot_copilot"    ("Hotshot Copilot");
                         - switch_control_t!"defense_latts_razzi"        ("Latts Razzi");

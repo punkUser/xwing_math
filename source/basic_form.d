@@ -144,8 +144,8 @@ align(1) struct BasicForm
 
         bool, "attack_weapons_guidance",      1,
         bool, "defense_sensor_cluster",       1,
-
-        ubyte, "",                            2,
+        bool, "defense_c3p0_0",               1,
+        bool, "defense_c3p0_1",               1,
         ));
 
     // TODO (near term):
@@ -254,6 +254,9 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
 
     // Once per round abilities are treated like "tokens" for simulation purposes
     setup.defense_tokens.sunny_bounder          = form.defense_pilot == DefensePilot.SunnyBounder;
+
+    setup.defense_tokens.defense_guess_evades   = (form.defense_c3p0_0 || form.defense_c3p0_1);
+    setup.defense_guess_evades                  = form.defense_c3p0_1 ? 1 : 0;
 
     // Special effects
     setup.defense_must_spend_focus              = form.attack_hotshot_copilot;     // NOTE: Affects the *other* person

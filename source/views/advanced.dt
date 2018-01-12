@@ -91,6 +91,7 @@ block form
                         legend Special Effects
                         - switch_control_t!"defense_must_spend_focus" ("Defender Must Spend Focus");
                         - switch_control_t!"defense_sunny_bounder"    ("Sunny Bounder");
+                        - stepper_control_t!"defense_guess_evades"    ("Guess Evades (C-3P0)", -1, 6);
 
                 .callout.small.alert
                     h3 Attacker Modify Defense Dice

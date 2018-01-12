@@ -580,10 +580,17 @@ class Simulation
         // Use our "guess evade results" (C-3P0) if available
         if (defense_tokens.defense_guess_evades)
         {
-            if (m_setup.defense_guess_evades == defense_dice.count(DieResult.Evade))
-                ++defense_dice.results[DieResult.Evade];
-            // Used
-            defense_tokens.defense_guess_evades = false;
+            // NOTE: Only works if we are rolling at least one die
+            int evade_count = defense_dice.count(DieResult.Evade);
+            int focus_count = defense_dice.count(DieResult.Focus);
+            int blank_count = defense_dice.count(DieResult.Blank);
+            if ((evade_count + focus_count + blank_count) > 0)
+            {
+                // Try out guess and mark it as used
+                if (m_setup.defense_guess_evades == evade_count)
+                    ++defense_dice.results[DieResult.Evade];
+                defense_tokens.defense_guess_evades = false;
+            }
         }
 
         // Add free results
