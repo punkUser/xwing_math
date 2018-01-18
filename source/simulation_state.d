@@ -109,9 +109,11 @@ public struct TokenState
     mixin(bitfields!(
          bool, "amad_any_to_hit",                      1,
          bool, "amad_any_to_crit",                     1,
-         bool, "sunny_bounder",                        1,      // Both attack and defense
+         bool, "sunny_bounder",                        1,       // Both attack and defense
          bool, "defense_guess_evades",                 1,
-         ubyte, "",                                    4));
+         bool, "palpatine",                            1,       // Both attack (crit) and defense (evade)
+         bool, "attack_crack_shot",                    1,
+         ubyte, "",                                    2));
 
     int opCmp(ref const TokenState s) const
     {

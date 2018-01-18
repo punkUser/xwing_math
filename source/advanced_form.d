@@ -103,6 +103,11 @@ align(1) struct AdvancedForm
         ubyte, "amdd_unstressed_reroll_evade_gain_stress_count",    4,
         ubyte, "amad_unstressed_reroll_any_gain_stress_count",      4,
         byte,  "defense_guess_evades",                              4,      // <0 is no guess/disabled
+
+        bool,  "attack_palpatine_crit",                      1,
+        bool,  "defense_palpatine_evade",                    1,
+        
+        ubyte, "",                                          14,
     ));
 
     // Can always add more on the end, so no need to reserve space explicitly
@@ -139,6 +144,7 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     setup.attack_tokens.amad_any_to_hit                     = form.amad_once_any_to_hit;
     setup.attack_tokens.amad_any_to_crit                    = form.amad_once_any_to_crit;
     setup.attack_tokens.sunny_bounder                       = form.attack_sunny_bounder;
+    setup.attack_tokens.palpatine                           = form.attack_palpatine_crit;
     
     setup.attack_fire_control_system                        = form.attack_fire_control_system;
     setup.attack_heavy_laser_cannon                         = form.attack_heavy_laser_cannon;
@@ -185,6 +191,7 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     setup.defense_tokens.stress                             = form.defense_stress_count;
     setup.defense_tokens.sunny_bounder                      = form.defense_sunny_bounder;
     setup.defense_tokens.defense_guess_evades               = (form.defense_guess_evades >= 0);
+    setup.defense_tokens.palpatine                          = form.defense_palpatine_evade;
     
     setup.defense_guess_evades                              = form.defense_guess_evades;
     setup.defense_must_spend_focus                          = form.defense_must_spend_focus;

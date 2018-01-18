@@ -43,8 +43,6 @@ struct SimulationSetup
     int attack_dice = 0;
     TokenState attack_tokens;
 
-    // TODO: Perhaps clean up parameters that depend on tokens somewhat?
-    // Probably just with a simple structure with 3 params and utility function to query based on tokens
     struct AttackerModifyAttackDice
     {
         // Add results
@@ -315,6 +313,51 @@ class Simulation
         return true;
     }
 
+    private static void assert_no_rerolled_or_final_dice(ref const(DiceState) dice)
+    {
+        debug
+        {
+            for (int i = 0; i < DieResult.Num; ++i)
+            {
+                assert(dice.rerolled_results[i] == 0);
+                assert(dice.final_results[i] == 0);
+            }
+        }
+    }
+
+    // Offensive palpatine - change one die to a (final) crit
+    private void do_attack_palpatine(ref DiceState dice, ref TokenState attack_tokens) const
+    {
+        // Palpatine happens right after rolling so there should not be any rerolled or final dice
+        assert_no_rerolled_or_final_dice(dice);
+
+        // As with other effects, this logic could get arbitrarily complicated based on simulating
+        // the rest of the attack using the currently available mods. For practical purposes, we're
+        // just going to consider passive ways to modify dice here and generally prefer changing
+        // blanks, then focus, then hits, then crits unless we have passive ways to modify all
+        // of the results that we rolled of a type.
+        
+        // TODO: Do we try and handle blank -> focus -> hit/crit chains?
+        // TODO: Consider passive rerolls of certain types as well?
+        int useful_blanks = m_setup.AMAD.blank_to_hit_count + m_setup.AMAD.blank_to_crit_count;
+        int useful_focus =  m_setup.AMAD.focus_to_hit_count(attack_tokens) + m_setup.AMAD.focus_to_crit_count(attack_tokens);
+
+        if (dice.results[DieResult.Blank] > useful_blanks)
+            dice.change_dice_final(DieResult.Blank, DieResult.Crit, 1);
+        else if (dice.results[DieResult.Focus] > useful_focus)
+            dice.change_dice_final(DieResult.Focus, DieResult.Crit, 1);
+        // Changing a crit->crit is still required if necessary, and prevents further modification
+        else if (dice.change_dice_final(DieResult.Hit, DieResult.Crit, 1) == 0 &&
+                 dice.change_dice_final(DieResult.Crit, DieResult.Crit, 1) == 0)
+        {
+            // No useless results. OMG WASTED PALP :P Palp something useful anyways as its required.
+            if (dice.change_dice_final(DieResult.Focus, DieResult.Crit, 1) == 0)
+                dice.change_dice_final(DieResult.Blank, DieResult.Crit, 1);
+        }
+
+        assert(dice.final_results[DieResult.Crit] == 1);
+    }
+
     private int dmad_before_reroll(ref DiceState attack_dice, ref TokenState attack_tokens) const
     {
         // Nothing to do here yet
@@ -506,6 +549,8 @@ class Simulation
         }
 
         // Spend "once per round" abilities if present
+        // TODO: In certain situations it could be better to use these instead of spending a focus or similar above,
+        // but as these are more general modifications we tend to do them afterwards in case there's a second attack.
         if (attack_tokens.amad_any_to_crit)
         {
             attack_tokens.amad_any_to_crit = (attack_dice.change_blank_focus(DieResult.Crit, 1) == 0);
@@ -578,19 +623,13 @@ class Simulation
             return 0;
 
         // Use our "guess evade results" (C-3P0) if available
-        if (defense_tokens.defense_guess_evades)
+        // NOTE: Only works if we are rolling at least one die
+        if (defense_tokens.defense_guess_evades && m_setup.defense_dice > 0)
         {
-            // NOTE: Only works if we are rolling at least one die
-            int evade_count = defense_dice.count(DieResult.Evade);
-            int focus_count = defense_dice.count(DieResult.Focus);
-            int blank_count = defense_dice.count(DieResult.Blank);
-            if ((evade_count + focus_count + blank_count) > 0)
-            {
-                // Try out guess and mark it as used
-                if (m_setup.defense_guess_evades == evade_count)
-                    ++defense_dice.results[DieResult.Evade];
-                defense_tokens.defense_guess_evades = false;
-            }
+            // Try out guess and mark it as used
+            if (m_setup.defense_guess_evades == defense_dice.count(DieResult.Evade))
+                ++defense_dice.results[DieResult.Evade];
+            defense_tokens.defense_guess_evades = false;
         }
 
         // Add free results
@@ -788,10 +827,10 @@ class Simulation
         if (m_setup.attack_fire_control_system)
         {
             // TODO: Handle multi-target-lock stuff... really only an issue with Redline and so on
-            if (attack_tokens.target_lock < 1) attack_tokens.target_lock = 1;
+            if (attack_tokens.target_lock < 1)
+                attack_tokens.target_lock = 1;
         }
 
-        // TODO: This needs to move to after_attack, and track if either attack hit for secondary perform twice!
         if (attack_hit && m_setup.attack_lose_stress_on_hit)
         {
             if (attack_tokens.stress > 0)
@@ -804,6 +843,17 @@ class Simulation
     private SimulationState attack_dice_before_defender_reroll(SimulationState state)
     {
         // "After rolling" events
+
+        // Attacker palpatine ordering with respect to above affects is not specified in FAQ,
+        // but only really affects some edge cases since the changed die cannot be modified again.
+        // FAQ says palpatine still works even if locked by Omega Leader, while Omega Leader shuts
+        // off the HLC effect though, so best current determination is that palpatine should happen first.
+        if (state.attack_tokens.palpatine && m_setup.attack_dice > 0)
+        {
+            do_attack_palpatine(state.attack_dice, state.attack_tokens);
+            state.attack_tokens.palpatine = false;
+        }
+
         // NOTE: FAQ says sunny triggers before HLC (just because...)
         if (state.attack_tokens.sunny_bounder)
             state.attack_tokens.sunny_bounder = do_sunny_bounder(state.attack_dice);
@@ -1079,7 +1129,6 @@ class Simulation
         assert(defense_tokens.stress >= 0);
 
         // Compute final results of this simulation step
-        // TODO: Can clean this up
         SimulationResult result;
         result.probability = probability;
 

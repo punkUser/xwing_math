@@ -146,6 +146,11 @@ align(1) struct BasicForm
         bool, "defense_sensor_cluster",       1,
         bool, "defense_c3p0_0",               1,
         bool, "defense_c3p0_1",               1,
+
+        bool, "attack_palpatine_crit",        1,
+        bool, "defense_palpatine_evade",      1,
+
+        uint, "",                            30,
         ));
 
     // TODO (near term):
@@ -192,6 +197,7 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.attack_tokens.amad_any_to_hit                     = form.attack_guidance_chips_hit;
     setup.attack_tokens.amad_any_to_crit                    = form.attack_guidance_chips_crit;
     setup.attack_tokens.sunny_bounder                       = form.attack_pilot == AttackPilot.SunnyBounder;
+    setup.attack_tokens.palpatine                           = form.attack_palpatine_crit;
 
     // Special effects...
     setup.attack_heavy_laser_cannon                         = form.attack_heavy_laser_cannon;
@@ -254,6 +260,7 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
 
     // Once per round abilities are treated like "tokens" for simulation purposes
     setup.defense_tokens.sunny_bounder          = form.defense_pilot == DefensePilot.SunnyBounder;
+    setup.defense_tokens.palpatine              = form.defense_palpatine_evade;
 
     setup.defense_tokens.defense_guess_evades   = (form.defense_c3p0_0 || form.defense_c3p0_1);
     setup.defense_guess_evades                  = form.defense_c3p0_1 ? 1 : 0;

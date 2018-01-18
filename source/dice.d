@@ -103,14 +103,36 @@ public struct DiceState
         return changed_count;
     }
 
-    // Prefers changing blanks, secondarily focus results
-    int change_blank_focus(DieResult to, int max_count = int.max)
+    // As above, but the changed dice are finalized and cannot be further modified at all
+    // Generally this is used when modifying your own dice with ex. Palpatine, so will
+    // prefer to change rerolled dice first (although this currently never comes up with
+    // effects present in the game).
+    int change_dice_final(DieResult from, DieResult to, int max_count)
     {
-        int changed_results = change_dice(DieResult.Blank, to, max_count);
-        if (changed_results >= max_count) return changed_results;
+        if (max_count == 0)
+            return 0;
+        assert(max_count > 0);
 
-        changed_results += change_dice(DieResult.Focus, to, max_count - changed_results);
-        return changed_results;
+        // Change rerolled dice first
+        int changed_count = 0;
+
+        int delta = min(rerolled_results[from], max_count - changed_count);
+        if (delta > 0)
+        {
+            rerolled_results[from] -= delta;
+            final_results[to]      += delta;
+            changed_count          += delta;
+        }
+        // Then regular ones
+        delta = min(results[from], max_count - changed_count);
+        if (delta > 0)
+        {
+            results[from]       -= delta;
+            final_results[to]   += delta;
+            changed_count       += delta;
+        }
+
+        return changed_count;
     }
 
     // Like above, but the changed dice cannot be rerolled
@@ -118,7 +140,7 @@ public struct DiceState
     // to change non-rerolled dice first to add additional constraints.
     // Ex. M9G8 forced reroll and sensor jammer can cause two separate dice
     // to be unable to be rerolled by the attacker.
-    int change_dice_no_reroll(DieResult from, DieResult to, int max_count = int.max)
+    int change_dice_no_reroll(DieResult from, DieResult to, int max_count)
     {
         if (max_count == 0)
             return 0;
@@ -144,5 +166,15 @@ public struct DiceState
         }
 
         return changed_count;
+    }
+
+    // Prefers changing blanks, secondarily focus results
+    int change_blank_focus(DieResult to, int max_count = int.max)
+    {
+        int changed_results = change_dice(DieResult.Blank, to, max_count);
+        if (changed_results >= max_count) return changed_results;
+
+        changed_results += change_dice(DieResult.Focus, to, max_count - changed_results);
+        return changed_results;
     }
 }

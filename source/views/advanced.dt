@@ -16,11 +16,12 @@ block form
                     fieldset.fieldset
                         legend Special Effects
                         - switch_control_t!"attack_must_spend_focus"    ("Attacker Must Spend Focus");
-                        - switch_control_t!"attack_sunny_bounder"       ("Sunny Bounder");
-                        - switch_control_t!"attack_heavy_laser_cannon"  ("Heavy Laser Cannon");
-                        - switch_control_t!"attack_one_damage_on_hit"   ("One Damage on Hit (TLT, Ion)");
-                        - switch_control_t!"attack_lose_stress_on_hit"  ("Lose Stress On Hit (Maul)");
                         - switch_control_t!"attack_fire_control_system" ("Fire Control System");
+                        - switch_control_t!"attack_heavy_laser_cannon"  ("Heavy Laser Cannon");
+                        - switch_control_t!"attack_lose_stress_on_hit"  ("Lose Stress on Hit (Maul)");
+                        - switch_control_t!"attack_one_damage_on_hit"   ("One Damage on Hit (TLT, Ion)");
+                        - switch_control_t!"attack_palpatine_crit"      ("Palpatine (Crit)");
+                        - switch_control_t!"attack_sunny_bounder"       ("Sunny Bounder");
                         
                 .callout.small.success
                     h3 Defender Modify Attack Dice
@@ -89,9 +90,9 @@ block form
 
                     fieldset.fieldset
                         legend Special Effects
+                        - stepper_control_t!"defense_guess_evades"    ("C-3P0, Guess Evades:", -1, 6);
                         - switch_control_t!"defense_must_spend_focus" ("Defender Must Spend Focus");
                         - switch_control_t!"defense_sunny_bounder"    ("Sunny Bounder");
-                        - stepper_control_t!"defense_guess_evades"    ("Guess Evades (C-3P0)", -1, 6);
 
                 .callout.small.alert
                     h3 Attacker Modify Defense Dice
