@@ -140,3 +140,39 @@ block content
                 p.
                     If you want a specific upgrade prioritized, please feel free to
                     <a href="https://github.com/punkUser/xwing_math/issues">upvote or file an issue on Github</a>.
+
+
+        li.accordion-item(data-accordion-item)
+            a.accordion-title(href="#c3p0") How does C-3P0 work?
+            #c3p0.accordion-content(data-tab-content)
+                p.
+                    If there are any hits or crits, the defender will "guess" with C-3P0 the number of evades indicated. As this is a
+                    once per turn ability, this can only happen once in multi-attack sequences.
+                p.
+                    No attempt is made to deduce optimal values to guess as that normally requires additional context from the game
+                    state. It's generally more useful to just try different guesses in various situations and observe the results.
+
+        li.accordion-item(data-accordion-item)
+            a.accordion-title(href="#palpatine") How does Palpatine work?
+            #palpatine.accordion-content(data-tab-content)
+                p.
+                    If there are any dice rolled (on attack) or any hits or crits to cancel (on defense), Palpatine will be used.
+                p.
+                    Simple logic based on the passive mods available determines which die to change. No attempt is made to do complex
+                    reasoning about potential outcomes of rerolling dice, etc.
+
+        li.accordion-item(data-accordion-item)
+            a.accordion-title(href="#crackshot") How does Crack Shot work?
+            #crackshot.accordion-content(data-tab-content)
+                p.
+                    The logic for the attacker is simple: if crack shot can be used to push extra damage through, it will always
+                    be used. If it's not necessary due to the defender having extra evades or effects like "One Damage on Hit",
+                    it will not. If Crack Shot is ever used, it will show up in the Expected Token Delta chart.
+                p.
+                    The presence of Crack Shot also changes defender token spending logic: the defender will attempt to have
+                    an extra evade result available, even if that means spending tokens to that end.
+                p.
+                    In the presence of "One Damage on Hit" the defender will usually not spend anything if it can't entirely avoid
+                    the attack. If Crack Shot is present, it will still spend tokens if it can match the uncancelled hits, since even
+                    if the attacker then uses Crack Shot to push the one damage through, that is a valuable outcome as
+                    it removes Crack Shot from any follow-up attacks.
