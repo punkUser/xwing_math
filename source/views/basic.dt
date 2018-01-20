@@ -140,4 +140,3 @@ block form
                     canvas#pdf-canvas(height="300")
                 .cell
                     canvas#token-canvas(height="300")
-

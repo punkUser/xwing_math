@@ -199,7 +199,7 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.attack_tokens.amad_any_to_crit                    = form.attack_guidance_chips_crit;
     setup.attack_tokens.sunny_bounder                       = form.attack_pilot == AttackPilot.SunnyBounder;
     setup.attack_tokens.palpatine                           = form.attack_palpatine_crit;
-    setup.attack_tokens.attack_crack_shot                   = form.attack_crack_shot;
+    setup.attack_tokens.crack_shot                          = form.attack_crack_shot;
 
     // Special effects...
     setup.attack_heavy_laser_cannon                         = form.attack_heavy_laser_cannon;

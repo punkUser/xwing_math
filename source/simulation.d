@@ -161,6 +161,7 @@ struct SimulationResult
     double attack_delta_focus_tokens = 0;
     double attack_delta_target_locks = 0;
     double attack_delta_stress       = 0;
+    double attack_delta_crack_shot   = 0;
 
     double defense_delta_focus_tokens = 0;
     double defense_delta_evade_tokens = 0;
@@ -178,6 +179,7 @@ SimulationResult accumulate_result(SimulationResult a, SimulationResult b)
     a.attack_delta_focus_tokens  += b.attack_delta_focus_tokens;
     a.attack_delta_target_locks  += b.attack_delta_target_locks;
     a.attack_delta_stress        += b.attack_delta_stress;
+    a.attack_delta_crack_shot    += b.attack_delta_crack_shot;
 
     a.defense_delta_focus_tokens += b.defense_delta_focus_tokens;
     a.defense_delta_evade_tokens += b.defense_delta_evade_tokens;
@@ -692,7 +694,7 @@ class Simulation
 
         // If the attacker has crack shot, we attempt to mitigate it by having an extra evade
         int required_evades = uncanceled_hits - defense_dice.count(DieResult.Evade);
-        if (uncanceled_hits > 0 && attack_tokens.attack_crack_shot)
+        if (uncanceled_hits > 0 && attack_tokens.crack_shot)
             ++required_evades;
 
         // FAQ update: can only spend a single focus or evade per attack!
@@ -839,7 +841,7 @@ class Simulation
         int total_evades = defense_results[DieResult.Evade];
 
         // Attacker can use crack shot to cancel one evade if applicable
-        if (attack_tokens.attack_crack_shot && total_evades > 0)
+        if (attack_tokens.crack_shot && total_evades > 0)
         {
             // Push the extra hit through to trigger one damage on hit
             bool use_crack_shot = false;
@@ -851,7 +853,7 @@ class Simulation
             if (use_crack_shot)
             {
                 --defense_results[DieResult.Evade];
-                attack_tokens.attack_crack_shot = false;
+                attack_tokens.crack_shot = false;
             }
         }
 
@@ -1217,6 +1219,8 @@ class Simulation
         result.attack_delta_focus_tokens  = probability * cast(double)(attack_tokens.focus        - m_setup.attack_tokens.focus      );
         result.attack_delta_target_locks  = probability * cast(double)(attack_tokens.target_lock  - m_setup.attack_tokens.target_lock);
         result.attack_delta_stress        = probability * cast(double)(attack_tokens.stress       - m_setup.attack_tokens.stress     );
+        result.attack_delta_crack_shot    = probability * cast(double)(attack_tokens.crack_shot != m_setup.attack_tokens.crack_shot ? -1.0 : 0.0);
+
         result.defense_delta_focus_tokens = probability * cast(double)(defense_tokens.focus       - m_setup.defense_tokens.focus     );
         result.defense_delta_evade_tokens = probability * cast(double)(defense_tokens.evade       - m_setup.defense_tokens.evade     );
         result.defense_delta_stress       = probability * cast(double)(defense_tokens.stress      - m_setup.defense_tokens.stress    );

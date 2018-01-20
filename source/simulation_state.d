@@ -112,7 +112,7 @@ public struct TokenState
          bool, "sunny_bounder",                        1,       // Both attack and defense
          bool, "defense_guess_evades",                 1,
          bool, "palpatine",                            1,       // Both attack (crit) and defense (evade)
-         bool, "attack_crack_shot",                    1,
+         bool, "crack_shot",                           1,
          ubyte, "",                                    2));
 
     int opCmp(ref const TokenState s) const

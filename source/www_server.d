@@ -80,9 +80,9 @@ public class WWWServer
         double[] crit_pdf;              // Percent
         double[] hit_inv_cdf;           // Percent
 
-        string[4] exp_token_labels;
-        double[4] exp_attack_tokens;
-        double[4] exp_defense_tokens;
+        string[] exp_token_labels;
+        double[] exp_attack_tokens;
+        double[] exp_defense_tokens;
 
         // HTML string of table contents
         string pdf_table_html;
@@ -179,17 +179,31 @@ public class WWWServer
         }
 
         // Tokens (see labels above)
-        content.exp_token_labels = ["Focus", "Target Lock", "Evade", "Stress"];
-        content.exp_attack_tokens = [
+        string[] exp_token_labels = ["Focus", "Target Lock", "Evade", "Stress"];
+        double[] exp_attack_tokens = [
             total_sum.attack_delta_focus_tokens,
             total_sum.attack_delta_target_locks,
             0.0f,
             total_sum.attack_delta_stress];
-        content.exp_defense_tokens = [
+        double[] exp_defense_tokens = [
             total_sum.defense_delta_focus_tokens,
             0.0f,
             total_sum.defense_delta_evade_tokens,
             total_sum.defense_delta_stress];
+
+        // Tokens that we only show if they changed
+        // NOTE: This is not perfect in cases where it just happens to average out to exactly 0, but
+        // there are no cases where it can be positive for these "tokens" (really cards) at the moment.
+        if (total_sum.attack_delta_crack_shot != 0.0)
+        {
+            exp_token_labels    ~= "Crack Shot";
+            exp_attack_tokens   ~= total_sum.attack_delta_crack_shot;
+            exp_defense_tokens  ~= 0.0;     // N/A
+        }
+
+        content.exp_token_labels = exp_token_labels;
+        content.exp_attack_tokens = exp_attack_tokens;
+        content.exp_defense_tokens = exp_defense_tokens;
 
         // Render HTML for tables
         {
@@ -199,7 +213,7 @@ public class WWWServer
         }
         {
             auto token_html = appender!string();
-            token_html.compileHTMLDietFile!("token_table.dt", total_sum);
+            token_html.compileHTMLDietFile!("token_table.dt", exp_token_labels, exp_attack_tokens, exp_defense_tokens);
             content.token_table_html = token_html.data;
         }
 

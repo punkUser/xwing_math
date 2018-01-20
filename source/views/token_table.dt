@@ -5,19 +5,8 @@ thead
         th Defender Delta
 tbody
     - import std.format;
-    tr
-        td Focus
-        td #{format("%.9f", total_sum.attack_delta_focus_tokens)}
-        td #{format("%.9f", total_sum.defense_delta_focus_tokens)}
-    tr
-        td Target Lock
-        td #{format("%.9f", total_sum.attack_delta_target_locks)}
-        td #{format("%.9f", 0.0)}
-    tr
-        td Evade
-        td #{format("%.9f", 0.0)}
-        td #{format("%.9f", total_sum.defense_delta_evade_tokens)}
-    tr
-        td Stress
-        td #{format("%.9f", total_sum.attack_delta_stress)}
-        td #{format("%.9f", total_sum.defense_delta_stress)}
+    - foreach(i, label; exp_token_labels)
+        tr
+            td= label
+            td #{format("%.9f", exp_attack_tokens[i])}
+            td #{format("%.9f", exp_defense_tokens[i])}

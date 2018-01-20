@@ -146,7 +146,7 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     setup.attack_tokens.amad_any_to_crit                    = form.amad_once_any_to_crit;
     setup.attack_tokens.sunny_bounder                       = form.attack_sunny_bounder;
     setup.attack_tokens.palpatine                           = form.attack_palpatine_crit;
-    setup.attack_tokens.attack_crack_shot                   = form.attack_crack_shot;
+    setup.attack_tokens.crack_shot                          = form.attack_crack_shot;
     
     setup.attack_fire_control_system                        = form.attack_fire_control_system;
     setup.attack_heavy_laser_cannon                         = form.attack_heavy_laser_cannon;

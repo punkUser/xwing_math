@@ -155,6 +155,9 @@ block form
         - import simulation;
         - SimulationResult[] total_hits_pdf;
         - SimulationResult total_sum;
+        - string[] exp_token_labels = ["Focus", "Target Lock", "Evade", "Stress"];
+        - double[] exp_attack_tokens = [0.0, 0.0, 0.0, 0.0];
+        - double[] exp_defense_tokens = [0.0, 0.0, 0.0, 0.0];
 
         .cell
             canvas#pdf-canvas(height="300")
