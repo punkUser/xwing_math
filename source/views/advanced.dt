@@ -47,7 +47,7 @@ block form
                         legend If Unstressed, Reroll
                         - stepper_control_t!"amad_unstressed_reroll_focus_count"			("Focus", 0, 15);
                         - stepper_control_t!"amad_unstressed_reroll_any_count"				("Any", 0, 15);
-                        - stepper_control_t!"amad_unstressed_reroll_any_gain_stress_count"  ("Any (Gain Stress)", 0, 15);
+                        - stepper_control_t!"amad_unstressed_reroll_any_gain_stress_count"  ("Any, Gain Stress)", 0, 15);
                     fieldset.fieldset
                         legend If Stressed, Reroll
                         - stepper_control_t!"amad_stressed_reroll_focus_count" ("Focus", 0, 15);
@@ -93,7 +93,7 @@ block form
                         legend Special Effects
                         - stepper_control_t!"defense_guess_evades"    ("C-3P0, Guess Evades:", -1, 6);
                         - switch_control_t!"defense_must_spend_focus" ("Defender Must Spend Focus");
-                        - switch_control_t!"defense_palpatine_evade"  ("Palpatine (Evade)");
+                        - switch_control_t!"defense_palpatine_evade"  ("Palpatine (evade)");
                         - switch_control_t!"defense_sunny_bounder"    ("Sunny Bounder");
 
                 .callout.small.alert

@@ -52,7 +52,7 @@ block form
                             - switch_control_t!"attack_maul_1"         ("Maul (1 reroll)");
                             - switch_control_t!"attack_maul_all"       ("Maul (all rerolls)");
                         - switch_control_t!"attack_mercenary_copilot"  ("Mercenary Copilot");
-                        - switch_control_t!"attack_palpatine_crit"     ("Palpatine (Crit)");
+                        - switch_control_t!"attack_palpatine_crit"     ("Palpatine (crit)");
                         - switch_control_t!"attack_wookie_commandos"   ("Wookie Commandos");
                         .switch-mutex
                             - switch_control_t!"attack_zuckuss_1_evade"   ("Zuckuss (reroll 1 evade)");
@@ -77,8 +77,8 @@ block form
                     fieldset.fieldset
                         legend Modifications
                         .switch-mutex
-                            - switch_control_t!"attack_guidance_chips_hit"  ("Guidance Chips (Hit)");
-                            - switch_control_t!"attack_guidance_chips_crit" ("Guidance Chips (Crit)");
+                            - switch_control_t!"attack_guidance_chips_hit"  ("Guidance Chips (hit)");
+                            - switch_control_t!"attack_guidance_chips_crit" ("Guidance Chips (crit)");
 
             .cell
                 .callout.small.success
@@ -112,7 +112,7 @@ block form
                         - switch_control_t!"defense_finn"               ("Finn");
                         - switch_control_t!"defense_hotshot_copilot"    ("Hotshot Copilot");
                         - switch_control_t!"defense_latts_razzi"        ("Latts Razzi");
-                        - switch_control_t!"defense_palpatine_evade"    ("Palpatine (Evade)");
+                        - switch_control_t!"defense_palpatine_evade"    ("Palpatine (evade)");
 
                     fieldset.fieldset
                         legend System Upgrades and Tech
