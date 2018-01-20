@@ -616,7 +616,7 @@ class Simulation
         ref const(ubyte)[DieResult.Num] attack_results,
         ref TokenState attack_tokens,
         ref DiceState defense_dice,
-        ref TokenState defense_tokens) const
+        ref const(TokenState) defense_tokens) const
     {
         int dice_to_reroll = 0;
 
@@ -631,7 +631,7 @@ class Simulation
         ref const(ubyte)[DieResult.Num] attack_results,
         ref TokenState attack_tokens,
         ref DiceState defense_dice,
-        ref TokenState defense_tokens) const
+        ref const(TokenState) defense_tokens) const
     {
         // Change results
         defense_dice.change_dice(DieResult.Evade, DieResult.Focus, m_setup.AMDD.evade_to_focus_count);
@@ -672,11 +672,14 @@ class Simulation
 
     void dmdd_after_reroll(
         const(ubyte)[DieResult.Num] attack_results,
-        ref TokenState attack_tokens,
+        ref TokenState attack_tokens,       // Can take stress from attacker so can't be const()
         ref DiceState defense_dice,
         ref TokenState defense_tokens) const
     {
-        int initial_focus_count = defense_tokens.focus;
+        // In case we need to undo our mods
+        immutable(TokenState) initial_attack_tokens = attack_tokens;
+        immutable(DiceState) initial_defense_dice = defense_dice;
+        immutable(TokenState) initial_defense_tokens = defense_tokens;
 
         // Change results
         // NOTE: Order matters here - do the most useful changes first
@@ -702,61 +705,45 @@ class Simulation
         // Spend regular focus or evade tokens?
         if (required_evades > 0 && (can_spend_focus || can_spend_evade))
         {
-            // In the presence of "one damage on hit" effects from the attacker, if we can't cancel everything,
-            // it's pointless to spend any tokens at all.
-            // TODO: This logic should really affect some of the other spending effects below as well. Probably
-            // makes more sense to treat it more like accuracy corrector and just undo all the spending if we
-            // aren't able to cancel enough at the end.
-            // NOTE: We do *not* consider crack shot for this test as it's still valuable to force the opponent to
-            // spend it to push the one damage through.
-            int max_damage_canceled =
-                defense_dice.count(DieResult.Evade) +
-                (can_spend_focus ? mutable_focus_results : 0) +
-                (can_spend_evade ? 1 : 0);
-            bool can_cancel_all = (max_damage_canceled >= required_evades);
+            // NOTE: Optimal strategy here depends on quite a lot of factors, but this is good enough in most cases
+            // - If defender must spend focus (ex. hotshot copilot), prefer to spend focus.
+            // - If attacker can modify evades into focus (ex. juke), prefer to spend evade.
+            // - Generally prefer to spend focus if none of the above conditions apply                
+            bool prefer_spend_focus = (m_setup.AMDD.evade_to_focus_count == 0) || (m_setup.defense_must_spend_focus);
 
-            if (can_cancel_all || !m_setup.attack_one_damage_on_hit)
+            bool can_cancel_all_with_focus = can_spend_focus && (mutable_focus_results >= required_evades);
+            bool can_cancel_all_with_evade = can_spend_evade && (1 >= required_evades);
+
+            // Do we need to spend both to cancel all hits?
+            if (!can_cancel_all_with_focus && !can_cancel_all_with_evade)
             {
-                // NOTE: Optimal strategy here depends on quite a lot of factors, but this is good enough in most cases
-                // - If defender must spend focus (ex. hotshot copilot), prefer to spend focus.
-                // - If attacker can modify evades into focus (ex. juke), prefer to spend evade.
-                // - Generally prefer to spend focus if none of the above conditions apply                
-                bool prefer_spend_focus = (m_setup.AMDD.evade_to_focus_count == 0) || (m_setup.defense_must_spend_focus);
-
-                bool can_cancel_all_with_focus = can_spend_focus && (mutable_focus_results >= required_evades);
-                bool can_cancel_all_with_evade = can_spend_evade && (1 >= required_evades);
-
-                // Do we need to spend both to cancel all hits?
-                if (!can_cancel_all_with_focus && !can_cancel_all_with_evade)
+                spent_focus = can_spend_focus;
+                spent_evade = can_spend_evade;
+            }
+            else if (prefer_spend_focus)      // Hold onto evade primarily
+            {
+                if (can_cancel_all_with_focus)
                 {
-                    spent_focus = can_spend_focus;
+                    assert(can_spend_focus);
+                    spent_focus = true;
+                }
+                else
+                {
+                    assert(can_cancel_all_with_evade);
                     spent_evade = can_spend_evade;
                 }
-                else if (prefer_spend_focus)      // Hold onto evade primarily
+            }
+            else                              // Hold on to focus primarily
+            {
+                if (can_cancel_all_with_evade)
                 {
-                    if (can_cancel_all_with_focus)
-                    {
-                        assert(can_spend_focus);
-                        spent_focus = true;
-                    }
-                    else
-                    {
-                        assert(can_cancel_all_with_evade);
-                        spent_evade = can_spend_evade;
-                    }
+                    assert(can_spend_evade);
+                    spent_evade = true;
                 }
-                else                              // Hold on to focus primarily
+                else
                 {
-                    if (can_cancel_all_with_evade)
-                    {
-                        assert(can_spend_evade);
-                        spent_evade = true;
-                    }
-                    else
-                    {
-                        assert(can_cancel_all_with_focus);
-                        spent_focus = can_spend_focus;
-                    }
+                    assert(can_cancel_all_with_focus);
+                    spent_focus = can_spend_focus;
                 }
             }
         }
@@ -797,19 +784,43 @@ class Simulation
             ++defense_dice.results[DieResult.Evade];
             --required_evades;
         }        
-
-        // If required and we didn't already spend focus, spend it now
-        if (m_setup.defense_must_spend_focus && initial_focus_count > 0 && initial_focus_count == defense_tokens.focus)
+        
+        if (m_setup.attack_one_damage_on_hit)
         {
-            --defense_tokens.focus;
-            assert(required_evades == 0 || defense_dice.count_mutable(DieResult.Focus) == 0);
+            // In the presence of "one damage on hit" effects from the attacker, if we can't cancel everything,
+            // it's pointless to spend any tokens at all.
+            // NOTE: We do *not* consider crack shot for this test as it's still valuable to force the opponent to
+            // spend it to push the one damage through.
+
+            int total_hits   = attack_results[DieResult.Hit] + attack_results[DieResult.Crit];
+            int total_evades = defense_dice.count(DieResult.Evade);
+            if (total_hits > total_evades)
+            {
+                // Retroactively undo all of our mods and token spending
+                // Like accuracy corrector, since no dice have been rolled here it's safe to assume the player
+                // can reason that there's no possible way to evade the attack before they spend anything.
+                attack_tokens = initial_attack_tokens;
+                defense_tokens = initial_defense_tokens;
+                defense_dice = initial_defense_dice;
+            }
+        }
+        else
+        {
+            // Sanity checks
+            if (required_evades > 0)
+            {
+                assert(!can_spend_focus || spent_focus);
+                assert(!can_spend_evade || spent_evade);
+            }
         }
 
-        // Sanity checks (RECALL: no point in canceling excess when one damage on hit)
-        if (required_evades > 0 && !m_setup.attack_one_damage_on_hit)
+        // If required and we didn't already spend focus, spend it now
+        // NOTE: This must stay after the logic that potentially undoes our token spend for one damage on hit cases, as it still
+        // requires us to spend a focus regardless!
+        if (m_setup.defense_must_spend_focus && defense_tokens.focus > 0 && defense_tokens.focus == initial_defense_tokens.focus)
         {
-            assert(!can_spend_focus || spent_focus);
-            assert(!can_spend_evade || spent_evade);
+            defense_dice.change_dice(DieResult.Focus, DieResult.Evade);
+            --defense_tokens.focus;
         }
         
         assert(defense_tokens.evade >= 0);
