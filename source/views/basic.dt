@@ -27,6 +27,7 @@ block form
 
                     fieldset.fieldset
                         legend Elite Pilot Talents
+                        - switch_control_t!"attack_crack_shot"         ("Crack Shot");
                         - switch_control_t!"attack_expertise"          ("Expertise");
                         - switch_control_t!"attack_fearlessness"       ("Fearlessness");
                         - switch_control_t!"attack_juke"               ("Juke");

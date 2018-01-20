@@ -91,6 +91,7 @@ struct SimulationSetup
     bool attack_heavy_laser_cannon = false;         // After initial roll, change all crits->hits
     bool attack_one_damage_on_hit = false;          // If attack hits, 1 damage (TLT, Ion, etc)
     bool attack_lose_stress_on_hit = false;         // If attack hits, lose one stress
+    bool attack_crack_shot = false;                 // At the start of compare results, can spend to cancel an evade
 
     // Defense tokens
     int defense_dice = 0;
@@ -129,7 +130,6 @@ struct SimulationSetup
     int defense_guess_evades = 0;                   // If initially roll this many evades, add another evade (C-3P0). Once per turn so see related token
 
     // TODO: Autoblaster (hit results cannot be canceled)
-    // TODO: C-3PO (always guess 0 probably the most relevant)
     // TODO: Lightweight frame
 
     // TODO: Crack shot? (gets a little bit complex as presence affects defender logic and as well)
@@ -356,6 +356,30 @@ class Simulation
         }
 
         assert(dice.final_results[DieResult.Crit] == 1);
+    }
+
+    // Defensive palpatine - change one die to a (final) evade
+    private void do_defense_palpatine(ref DiceState dice, ref TokenState defense_tokens) const
+    {
+        // Palpatine happens right after rolling so there should not be any rerolled or final dice
+        assert_no_rerolled_or_final_dice(dice);
+
+        // Logic is as above
+        int useful_blanks = m_setup.DMDD.blank_to_evade_count;
+        int useful_focus =  m_setup.DMDD.focus_to_evade_count(defense_tokens);
+
+        if (dice.results[DieResult.Blank] > useful_blanks)
+            dice.change_dice_final(DieResult.Blank, DieResult.Evade, 1);
+        else if (dice.results[DieResult.Focus] > useful_focus)
+            dice.change_dice_final(DieResult.Focus, DieResult.Evade, 1);
+        else if (dice.change_dice_final(DieResult.Evade, DieResult.Evade, 1) == 0)
+        {
+            // No useless results. OMG WASTED PALP :P Palp something useful anyways as its required.
+            if (dice.change_dice_final(DieResult.Focus, DieResult.Evade, 1) == 0)
+                dice.change_dice_final(DieResult.Blank, DieResult.Evade, 1);
+        }
+
+        assert(dice.final_results[DieResult.Evade] == 1);
     }
 
     private int dmad_before_reroll(ref DiceState attack_dice, ref TokenState attack_tokens) const
@@ -622,16 +646,6 @@ class Simulation
         if (attack_results[DieResult.Hit] == 0 && attack_results[DieResult.Crit] == 0)
             return 0;
 
-        // Use our "guess evade results" (C-3P0) if available
-        // NOTE: Only works if we are rolling at least one die
-        if (defense_tokens.defense_guess_evades && m_setup.defense_dice > 0)
-        {
-            // Try out guess and mark it as used
-            if (m_setup.defense_guess_evades == defense_dice.count(DieResult.Evade))
-                ++defense_dice.results[DieResult.Evade];
-            defense_tokens.defense_guess_evades = false;
-        }
-
         // Add free results
         defense_dice.results[DieResult.Blank] += m_setup.DMDD.add_blank_count;
         defense_dice.results[DieResult.Focus] += m_setup.DMDD.add_focus_count;
@@ -670,8 +684,13 @@ class Simulation
         defense_dice.change_dice(DieResult.Focus, DieResult.Evade, m_setup.DMDD.focus_to_evade_count(defense_tokens));
 
         // Figure out if we should spend focus or evade tokens (regular effect)
-        int uncanceled_hits = attack_results[DieResult.Hit] + attack_results[DieResult.Crit] - defense_dice.count(DieResult.Evade);
-        int mutable_focus_results = defense_dice.count_mutable(DieResult.Focus);
+        int uncanceled_hits = attack_results[DieResult.Hit] + attack_results[DieResult.Crit];
+        int mutable_focus_results = defense_dice.count_mutable(DieResult.Focus);        
+
+        // If the attacker has crack shot, we attempt to mitigate it by having an extra evade
+        int required_evades = uncanceled_hits - defense_dice.count(DieResult.Evade);
+        if (uncanceled_hits > 0 && attack_tokens.attack_crack_shot)
+            ++required_evades;
 
         // FAQ update: can only spend a single focus or evade per attack!
         bool can_spend_focus = (defense_tokens.focus > 0 && mutable_focus_results > 0);
@@ -681,13 +700,21 @@ class Simulation
         bool spent_evade = false;
 
         // Spend regular focus or evade tokens?
-        if (uncanceled_hits > 0 && (can_spend_focus || can_spend_evade))
+        if (required_evades > 0 && (can_spend_focus || can_spend_evade))
         {
-            int max_damage_canceled = (can_spend_focus ? mutable_focus_results : 0) + (can_spend_evade ? 1 : 0);
-            bool can_cancel_all = (max_damage_canceled >= uncanceled_hits);
-
             // In the presence of "one damage on hit" effects from the attacker, if we can't cancel everything,
             // it's pointless to spend any tokens at all.
+            // TODO: This logic should really affect some of the other spending effects below as well. Probably
+            // makes more sense to treat it more like accuracy corrector and just undo all the spending if we
+            // aren't able to cancel enough at the end.
+            // NOTE: We do *not* consider crack shot for this test as it's still valuable to force the opponent to
+            // spend it to push the one damage through.
+            int max_damage_canceled =
+                defense_dice.count(DieResult.Evade) +
+                (can_spend_focus ? mutable_focus_results : 0) +
+                (can_spend_evade ? 1 : 0);
+            bool can_cancel_all = (max_damage_canceled >= required_evades);
+
             if (can_cancel_all || !m_setup.attack_one_damage_on_hit)
             {
                 // NOTE: Optimal strategy here depends on quite a lot of factors, but this is good enough in most cases
@@ -696,8 +723,8 @@ class Simulation
                 // - Generally prefer to spend focus if none of the above conditions apply                
                 bool prefer_spend_focus = (m_setup.AMDD.evade_to_focus_count == 0) || (m_setup.defense_must_spend_focus);
 
-                bool can_cancel_all_with_focus = can_spend_focus && (mutable_focus_results >= uncanceled_hits);
-                bool can_cancel_all_with_evade = can_spend_evade && (1 >= uncanceled_hits);
+                bool can_cancel_all_with_focus = can_spend_focus && (mutable_focus_results >= required_evades);
+                bool can_cancel_all_with_evade = can_spend_evade && (1 >= required_evades);
 
                 // Do we need to spend both to cancel all hits?
                 if (!can_cancel_all_with_focus && !can_cancel_all_with_evade)
@@ -736,7 +763,7 @@ class Simulation
 
         if (spent_focus)
         {
-            uncanceled_hits -= mutable_focus_results;
+            required_evades -= mutable_focus_results;
             defense_dice.change_dice(DieResult.Focus, DieResult.Evade);
             --defense_tokens.focus;
         }
@@ -744,42 +771,42 @@ class Simulation
         // Evade tokens add defense dice to the pool
         if (spent_evade)
         {
-            --uncanceled_hits;
+            --required_evades;
             ++defense_dice.results[DieResult.Evade];
             --defense_tokens.evade;
         }
         
-        // If we still have uncanceled hits, consider spending other tokens if possible)
+        // If we still have required_evades, consider spending other tokens if possible)
 
         // Spend a focus each to convert a blank into an evade
-        if (uncanceled_hits > 0 && m_setup.DMDD.spend_focus_one_blank_to_evade > 0)
+        if (required_evades > 0 && m_setup.DMDD.spend_focus_one_blank_to_evade > 0)
         {
             int blank_to_evade_count = min(m_setup.DMDD.spend_focus_one_blank_to_evade, defense_tokens.focus);
             int blanks_changed = defense_dice.change_dice(DieResult.Blank, DieResult.Evade, blank_to_evade_count);
             defense_tokens.focus -= blanks_changed;
-            uncanceled_hits -= blanks_changed;            
+            required_evades -= blanks_changed;            
         }
 
         // Spend attacker stress to add an evade?
         // NOTE: There are some edge cases where it's actually better to spend the attacker stress even
         // if we don't need the evade, as it may be enabling passive mods for a future attack.
         // These are pretty esoteric though, so we'll stick to the more intuitive logic for now.
-        if (uncanceled_hits > 0 && m_setup.DMDD.spend_attacker_stress_add_evade && attack_tokens.stress > 0)
+        if (required_evades > 0 && m_setup.DMDD.spend_attacker_stress_add_evade && attack_tokens.stress > 0)
         {
             --attack_tokens.stress;
             ++defense_dice.results[DieResult.Evade];
-            --uncanceled_hits;
+            --required_evades;
         }        
 
         // If required and we didn't already spend focus, spend it now
         if (m_setup.defense_must_spend_focus && initial_focus_count > 0 && initial_focus_count == defense_tokens.focus)
         {
             --defense_tokens.focus;
-            assert(uncanceled_hits == 0 || defense_dice.count_mutable(DieResult.Focus) == 0);
+            assert(required_evades == 0 || defense_dice.count_mutable(DieResult.Focus) == 0);
         }
 
         // Sanity checks (RECALL: no point in canceling excess when one damage on hit)
-        if (uncanceled_hits > 0 && !m_setup.attack_one_damage_on_hit)
+        if (required_evades > 0 && !m_setup.attack_one_damage_on_hit)
         {
             assert(!can_spend_focus || spent_focus);
             assert(!can_spend_evade || spent_evade);
@@ -796,6 +823,26 @@ class Simulation
         ubyte[DieResult.Num] defense_results) const
     {
         // Compare results
+
+        int total_hits   = attack_results[DieResult.Hit] + attack_results[DieResult.Crit];
+        int total_evades = defense_results[DieResult.Evade];
+
+        // Attacker can use crack shot to cancel one evade if applicable
+        if (attack_tokens.attack_crack_shot && total_evades > 0)
+        {
+            // Push the extra hit through to trigger one damage on hit
+            bool use_crack_shot = false;
+            if (m_setup.attack_one_damage_on_hit)
+                use_crack_shot = use_crack_shot || (total_hits == total_evades);
+            else
+                use_crack_shot = use_crack_shot || (total_hits >= total_evades);
+
+            if (use_crack_shot)
+            {
+                --defense_results[DieResult.Evade];
+                attack_tokens.attack_crack_shot = false;
+            }
+        }
 
         // Cancel pairs of hits and evades
         {
@@ -893,9 +940,30 @@ class Simulation
 
     private SimulationState defense_dice_before_attacker_reroll(SimulationState state)
     {
+        // NOTE: Again, FAQ doesn't specify the ordering of some of these since they can never occur with current game rules,
+        // so we're extrapolating a bit here...
+
+        // Only palp on defense if there are hits to cancel and we're rolling at least one die
+        int uncanceled_hits = state.attack_dice.final_results[DieResult.Hit] + state.attack_dice.final_results[DieResult.Crit];
+        if (uncanceled_hits > 0 && state.defense_tokens.palpatine && m_setup.defense_dice > 0)
+        {
+            do_defense_palpatine(state.defense_dice, state.defense_tokens);
+            state.defense_tokens.palpatine = false;
+        }
+
         // "After rolling" events
         if (state.defense_tokens.sunny_bounder)
             state.defense_tokens.sunny_bounder = do_sunny_bounder(state.defense_dice);
+
+        // Use our "guess evade results" (C-3P0) if available
+        // NOTE: Only works if we are rolling at least one die
+        if (state.defense_tokens.defense_guess_evades && m_setup.defense_dice > 0)
+        {
+            // Try out guess and mark it as used
+            if (m_setup.defense_guess_evades == state.defense_dice.count(DieResult.Evade))
+                ++state.defense_dice.results[DieResult.Evade];
+            state.defense_tokens.defense_guess_evades = false;
+        }
 
         // Attacker reroll defense dice
         state.dice_to_reroll = cast(ubyte)amdd_before_reroll(state.attack_dice.final_results, state.attack_tokens, state.defense_dice, state.defense_tokens);
@@ -976,8 +1044,8 @@ class Simulation
         states = roll_attack_dice!(false)(states, &attack_dice_after_reroll);
 
         // Roll and modify defense dice, and compare results
-        states = roll_defense_dice!(true)(states,  &defense_dice_before_defender_reroll, cast(ubyte)m_setup.defense_dice);
-        states = roll_defense_dice!(false)(states, &defense_dice_before_attacker_reroll);
+        states = roll_defense_dice!(true)(states,  &defense_dice_before_attacker_reroll, cast(ubyte)m_setup.defense_dice);
+        states = roll_defense_dice!(false)(states, &defense_dice_before_defender_reroll);
         states = roll_defense_dice!(false)(states, &defense_dice_after_reroll);
 
         return states;
