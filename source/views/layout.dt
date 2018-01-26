@@ -4,7 +4,7 @@ html(class="no-js", lang="en")
         //- Simple auto-versioning for CSS files - just hash the date/time @ compile time
         //- Works well enough for our uses here
         - import std.digest.md;
-        - string file_version = toHexString(md5Of(__TIMESTAMP__));
+        - string file_version = toHexString(md5Of(__TIMESTAMP__)).dup;
         
         meta(charset="utf-8")
         meta(http-equiv="x-ua-compatible", content="ie=edge")
