@@ -150,8 +150,9 @@ align(1) struct BasicForm
         bool, "attack_palpatine_crit",        1,
         bool, "defense_palpatine_evade",      1,
         bool, "attack_crack_shot",            1,
+        bool, "attack_a_score_to_settle",     1,
 
-        uint, "",                            29,
+        uint, "",                            28,
         ));
 
     // TODO (near term):
@@ -230,6 +231,7 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.AMAD.reroll_any_gain_stress_count.unstressed      += form.attack_maul_all                         ? k_all_dice_count : 0;
 
     // Change results
+    setup.AMAD.focus_to_crit_count.always                   += form.attack_a_score_to_settle                ? 1 : 0;
     setup.AMAD.focus_to_crit_count.always                   += form.attack_proton_torpedoes                 ? 1 : 0;
     setup.AMAD.focus_to_crit_count.always                   += form.attack_pilot == AttackPilot.RearAdmiralChiraneau ? 1 : 0;
     setup.AMAD.focus_to_crit_count.stressed                 += form.attack_ezra_crew                        ? 1 : 0;
