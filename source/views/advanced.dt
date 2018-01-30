@@ -160,14 +160,16 @@ block form
         - double[] exp_defense_tokens = [0.0, 0.0, 0.0, 0.0];
 
         .cell
-            canvas#pdf-canvas(height="300")
+            .pdf-container
+                canvas#pdf-canvas(height="300")
 
         .cell
             table#pdf-table
                 include pdf_table
 
         .cell
-            canvas#token-canvas(height="300")
+            .token-container
+                canvas#token-canvas(height="300")
 
         .cell
             table#token-table

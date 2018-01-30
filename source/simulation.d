@@ -1012,16 +1012,6 @@ class Simulation
         state.final_crits += attack_results[DieResult.Crit];
         ++state.completed_attack_count;
 
-        // "After attack" abilities do not trigger on the first of a "secondary perform twice" attack
-        if (state.completed_attack_count > 1 || m_setup.type != MultiAttackType.SecondaryPerformTwice)
-        {
-            // NOTE: If there's any "final" damage over the two "secondary perform twice" attacks,
-            // the combined attack is considered to have hit
-            bool attack_hit = (state.final_hits > 0 || state.final_crits > 0);
-
-            after_attack(state.attack_tokens, state.defense_tokens, attack_hit);
-        }
-
         // Simplify state in case of further iteration
         // Keep tokens and final results, discard the rest
         state.attack_dice.cancel_all();
@@ -1038,7 +1028,7 @@ class Simulation
 
 
     // Returns full set of states after result comparison (results put into state.final_hits, etc)
-    // Does not directly accumulate as this may be part of a multi-attack sequence.
+    // Does NOT trigger after attack events or directly accumulate as this may be part of a multi-attack sequence
     public SimulationStateMap simulate_single_attack(TokenState attack_tokens,
                                                      TokenState defense_tokens,
                                                      ubyte completed_attack_count = 0)
@@ -1067,7 +1057,11 @@ class Simulation
 
     // Returns full set of states after result comparison (results put into state.final_hits, etc)
     // Does not directly accumulate as this may be part of a multi-attack sequence.
-    public SimulationStateMap simulate_single_attack(SimulationStateMap initial_states)
+    // NOTE: Secondary perform twice causes "after attack that hits" triggers if *any* of the attacks hit.
+    public SimulationStateMap simulate_single_attack(
+        SimulationStateMap initial_states,
+        bool trigger_after_attack = true,
+        bool secondary_perform_twice = false)
     {
         // NOTE: It would be "correct" here to just immediately fork all of our states set into another attack,
         // but that is relatively inefficient. Since the core thing that affects how the next attack plays out is
@@ -1131,11 +1125,24 @@ class Simulation
             {
                 // NOTE: Important to keep the token state and such from after the second attack, not initial one
                 // We basically just want to add each of the combinations of "final hits/crits" together for the
-                // combined attack.
+                // combined attack and potentially trigger "after attack" logic.
                 SimulationState new_state = second_attack_state;
-                new_state.final_hits			 += initial_state.final_hits;
-                new_state.final_crits		     += initial_state.final_crits;
-                new_state.completed_attack_count += initial_state.completed_attack_count;
+                new_state.final_hits  += initial_state.final_hits;
+                new_state.final_crits += initial_state.final_crits;
+
+                if (trigger_after_attack)
+                {
+                    // NOTE: If there's any "final" damage over two "secondary perform twice" attacks,
+                    // the combined attack is considered to have hit.
+                    bool attack_hit = false;
+                    if (secondary_perform_twice)
+                        attack_hit = (new_state.final_hits > 0 || new_state.final_crits > 0);
+                    else
+                        attack_hit = (second_attack_state.final_hits > 0 || second_attack_state.final_crits > 0);
+
+                    after_attack(new_state.attack_tokens, new_state.defense_tokens, attack_hit);
+                }
+
                 append_state(new_states, new_state, initial_probability * second_probability);
             }
         }
@@ -1145,19 +1152,33 @@ class Simulation
 
     public void simulate_attack()
     {
-        // First attack
-        auto states = simulate_single_attack(m_setup.attack_tokens, m_setup.defense_tokens);
+        // Initial state
+        SimulationState initial_state;
+        initial_state.attack_tokens  = m_setup.attack_tokens;
+        initial_state.defense_tokens = m_setup.defense_tokens;
+        SimulationStateMap states;
+        states[initial_state] = 1.0f;
 
-        //writefln("Attack complete with %s states.", states.length);
-
-        if (m_setup.type == MultiAttackType.SecondaryPerformTwice ||
-            m_setup.type == MultiAttackType.AfterAttack)
+        if (m_setup.type == MultiAttackType.Single)
         {
-            // Unconditional second attacks
+            states = simulate_single_attack(states);
+        }
+        if (m_setup.type == MultiAttackType.SecondaryPerformTwice)
+        {
+            // NOTE: After attack triggers do not happen on the first of two "secondary perform twice" attacks
+            // Secondary perform twice attacks are considered to have hit if either sub-attack hits.
+            states = simulate_single_attack(states, false, true);
+            states = simulate_single_attack(states, true, true);
+        }
+        else if (m_setup.type == MultiAttackType.AfterAttack)
+        {
+            states = simulate_single_attack(states);
             states = simulate_single_attack(states);
         }
         else if (m_setup.type == MultiAttackType.AfterAttackDoesNotHit)
         {
+            states = simulate_single_attack(states);
+
             // Only attack again for the states that didn't hit anything
             SimulationStateMap second_attack_states;
             SimulationStateMap no_second_attack_states;
@@ -1219,7 +1240,7 @@ class Simulation
         result.attack_delta_focus_tokens  = probability * cast(double)(attack_tokens.focus        - m_setup.attack_tokens.focus      );
         result.attack_delta_target_locks  = probability * cast(double)(attack_tokens.target_lock  - m_setup.attack_tokens.target_lock);
         result.attack_delta_stress        = probability * cast(double)(attack_tokens.stress       - m_setup.attack_tokens.stress     );
-        result.attack_delta_crack_shot    = probability * cast(double)(attack_tokens.crack_shot != m_setup.attack_tokens.crack_shot ? -1.0 : 0.0);
+        result.attack_delta_crack_shot    = probability * cast(double)(attack_tokens.crack_shot  != m_setup.attack_tokens.crack_shot ? -1.0 : 0.0);
 
         result.defense_delta_focus_tokens = probability * cast(double)(defense_tokens.focus       - m_setup.defense_tokens.focus     );
         result.defense_delta_evade_tokens = probability * cast(double)(defense_tokens.evade       - m_setup.defense_tokens.evade     );

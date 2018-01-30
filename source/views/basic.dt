@@ -137,6 +137,10 @@ block form
                         button#simulate.button.large.simulate-button Simulate
 
                 .cell
-                    canvas#pdf-canvas(height="300")
+                    .pdf-container
+                        canvas#pdf-canvas(height="300")
+
                 .cell
-                    canvas#token-canvas(height="300")
+                    .token-container
+                        canvas#token-canvas(height="300")
+
