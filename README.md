@@ -16,7 +16,7 @@ library to host the web interface. It currently supports Windows and Linux (Ubun
 Install the [D compiler](https://dlang.org/download.html) and [DUB](http://code.dlang.org/download) on your platform
 of choice and build/run the application by invoking `dub` from the command line in the root directory.
 
-Additional Setup of Linux
+Additional Setup on Linux
 -------------------------
 On Linux you may also need to install the dependencies for vibe.d. See the Linux section on
 [this page](https://github.com/vibe-d/vibe.d) for more information.
