@@ -37,7 +37,7 @@ struct PassiveModifier
 
 struct SimulationSetup
 {
-    MultiAttackType type = MultiAttackType.Single;
+    //MultiAttackType type = MultiAttackType.Single;
 
     // Tokens
     int attack_dice = 0;
@@ -515,8 +515,7 @@ class Simulation
 
     // Removes rerolled dice from pool; returns number of dice to reroll
     private void amad_after_reroll(ref DiceState attack_dice,
-                                   ref TokenState attack_tokens,
-                                   bool final_attack) const
+                                   ref TokenState attack_tokens) const
     {
         // Handle accuracy corrector... we cache the token state here before doing other modification -
         // namely focus spending - because we assume at this point that the player could determine if it's
@@ -582,7 +581,7 @@ class Simulation
             attack_tokens.amad_any_to_crit = (attack_dice.change_blank_focus(DieResult.Crit, 1) == 0);
             
             // If this is the final attack, might as well change a hit to a crit also
-            if (attack_tokens.amad_any_to_crit && final_attack)
+            if (attack_tokens.amad_any_to_crit && m_attacker_final_attack)
             {
                 attack_tokens.amad_any_to_crit = (attack_dice.change_dice(DieResult.Hit, DieResult.Crit, 1) == 0);
             }
@@ -900,7 +899,7 @@ class Simulation
 
 
 
-    private SimulationState attack_dice_before_defender_reroll(SimulationState state)
+    private SimulationState attack_dice_before_defender_reroll(SimulationState state) const
     {
         // "After rolling" events
 
@@ -925,7 +924,7 @@ class Simulation
         return state;
     }
 
-    private SimulationState attack_dice_before_attacker_reroll(SimulationState state)
+    private SimulationState attack_dice_before_attacker_reroll(SimulationState state) const
     {
         dmad_after_reroll(state.attack_dice, state.attack_tokens);
 
@@ -934,15 +933,14 @@ class Simulation
         return state;
     }    
 
-    private SimulationState attack_dice_after_reroll(SimulationState state)
+    private SimulationState attack_dice_after_reroll(SimulationState state) const
     {
         // "After rerolling" events for attacker
         // TODO: Wackiness of spending target lock to reroll "0" dice? And sort out what that means for passive mods?
         if (state.dice_to_reroll > 0 && state.attack_tokens.sunny_bounder)
             state.attack_tokens.sunny_bounder = do_sunny_bounder(state.attack_dice);
 
-        bool final_attack = (m_setup.type == MultiAttackType.Single || state.completed_attack_count == 1);
-        amad_after_reroll(state.attack_dice, state.attack_tokens, final_attack);
+        amad_after_reroll(state.attack_dice, state.attack_tokens);
 
         // Done modifying attack dice
         state.attack_dice.finalize();
@@ -951,7 +949,7 @@ class Simulation
         return state;
     }
 
-    private SimulationState defense_dice_before_attacker_reroll(SimulationState state)
+    private SimulationState defense_dice_before_attacker_reroll(SimulationState state) const
     {
         // NOTE: Again, FAQ doesn't specify the ordering of some of these since they can never occur with current game rules,
         // so we're extrapolating a bit here...
@@ -983,7 +981,7 @@ class Simulation
         return state;
     }
 
-    private SimulationState defense_dice_before_defender_reroll(SimulationState state)
+    private SimulationState defense_dice_before_defender_reroll(SimulationState state) const
     {
         amdd_after_reroll(state.attack_dice.final_results, state.attack_tokens, state.defense_dice, state.defense_tokens);
 
@@ -992,7 +990,7 @@ class Simulation
         return state;
     }
 
-    private SimulationState defense_dice_after_reroll(SimulationState state)
+    private SimulationState defense_dice_after_reroll(SimulationState state) const
     {
         // "After rerolling" events for defender
         if (state.dice_to_reroll > 0 && state.defense_tokens.sunny_bounder)
@@ -1010,7 +1008,6 @@ class Simulation
 
         state.final_hits  += attack_results[DieResult.Hit];
         state.final_crits += attack_results[DieResult.Crit];
-        ++state.completed_attack_count;
 
         // Simplify state in case of further iteration
         // Keep tokens and final results, discard the rest
@@ -1030,13 +1027,11 @@ class Simulation
     // Returns full set of states after result comparison (results put into state.final_hits, etc)
     // Does NOT trigger after attack events or directly accumulate as this may be part of a multi-attack sequence
     public SimulationStateMap simulate_single_attack(TokenState attack_tokens,
-                                                     TokenState defense_tokens,
-                                                     ubyte completed_attack_count = 0)
+                                                     TokenState defense_tokens) const
     {
         SimulationState initial_state;
         initial_state.attack_tokens  = attack_tokens;
         initial_state.defense_tokens = defense_tokens;
-        initial_state.completed_attack_count = completed_attack_count;
 
         SimulationStateMap states;
         states[initial_state] = 1.0f;
@@ -1061,7 +1056,7 @@ class Simulation
     public SimulationStateMap simulate_single_attack(
         SimulationStateMap initial_states,
         bool trigger_after_attack = true,
-        bool secondary_perform_twice = false)
+        bool secondary_perform_twice = false) const
     {
         // NOTE: It would be "correct" here to just immediately fork all of our states set into another attack,
         // but that is relatively inefficient. Since the core thing that affects how the next attack plays out is
@@ -1111,9 +1106,7 @@ class Simulation
                 // It should be fine since any calls to second attacks, etc. are done in lock step with the relevant
                 // states being carried forward, but there may be some simple ways to make this somewhat more robust
                 // to theoretical cases of mixed state sets.
-                second_attack_states = simulate_single_attack(last_attack_tokens,
-                                                              last_defense_tokens,
-                                                              initial_state.completed_attack_count);
+                second_attack_states = simulate_single_attack(last_attack_tokens, last_defense_tokens);
                 ++second_attack_evaluations;
 
                 //writefln("Second attack in %s msec", sw.peek().msecs());
@@ -1150,7 +1143,7 @@ class Simulation
         return new_states;
     }
 
-    public void simulate_attack()
+    public void simulate_multi_attack(MultiAttackType type)
     {
         // Initial state
         SimulationState initial_state;
@@ -1159,24 +1152,39 @@ class Simulation
         SimulationStateMap states;
         states[initial_state] = 1.0f;
 
-        if (m_setup.type == MultiAttackType.Single)
+        if (type == MultiAttackType.Single)
         {
+            m_attacker_final_attack = true;
+            m_defender_final_attack = true;
             states = simulate_single_attack(states);
         }
-        if (m_setup.type == MultiAttackType.SecondaryPerformTwice)
+        else if (type == MultiAttackType.SecondaryPerformTwice)
         {
+
             // NOTE: After attack triggers do not happen on the first of two "secondary perform twice" attacks
             // Secondary perform twice attacks are considered to have hit if either sub-attack hits.
+            m_attacker_final_attack = false;
+            m_defender_final_attack = false;
             states = simulate_single_attack(states, false, true);
+
+            m_attacker_final_attack = true;
+            m_defender_final_attack = true;
             states = simulate_single_attack(states, true, true);
         }
-        else if (m_setup.type == MultiAttackType.AfterAttack)
+        else if (type == MultiAttackType.AfterAttack)
         {
+            m_attacker_final_attack = false;
+            m_defender_final_attack = false;
             states = simulate_single_attack(states);
+
+            m_attacker_final_attack = true;
+            m_defender_final_attack = true;
             states = simulate_single_attack(states);
         }
-        else if (m_setup.type == MultiAttackType.AfterAttackDoesNotHit)
+        else if (type == MultiAttackType.AfterAttackDoesNotHit)
         {
+            m_attacker_final_attack = false;
+            m_defender_final_attack = false;
             states = simulate_single_attack(states);
 
             // Only attack again for the states that didn't hit anything
@@ -1199,14 +1207,23 @@ class Simulation
             // Do the next attack for those states, then merge them into the other list
             if (second_attack_states.length > 0)
             {
+                m_attacker_final_attack = true;
+                m_defender_final_attack = true;
                 second_attack_states = simulate_single_attack(second_attack_states);
 
                 states = no_second_attack_states;
                 foreach (ref state, state_probability; second_attack_states)
                 {
-                    assert(!(state in states));		// Should not be possible since attack index will be incremented
-                    states[state] = state_probability;
+                    append_state(states, state, state_probability);
                 }
+            }
+        }
+        else
+        {
+            // Unknown multi attack type!
+            debug 
+            {
+                assert(false);
             }
         }
 
@@ -1280,6 +1297,8 @@ class Simulation
     private double m_at_least_one_crit_probability = 0.0;
 
     private immutable SimulationSetup m_setup;
+    private bool m_attacker_final_attack = true;
+    private bool m_defender_final_attack = true;
 };
 
 

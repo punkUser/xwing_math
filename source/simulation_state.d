@@ -134,7 +134,6 @@ public struct SimulationState
     ubyte dice_to_reroll = 0;
 
     // Final results (multi-attack, etc)
-    ubyte completed_attack_count = 0;
     ubyte final_hits = 0;
     ubyte final_crits = 0;
 

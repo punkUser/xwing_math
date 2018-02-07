@@ -43,6 +43,22 @@ block content
                     reference card names when it is more concise to do so versus spelling out the underlying effect.
 
         li.accordion-item(data-accordion-item)
+            a.accordion-title(href="#links") How can I link or bookmark a specific result?
+            #links.accordion-content(data-tab-content)
+                p.
+                    When you press "Simulate" the address bar will be updated with a link that can be bookmarked or shared to
+                    get right back to a given result. This is also a convenient way of comparing results between tabs or windows.
+
+        li.accordion-item(data-accordion-item)
+            a.accordion-title(href="#numbers") How can I see the numbers?
+            #numbers.accordion-content(data-tab-content)
+                p.
+                    One a result is simulated, simply hover over (or tap) any bar in the charts to see the probabilities.
+                p.
+                    Alternatively, the "Advanced" form additionally outputs a data table which makes it easy to copy the results
+                    into an external spreadsheet or similar.
+
+        li.accordion-item(data-accordion-item)
             a.accordion-title(href="#triggers") Which effects and triggers are active?
             #triggers.accordion-content(data-tab-content)
                 p.
@@ -57,13 +73,6 @@ block content
                     the attacker to discard a target lock to fire) do <em>not</em> include those tokens in the simulation. The
                     simulation effectively begins at the attacker's initial dice roll, so that is the point in which you should
                     set the token state.
-
-        li.accordion-item(data-accordion-item)
-            a.accordion-title(href="#links") How can I link or bookmark a specific result?
-            #links.accordion-content(data-tab-content)
-                p.
-                    When you press "Simulate" the address bar will be updated with a link that can be bookmarked or shared to
-                    get right back to a given result. This is also a convenient way of comparing results between tabs or windows.
 
         li.accordion-item(data-accordion-item)
             a.accordion-title(href="#strategies") What strategies do the attacker and defender employ?

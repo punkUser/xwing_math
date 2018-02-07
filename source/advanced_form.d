@@ -134,8 +134,6 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
 {
     SimulationSetup setup;
 
-    setup.type                                              = cast(MultiAttackType)form.attack_type;
-
     setup.attack_dice                                       = form.attack_dice;
     setup.attack_tokens.focus                               = form.attack_focus_token_count;
     setup.attack_tokens.target_lock                         = form.attack_target_lock_count;

@@ -2,6 +2,7 @@ import simulation;
 import form;
 import basic_form;
 import advanced_form;
+import alpha_form;
 import log;
 
 import std.array;
@@ -30,6 +31,7 @@ public class WWWServer
     
         router.get("/", &basic);
         router.get("/advanced/", &advanced);
+        router.get("/alpha/", &alpha);
         router.get("/about/", &about);
         router.post("/simulate_basic.json", &simulate_basic);
         router.post("/simulate_advanced.json", &simulate_advanced);
@@ -93,11 +95,12 @@ public class WWWServer
     {
         //debug writeln(req.form.serializeToPrettyJson());
 
-        auto basic_form = create_form_from_fields!BasicForm(req.form);
-        string form_state_string = serialize_form_to_url(basic_form);
+        auto basic_form = create_form_from_fields!BasicForm(req.form);        
         SimulationSetup setup = to_simulation_setup(basic_form);
+        MultiAttackType multi_attack_type = cast(MultiAttackType)basic_form.attack_type;
 
-        simulate_response(req, res, setup, form_state_string);
+        string form_state_string = serialize_form_to_url(basic_form);
+        simulate_response(req, res, setup, multi_attack_type, form_state_string);
     }
 
     private void simulate_advanced(HTTPServerRequest req, HTTPServerResponse res)
@@ -105,15 +108,17 @@ public class WWWServer
         //debug writeln(req.form.serializeToPrettyJson());
 
         auto advanced_form = create_form_from_fields!AdvancedForm(req.form);
-        string form_state_string = serialize_form_to_url(advanced_form);
         SimulationSetup setup = to_simulation_setup(advanced_form);
+        MultiAttackType multi_attack_type = cast(MultiAttackType)advanced_form.attack_type;
 
-        simulate_response(req, res, setup, form_state_string);
+        string form_state_string = serialize_form_to_url(advanced_form);
+        simulate_response(req, res, setup, multi_attack_type, form_state_string);
     }
 
     private void simulate_response(HTTPServerRequest req,		// Mostly for logging
                                    HTTPServerResponse res,
                                    ref const(SimulationSetup) setup,
+                                   MultiAttackType multi_attack_type,
                                    string form_state_string = "")
     {
         //writefln("Setup: %s", setup.serializeToPrettyJson());
@@ -125,13 +130,13 @@ public class WWWServer
         {
             auto sw = StopWatch(AutoStart.yes);
 
-            simulation.simulate_attack();
+            simulation.simulate_multi_attack(multi_attack_type);
 
             // NOTE: This is kinda similar to the access log, but convenient for now
             log_message("%s %s Simulated %d evaluations in %s msec",
-                     req.peer,
-                     req.path ~ "?q=" ~ form_state_string,
-                     simulation.total_sum().evaluation_count, sw.peek().total!"msecs");
+                req.clientAddress.toAddressString(),
+                req.path ~ "?q=" ~ form_state_string,
+                simulation.total_sum().evaluation_count, sw.peek().total!"msecs");
         }
 
         auto total_hits_pdf = simulation.total_hits_pdf();
@@ -235,6 +240,14 @@ public class WWWServer
         string form_state_string = req.query.get("q", "");
         AdvancedForm form_values = create_form_from_url!AdvancedForm(form_state_string);
         res.render!("advanced.dt", form_values);
+    }
+
+    private void alpha(HTTPServerRequest req, HTTPServerResponse res)
+    {
+        // Load values from URL if present
+        string form_state_string = req.query.get("q", "");
+        AlphaForm form_values = create_form_from_url!AlphaForm(form_state_string);
+        res.render!("alpha.dt", form_values);
     }
 
     private void about(HTTPServerRequest req, HTTPServerResponse res)
