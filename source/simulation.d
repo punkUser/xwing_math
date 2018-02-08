@@ -672,7 +672,7 @@ class Simulation
     }
 
     void dmdd_after_reroll(
-        const(ubyte)[DieResult.Num] attack_results,
+        ref const(ubyte)[DieResult.Num] attack_results,
         ref TokenState attack_tokens,       // Can take stress from attacker so can't be const()
         ref DiceState defense_dice,
         ref TokenState defense_tokens) const
@@ -828,11 +828,13 @@ class Simulation
         assert(defense_tokens.focus >= 0);
     }
 
-    private ubyte[DieResult.Num] compare_results(
+    // Returns true if attack hit, false otherwise
+    private bool compare_results(
         ref TokenState attack_tokens,                              
         ubyte[DieResult.Num] attack_results,
         ref TokenState defense_tokens,
-        ubyte[DieResult.Num] defense_results) const
+        ubyte[DieResult.Num] defense_results,
+        ref ubyte[DieResult.Num] out_results) const
     {
         // Compare results
 
@@ -877,7 +879,8 @@ class Simulation
             attack_results[DieResult.Crit] = 0;
         }
 
-        return attack_results;
+        out_results = attack_results;
+        return attack_hit;
     }
 
     private void after_attack(ref TokenState attack_tokens, ref TokenState defense_tokens, bool attack_hit) const
@@ -1003,11 +1006,15 @@ class Simulation
         state.dice_to_reroll = 0;
 
         // Compare results
-        auto attack_results = compare_results(state.attack_tokens, state.attack_dice.final_results, 
-                                              state.defense_tokens, state.defense_dice.final_results);
+        ubyte[DieResult.Num] attack_results;
+        bool attack_hit = compare_results(
+            state.attack_tokens, state.attack_dice.final_results, 
+            state.defense_tokens, state.defense_dice.final_results,
+            attack_results);
 
         state.final_hits  += attack_results[DieResult.Hit];
         state.final_crits += attack_results[DieResult.Crit];
+        state.attack_hit   = state.attack_hit || attack_hit;        // Secondary perform twice attacks hit if *either* sub-attack hits
 
         // Simplify state in case of further iteration
         // Keep tokens and final results, discard the rest
@@ -1051,12 +1058,12 @@ class Simulation
 
 
     // Returns full set of states after result comparison (results put into state.final_hits, etc)
-    // Does not directly accumulate as this may be part of a multi-attack sequence.
-    // NOTE: Secondary perform twice causes "after attack that hits" triggers if *any* of the attacks hit.
+    // NOTE: If "trigger_after_attack" is true, this attack will considered to have hit if any attack since the
+    // last "after attack" trigger hit. Example: secondary perform twice causes "after attack that hits" triggers
+    // if *any* of the attacks hit. After this is triggered, the attack hit flag is cleared.
     public SimulationStateMap simulate_single_attack(
         SimulationStateMap initial_states,
-        bool trigger_after_attack = true,
-        bool secondary_perform_twice = false) const
+        bool trigger_after_attack = true) const
     {
         // NOTE: It would be "correct" here to just immediately fork all of our states set into another attack,
         // but that is relatively inefficient. Since the core thing that affects how the next attack plays out is
@@ -1122,18 +1129,12 @@ class Simulation
                 SimulationState new_state = second_attack_state;
                 new_state.final_hits  += initial_state.final_hits;
                 new_state.final_crits += initial_state.final_crits;
+                new_state.attack_hit   = new_state.attack_hit || initial_state.attack_hit;
 
                 if (trigger_after_attack)
                 {
-                    // NOTE: If there's any "final" damage over two "secondary perform twice" attacks,
-                    // the combined attack is considered to have hit.
-                    bool attack_hit = false;
-                    if (secondary_perform_twice)
-                        attack_hit = (new_state.final_hits > 0 || new_state.final_crits > 0);
-                    else
-                        attack_hit = (second_attack_state.final_hits > 0 || second_attack_state.final_crits > 0);
-
-                    after_attack(new_state.attack_tokens, new_state.defense_tokens, attack_hit);
+                    after_attack(new_state.attack_tokens, new_state.defense_tokens, new_state.attack_hit);
+                    new_state.attack_hit = false;
                 }
 
                 append_state(new_states, new_state, initial_probability * second_probability);
@@ -1160,16 +1161,15 @@ class Simulation
         }
         else if (type == MultiAttackType.SecondaryPerformTwice)
         {
-
             // NOTE: After attack triggers do not happen on the first of two "secondary perform twice" attacks
             // Secondary perform twice attacks are considered to have hit if either sub-attack hits.
             m_attacker_final_attack = false;
             m_defender_final_attack = false;
-            states = simulate_single_attack(states, false, true);
+            states = simulate_single_attack(states, false);
 
             m_attacker_final_attack = true;
             m_defender_final_attack = true;
-            states = simulate_single_attack(states, true, true);
+            states = simulate_single_attack(states, true);
         }
         else if (type == MultiAttackType.AfterAttack)
         {

@@ -136,6 +136,7 @@ public struct SimulationState
     // Final results (multi-attack, etc)
     ubyte final_hits = 0;
     ubyte final_crits = 0;
+    bool attack_hit = false;
 
     // TODO: Since this is such an important part of the simulation process now, we should compress
     // the size of this structure and implement (and test!) a proper custom hash function.
