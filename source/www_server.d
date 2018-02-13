@@ -104,20 +104,22 @@ public class WWWServer
         TokenState attack_tokens            = basic_form.to_attack_tokens();
         TokenState defense_tokens           = basic_form.to_defense_tokens();
         
-        auto simulation = new Simulation(attack_tokens, defense_tokens);
+        SimulationResults results;
         {
             auto sw = StopWatch(AutoStart.yes);
 
-            simulation.simulate_multi_attack(setup, multi_attack_type);
+            auto simulation = new Simulation(attack_tokens, defense_tokens);
+            simulation.simulate_attack(multi_attack_type, setup);
+            results = simulation.compute_results();
 
             // NOTE: This is kinda similar to the access log, but convenient for now
-            log_message("%s %s Simulated in %s msec",
+            log_message("%s %s Simulated %s states in %s msec",
                         req.clientAddress.toAddressString(),
                         "/?q=" ~ form_state_string,
-                        sw.peek().total!"msecs");
+                        results.total_sum.evaluation_count, sw.peek().total!"msecs");
         }
 
-        simulate_response(res, simulation, form_state_string);
+        simulate_response(res, results, form_state_string);
     }
 
     private void simulate_advanced(HTTPServerRequest req, HTTPServerResponse res)
@@ -132,31 +134,29 @@ public class WWWServer
         TokenState attack_tokens            = advanced_form.to_attack_tokens();
         TokenState defense_tokens           = advanced_form.to_defense_tokens();
 
-        auto simulation = new Simulation(attack_tokens, defense_tokens);
+        SimulationResults results;
         {
             auto sw = StopWatch(AutoStart.yes);
 
-            simulation.simulate_multi_attack(setup, multi_attack_type);
+            auto simulation = new Simulation(attack_tokens, defense_tokens);
+            simulation.simulate_attack(multi_attack_type, setup);
+
+            results = simulation.compute_results();
 
             // NOTE: This is kinda similar to the access log, but convenient for now
-            log_message("%s %s Simulated in %s msec",
+            log_message("%s %s Simulated %s states in %s msec",
                         req.clientAddress.toAddressString(),
                         "/advanced/?q=" ~ form_state_string,
-                        sw.peek().total!"msecs");
+                        results.total_sum.evaluation_count, sw.peek().total!"msecs");
         }
 
-        simulate_response(res, simulation, form_state_string);
+        simulate_response(res, results, form_state_string);
     }
 
     private void simulate_response(HTTPServerResponse res,
-                                   Simulation simulation,
+                                   SimulationResults results,
                                    string form_state_string = "")
     {
-        //writefln("Setup: %s", setup.serializeToPrettyJson());
-        //writeln(form_state_string);
-
-        auto results = simulation.compute_results();
-
         // Always nice to show at least 0..6 hits on the graph
         int graph_max_hits = max(7, cast(int)results.total_hits_pdf.length);
 

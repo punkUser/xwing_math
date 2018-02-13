@@ -1045,21 +1045,6 @@ class Simulation
         return states;
     }
 
-
-
-    public this(TokenState attack_tokens, TokenState defense_tokens)
-    {
-        m_initial_attack_tokens  = attack_tokens;
-        m_initial_defense_tokens = defense_tokens;
-
-        // Set up the initial state
-        SimulationState initial_state;
-        initial_state.attack_tokens  = attack_tokens;
-        initial_state.defense_tokens = defense_tokens;
-        m_states[initial_state] = 1.0f;
-    }
-
-
     // Main entry point for simulating a new attack following any previously simulated results
     //
     // If "final attack" is set for either attacker or defender, it may use tokens or abilities that it
@@ -1070,10 +1055,10 @@ class Simulation
     // last "after attack" trigger hit. Example: secondary perform twice causes "after attack that hits" triggers
     // if *any* of the attacks hit. The attack hit flag is cleared after this attack completes if requested.
     //
-    public void simulate_attack(
+    private void simulate_single_attack(
         ref const(SimulationSetup) setup,
-        bool attacker_final_attack = false,
-        bool defender_final_attack = false,
+        bool attacker_final_attack = true,
+        bool defender_final_attack = true,
         bool trigger_after_attack = true,
         bool clear_attack_hit = true)
     {
@@ -1102,7 +1087,7 @@ class Simulation
         // Sort our states by tokens so that any matching sets are back to back in the list
         SimulationState[] initial_states_list = m_states.keys.dup;
         multiSort!("a.attack_tokens < b.attack_tokens", "a.defense_tokens < b.defense_tokens")(initial_states_list);
-        
+
         TokenState last_attack_tokens;
         TokenState last_defense_tokens;
         // Hacky just to ensure these don't match the first element
@@ -1110,7 +1095,7 @@ class Simulation
         ++last_attack_tokens.focus;
 
         SimulationStateMap second_attack_states;
-       
+
         foreach (ref initial_state; initial_states_list)
         {
             // If our tokens are the same as the previous simulation (we sorted), we don't have to simulate again
@@ -1166,30 +1151,61 @@ class Simulation
         m_states = new_states;
     }
 
-    public void simulate_multi_attack(
+
+
+    public this(TokenState attack_tokens, TokenState defense_tokens)
+    {
+        m_initial_attack_tokens  = attack_tokens;
+        m_initial_defense_tokens = defense_tokens;
+
+        // Set up the initial state
+        SimulationState initial_state;
+        initial_state.attack_tokens  = attack_tokens;
+        initial_state.defense_tokens = defense_tokens;
+        m_states[initial_state] = 1.0f;
+    }
+
+    // Replaces the attack tokens on *all* current states with the given ones
+    // Generally this is done in preparation for simulating another attack *from a different attacker*
+    // Note that this makes the attacker token state deltas kind of meaningless, so they likely shouldn't be used
+    public void replace_attack_tokens(TokenState attack_tokens)
+    {
+        SimulationStateMap new_states;
+        foreach (state, probability; m_states)
+        {
+            state.attack_tokens = attack_tokens;
+            append_state(new_states, state, probability);
+        }
+        m_states = new_states;
+    }
+ 
+    // Public entry point for simulating one or two attacks from the same attacker
+    public void simulate_attack(
+        MultiAttackType type,
         ref const(SimulationSetup) setup,
-        MultiAttackType type)
+        bool attacker_final_attack = true,
+        bool defender_final_attack = true)
     {
         if (type == MultiAttackType.Single)
         {
-            simulate_attack(setup, true, true, true, true);
+            simulate_single_attack(setup, attacker_final_attack, defender_final_attack, true, true);
         }
         else if (type == MultiAttackType.SecondaryPerformTwice)
         {
             // NOTE: After attack triggers do not happen on the first of two "secondary perform twice" attacks
             // Secondary perform twice attacks are considered to have hit if either sub-attack hits.
-            simulate_attack(setup, false, false, false, false);
-            simulate_attack(setup, true, true, true, true);
+            simulate_single_attack(setup, false, false, false, false);
+            simulate_single_attack(setup, attacker_final_attack, defender_final_attack, true, true);
         }
         else if (type == MultiAttackType.AfterAttack)
         {
-            simulate_attack(setup, false, false, true, true);
-            simulate_attack(setup, true, true, true, true);
+            simulate_single_attack(setup, false, false, true, true);
+            simulate_single_attack(setup, attacker_final_attack, defender_final_attack, true, true);
         }
         else if (type == MultiAttackType.AfterAttackDoesNotHit)
         {
             // NOTE: Maintain the attack_hit flag so we can separate out the states
-            simulate_attack(setup, false, false, true, false);
+            simulate_single_attack(setup, false, false, true, false);
 
             // Only attack again for the states that didn't hit anything
             SimulationStateMap second_attack_states;
@@ -1213,7 +1229,7 @@ class Simulation
             {
                 // This time clear the attack_hit flag as we no longer need it
                 m_states = second_attack_states;
-                simulate_attack(setup, true, true, true, true);
+                simulate_single_attack(setup, attacker_final_attack, defender_final_attack, true, true);
 
                 // Now merge the ones that hit on the first attack back in
                 foreach (ref state, state_probability; no_second_attack_states)
