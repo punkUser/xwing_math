@@ -1,4 +1,5 @@
 import simulation;
+import simulation_state;
 import dice;
 
 import std.bitmanip;
@@ -183,22 +184,46 @@ align(1) struct BasicForm
 
 //pragma(msg, "sizeof(BasicForm) = " ~ to!string(BasicForm.sizeof));
 
+public TokenState to_attack_tokens(ref const(BasicForm) form)
+{
+    TokenState attack_tokens;
 
-static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
+    attack_tokens.focus              = form.attack_focus_token_count;
+    attack_tokens.target_lock        = form.attack_target_lock_count;
+    attack_tokens.stress             = form.attack_stress_count;
+
+    // Once per round abilities are treated like "tokens" for simulation purposes
+    attack_tokens.amad_any_to_hit    = form.attack_guidance_chips_hit;
+    attack_tokens.amad_any_to_crit   = form.attack_guidance_chips_crit;
+    attack_tokens.sunny_bounder      = form.attack_pilot == AttackPilot.SunnyBounder;
+    attack_tokens.palpatine          = form.attack_palpatine_crit;
+    attack_tokens.crack_shot         = form.attack_crack_shot;
+
+    return attack_tokens;
+}
+
+public TokenState to_defense_tokens(ref const(BasicForm) form)
+{
+    TokenState defense_tokens;
+
+    defense_tokens.focus                  = form.defense_focus_token_count;
+    defense_tokens.evade                  = form.defense_evade_token_count;
+    defense_tokens.stress                 = form.defense_stress_count;
+
+    // Once per round abilities are treated like "tokens" for simulation purposes
+    defense_tokens.sunny_bounder          = form.defense_pilot == DefensePilot.SunnyBounder;
+    defense_tokens.palpatine              = form.defense_palpatine_evade;
+
+    defense_tokens.defense_guess_evades   = (form.defense_c3p0_0 || form.defense_c3p0_1);
+
+    return defense_tokens;
+}
+
+public SimulationSetup to_simulation_setup(ref const(BasicForm) form)
 {
     SimulationSetup setup;
 
     setup.attack_dice				                        = form.attack_dice;
-    setup.attack_tokens.focus                               = form.attack_focus_token_count;
-    setup.attack_tokens.target_lock                         = form.attack_target_lock_count;
-    setup.attack_tokens.stress                              = form.attack_stress_count;
-
-    // Once per round abilities are treated like "tokens" for simulation purposes
-    setup.attack_tokens.amad_any_to_hit                     = form.attack_guidance_chips_hit;
-    setup.attack_tokens.amad_any_to_crit                    = form.attack_guidance_chips_crit;
-    setup.attack_tokens.sunny_bounder                       = form.attack_pilot == AttackPilot.SunnyBounder;
-    setup.attack_tokens.palpatine                           = form.attack_palpatine_crit;
-    setup.attack_tokens.crack_shot                          = form.attack_crack_shot;
 
     // Special effects...
     setup.attack_heavy_laser_cannon                         = form.attack_heavy_laser_cannon;
@@ -256,18 +281,9 @@ static SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     // ****************************************************************************************************************
 
     setup.defense_dice                          = form.defense_dice;
-    setup.defense_tokens.focus                  = form.defense_focus_token_count;
-    setup.defense_tokens.evade                  = form.defense_evade_token_count;
-    setup.defense_tokens.stress                 = form.defense_stress_count;
-
-    // Once per round abilities are treated like "tokens" for simulation purposes
-    setup.defense_tokens.sunny_bounder          = form.defense_pilot == DefensePilot.SunnyBounder;
-    setup.defense_tokens.palpatine              = form.defense_palpatine_evade;
-
-    setup.defense_tokens.defense_guess_evades   = (form.defense_c3p0_0 || form.defense_c3p0_1);
-    setup.defense_guess_evades                  = form.defense_c3p0_1 ? 1 : 0;
-
+    
     // Special effects
+    setup.defense_guess_evades                  = form.defense_c3p0_1 ? 1 : 0;
     setup.defense_must_spend_focus              = form.attack_hotshot_copilot;     // NOTE: Affects the *other* person
 
     // Add results

@@ -1,4 +1,5 @@
 import simulation;
+import simulation_state;
 import dice;
 
 import std.bitmanip;
@@ -130,21 +131,45 @@ align(1) struct AdvancedForm
 
 //pragma(msg, "sizeof(AdvancedForm) = " ~ to!string(AdvancedForm.sizeof));
 
+
+TokenState to_attack_tokens(ref const(AdvancedForm) form)
+{
+    TokenState attack_tokens;
+
+    attack_tokens.focus             = form.attack_focus_token_count;
+    attack_tokens.target_lock       = form.attack_target_lock_count;
+    attack_tokens.stress            = form.attack_stress_count;
+
+    // Once per round abilities are treated like "tokens" for simulation purposes
+    attack_tokens.amad_any_to_hit   = form.amad_once_any_to_hit;
+    attack_tokens.amad_any_to_crit  = form.amad_once_any_to_crit;
+    attack_tokens.sunny_bounder     = form.attack_sunny_bounder;
+    attack_tokens.palpatine         = form.attack_palpatine_crit;
+    attack_tokens.crack_shot        = form.attack_crack_shot;
+
+    return attack_tokens;
+}
+
+
+TokenState to_defense_tokens(ref const(AdvancedForm) form)
+{
+    TokenState defense_tokens;
+
+    defense_tokens.focus                 = form.defense_focus_token_count;
+    defense_tokens.evade                 = form.defense_evade_token_count;
+    defense_tokens.stress                = form.defense_stress_count;
+    defense_tokens.sunny_bounder         = form.defense_sunny_bounder;
+    defense_tokens.defense_guess_evades  = (form.defense_guess_evades >= 0);
+    defense_tokens.palpatine             = form.defense_palpatine_evade;
+
+    return defense_tokens;
+}
+
 SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
 {
     SimulationSetup setup;
 
-    setup.attack_dice                                       = form.attack_dice;
-    setup.attack_tokens.focus                               = form.attack_focus_token_count;
-    setup.attack_tokens.target_lock                         = form.attack_target_lock_count;
-    setup.attack_tokens.stress                              = form.attack_stress_count;
-
-    // Once per round abilities are treated like "tokens" for simulation purposes
-    setup.attack_tokens.amad_any_to_hit                     = form.amad_once_any_to_hit;
-    setup.attack_tokens.amad_any_to_crit                    = form.amad_once_any_to_crit;
-    setup.attack_tokens.sunny_bounder                       = form.attack_sunny_bounder;
-    setup.attack_tokens.palpatine                           = form.attack_palpatine_crit;
-    setup.attack_tokens.crack_shot                          = form.attack_crack_shot;
+    setup.attack_dice                                       = form.attack_dice;    
     
     setup.attack_fire_control_system                        = form.attack_fire_control_system;
     setup.attack_heavy_laser_cannon                         = form.attack_heavy_laser_cannon;
@@ -186,13 +211,7 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
 
 
     setup.defense_dice                                      = form.defense_dice;
-    setup.defense_tokens.focus                              = form.defense_focus_token_count;
-    setup.defense_tokens.evade                              = form.defense_evade_token_count;
-    setup.defense_tokens.stress                             = form.defense_stress_count;
-    setup.defense_tokens.sunny_bounder                      = form.defense_sunny_bounder;
-    setup.defense_tokens.defense_guess_evades               = (form.defense_guess_evades >= 0);
-    setup.defense_tokens.palpatine                          = form.defense_palpatine_evade;
-    
+        
     setup.defense_guess_evades                              = form.defense_guess_evades;
     setup.defense_must_spend_focus                          = form.defense_must_spend_focus;
 

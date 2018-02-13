@@ -1,4 +1,5 @@
 import simulation;
+import simulation_state;
 import form;
 import basic_form;
 import advanced_form;
@@ -95,12 +96,28 @@ public class WWWServer
     {
         //debug writeln(req.form.serializeToPrettyJson());
 
-        auto basic_form = create_form_from_fields!BasicForm(req.form);        
-        SimulationSetup setup = to_simulation_setup(basic_form);
-        MultiAttackType multi_attack_type = cast(MultiAttackType)basic_form.attack_type;
-
+        auto basic_form = create_form_from_fields!BasicForm(req.form);
         string form_state_string = serialize_form_to_url(basic_form);
-        simulate_response(req, res, setup, multi_attack_type, form_state_string);
+
+        MultiAttackType multi_attack_type   = cast(MultiAttackType)basic_form.attack_type;
+        SimulationSetup setup               = basic_form.to_simulation_setup();
+        TokenState attack_tokens            = basic_form.to_attack_tokens();
+        TokenState defense_tokens           = basic_form.to_defense_tokens();
+        
+        auto simulation = new Simulation(attack_tokens, defense_tokens);
+        {
+            auto sw = StopWatch(AutoStart.yes);
+
+            simulation.simulate_multi_attack(setup, multi_attack_type);
+
+            // NOTE: This is kinda similar to the access log, but convenient for now
+            log_message("%s %s Simulated %d evaluations in %s msec",
+                        req.clientAddress.toAddressString(),
+                        "/?q=" ~ form_state_string,
+                        simulation.total_sum().evaluation_count, sw.peek().total!"msecs");
+        }
+
+        simulate_response(res, simulation, form_state_string);
     }
 
     private void simulate_advanced(HTTPServerRequest req, HTTPServerResponse res)
@@ -108,36 +125,35 @@ public class WWWServer
         //debug writeln(req.form.serializeToPrettyJson());
 
         auto advanced_form = create_form_from_fields!AdvancedForm(req.form);
-        SimulationSetup setup = to_simulation_setup(advanced_form);
-        MultiAttackType multi_attack_type = cast(MultiAttackType)advanced_form.attack_type;
-
         string form_state_string = serialize_form_to_url(advanced_form);
-        simulate_response(req, res, setup, multi_attack_type, form_state_string);
+
+        MultiAttackType multi_attack_type   = cast(MultiAttackType)advanced_form.attack_type;
+        SimulationSetup setup               = to_simulation_setup(advanced_form);
+        TokenState attack_tokens            = advanced_form.to_attack_tokens();
+        TokenState defense_tokens           = advanced_form.to_defense_tokens();
+
+        auto simulation = new Simulation(attack_tokens, defense_tokens);
+        {
+            auto sw = StopWatch(AutoStart.yes);
+
+            simulation.simulate_multi_attack(setup, multi_attack_type);
+
+            // NOTE: This is kinda similar to the access log, but convenient for now
+            log_message("%s %s Simulated %d evaluations in %s msec",
+                        req.clientAddress.toAddressString(),
+                        "/advanced/?q=" ~ form_state_string,
+                        simulation.total_sum().evaluation_count, sw.peek().total!"msecs");
+        }
+
+        simulate_response(res, simulation, form_state_string);
     }
 
-    private void simulate_response(HTTPServerRequest req,		// Mostly for logging
-                                   HTTPServerResponse res,
-                                   ref const(SimulationSetup) setup,
-                                   MultiAttackType multi_attack_type,
+    private void simulate_response(HTTPServerResponse res,
+                                   Simulation simulation,
                                    string form_state_string = "")
     {
         //writefln("Setup: %s", setup.serializeToPrettyJson());
         //writeln(form_state_string);
-
-        auto simulation = new Simulation(setup);
-
-        // Exhaustive search
-        {
-            auto sw = StopWatch(AutoStart.yes);
-
-            simulation.simulate_multi_attack(multi_attack_type);
-
-            // NOTE: This is kinda similar to the access log, but convenient for now
-            log_message("%s %s Simulated %d evaluations in %s msec",
-                req.clientAddress.toAddressString(),
-                req.path ~ "?q=" ~ form_state_string,
-                simulation.total_sum().evaluation_count, sw.peek().total!"msecs");
-        }
 
         auto total_hits_pdf = simulation.total_hits_pdf();
         auto total_sum = simulation.total_sum();
