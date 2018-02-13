@@ -111,10 +111,10 @@ public class WWWServer
             simulation.simulate_multi_attack(setup, multi_attack_type);
 
             // NOTE: This is kinda similar to the access log, but convenient for now
-            log_message("%s %s Simulated %d evaluations in %s msec",
+            log_message("%s %s Simulated in %s msec",
                         req.clientAddress.toAddressString(),
                         "/?q=" ~ form_state_string,
-                        simulation.total_sum().evaluation_count, sw.peek().total!"msecs");
+                        sw.peek().total!"msecs");
         }
 
         simulate_response(res, simulation, form_state_string);
@@ -139,10 +139,10 @@ public class WWWServer
             simulation.simulate_multi_attack(setup, multi_attack_type);
 
             // NOTE: This is kinda similar to the access log, but convenient for now
-            log_message("%s %s Simulated %d evaluations in %s msec",
+            log_message("%s %s Simulated in %s msec",
                         req.clientAddress.toAddressString(),
                         "/advanced/?q=" ~ form_state_string,
-                        simulation.total_sum().evaluation_count, sw.peek().total!"msecs");
+                        sw.peek().total!"msecs");
         }
 
         simulate_response(res, simulation, form_state_string);
@@ -155,18 +155,17 @@ public class WWWServer
         //writefln("Setup: %s", setup.serializeToPrettyJson());
         //writeln(form_state_string);
 
-        auto total_hits_pdf = simulation.total_hits_pdf();
-        auto total_sum = simulation.total_sum();
+        auto results = simulation.compute_results();
 
         // Always nice to show at least 0..6 hits on the graph
-        int graph_max_hits = max(7, cast(int)total_hits_pdf.length);
+        int graph_max_hits = max(7, cast(int)results.total_hits_pdf.length);
 
         // Setup page content
         SimulateJsonContent content;
         content.form_state_string = form_state_string;
         
-        content.expected_total_hits = (total_sum.hits + total_sum.crits);
-        content.at_least_one_crit = 100.0 * simulation.at_least_one_crit_probability();
+        content.expected_total_hits = (results.total_sum.hits + results.total_sum.crits);
+        content.at_least_one_crit = 100.0 * results.at_least_one_crit_probability;
 
         // Set up X labels on the total hits graph
         content.pdf_x_labels = new string[graph_max_hits];
@@ -182,14 +181,14 @@ public class WWWServer
         content.crit_pdf[] = 0.0;
         content.hit_inv_cdf[] = 0.0;
 
-        foreach (i; 0 .. total_hits_pdf.length)
+        foreach (int i, SimulationResult result; results.total_hits_pdf)
         {
-            double total_probability = total_hits_pdf[i].hits + total_hits_pdf[i].crits;
-            double fraction_crits = total_probability > 0.0 ? total_hits_pdf[i].crits / total_probability : 0.0;
+            double total_probability = result.hits + result.crits;
+            double fraction_crits = total_probability > 0.0 ? result.crits / total_probability : 0.0;
             double fraction_hits  = 1.0 - fraction_crits;
 
-            content.hit_pdf[i]  = 100.0 * fraction_hits  * total_hits_pdf[i].probability;
-            content.crit_pdf[i] = 100.0 * fraction_crits * total_hits_pdf[i].probability;
+            content.hit_pdf[i]  = 100.0 * fraction_hits  * result.probability;
+            content.crit_pdf[i] = 100.0 * fraction_crits * result.probability;
         }
 
         // Compute inverse CDF P(at least X hits)
@@ -202,32 +201,34 @@ public class WWWServer
         // Tokens (see labels above)
         string[] exp_token_labels = ["Focus", "Target Lock", "Evade", "Stress"];
         double[] exp_attack_tokens = [
-            total_sum.attack_delta_focus_tokens,
-            total_sum.attack_delta_target_locks,
+            results.total_sum.attack_delta_focus_tokens,
+            results.total_sum.attack_delta_target_locks,
             0.0f,
-            total_sum.attack_delta_stress];
+            results.total_sum.attack_delta_stress];
         double[] exp_defense_tokens = [
-            total_sum.defense_delta_focus_tokens,
+            results.total_sum.defense_delta_focus_tokens,
             0.0f,
-            total_sum.defense_delta_evade_tokens,
-            total_sum.defense_delta_stress];
+            results.total_sum.defense_delta_evade_tokens,
+            results.total_sum.defense_delta_stress];
 
         // Tokens that we only show if they changed
         // NOTE: This is not perfect in cases where it just happens to average out to exactly 0, but
         // there are no cases where it can be positive for these "tokens" (really cards) at the moment.
-        if (total_sum.attack_delta_crack_shot != 0.0)
+        if (results.total_sum.attack_delta_crack_shot != 0.0)
         {
             exp_token_labels    ~= "Crack Shot";
-            exp_attack_tokens   ~= total_sum.attack_delta_crack_shot;
+            exp_attack_tokens   ~= results.total_sum.attack_delta_crack_shot;
             exp_defense_tokens  ~= 0.0;     // N/A
         }
 
-        content.exp_token_labels = exp_token_labels;
-        content.exp_attack_tokens = exp_attack_tokens;
+        content.exp_token_labels   = exp_token_labels;
+        content.exp_attack_tokens  = exp_attack_tokens;
         content.exp_defense_tokens = exp_defense_tokens;
 
         // Render HTML for tables
         {
+            SimulationResult[] total_hits_pdf = results.total_hits_pdf;
+
             auto pdf_html = appender!string();
             pdf_html.compileHTMLDietFile!("pdf_table.dt", total_hits_pdf);
             content.pdf_table_html = pdf_html.data;

@@ -184,6 +184,14 @@ SimulationResult accumulate_result(SimulationResult a, SimulationResult b)
     return a;
 }
 
+// Accumulated results
+struct SimulationResults
+{
+    SimulationResult[] total_hits_pdf;
+    SimulationResult total_sum;
+    double at_least_one_crit_probability = 0.0;
+};
+
 //-----------------------------------------------------------------------------------
 
 
@@ -1041,10 +1049,6 @@ class Simulation
 
     public this(TokenState attack_tokens, TokenState defense_tokens)
     {
-        m_total_hits_pdf = new SimulationResult[1];
-        foreach (ref i; m_total_hits_pdf)
-            i = SimulationResult.init;
-
         m_initial_attack_tokens  = attack_tokens;
         m_initial_defense_tokens = defense_tokens;
 
@@ -1230,71 +1234,63 @@ class Simulation
                 assert(false);
             }
         }
+    }
 
-        // Record final results
-        foreach (ref state, state_probability; m_states)
+    public SimulationResults compute_results() const
+    {
+        SimulationResults results;
+
+        // TODO: Could scan through m_states to see the required size, but this is good enough for now
+        results.total_hits_pdf = new SimulationResult[1];
+        foreach (ref i; results.total_hits_pdf)
+            i = SimulationResult.init;
+
+        foreach (ref state, probability; m_states)
         {
-            accumulate(state_probability, state.final_hits, state.final_crits, state.attack_tokens, state.defense_tokens);
-        }
-    }
+            // Sanity checks on token spending
+            assert(state.attack_tokens.focus >= 0);
+            assert(state.attack_tokens.evade >= 0);
+            assert(state.attack_tokens.target_lock >= 0);
+            assert(state.attack_tokens.stress >= 0);
 
-    private void accumulate(double probability, int hits, int crits, TokenState attack_tokens, TokenState defense_tokens)
-    {
-        // Sanity checks on token spending
-        assert(attack_tokens.focus >= 0);
-        assert(attack_tokens.evade >= 0);
-        assert(attack_tokens.target_lock >= 0);
-        assert(attack_tokens.stress >= 0);
+            assert(state.defense_tokens.focus >= 0);
+            assert(state.defense_tokens.evade >= 0);
+            assert(state.defense_tokens.target_lock >= 0);
+            assert(state.defense_tokens.stress >= 0);
 
-        assert(defense_tokens.focus >= 0);
-        assert(defense_tokens.evade >= 0);
-        assert(defense_tokens.target_lock >= 0);
-        assert(defense_tokens.stress >= 0);
+            // Compute final results of this simulation step
+            SimulationResult result;
+            result.probability = probability;
 
-        // Compute final results of this simulation step
-        SimulationResult result;
-        result.probability = probability;
+            result.hits  = probability * cast(double)state.final_hits;
+            result.crits = probability * cast(double)state.final_crits;
 
-        result.hits  = probability * cast(double)hits;
-        result.crits = probability * cast(double)crits;
+            result.attack_delta_focus_tokens  = probability * cast(double)(state.attack_tokens.focus        - m_initial_attack_tokens.focus      );
+            result.attack_delta_target_locks  = probability * cast(double)(state.attack_tokens.target_lock  - m_initial_attack_tokens.target_lock);
+            result.attack_delta_stress        = probability * cast(double)(state.attack_tokens.stress       - m_initial_attack_tokens.stress     );
+            result.attack_delta_crack_shot    = probability * cast(double)(state.attack_tokens.crack_shot  != m_initial_attack_tokens.crack_shot ? -1.0 : 0.0);
 
-        result.attack_delta_focus_tokens  = probability * cast(double)(attack_tokens.focus        - m_initial_attack_tokens.focus      );
-        result.attack_delta_target_locks  = probability * cast(double)(attack_tokens.target_lock  - m_initial_attack_tokens.target_lock);
-        result.attack_delta_stress        = probability * cast(double)(attack_tokens.stress       - m_initial_attack_tokens.stress     );
-        result.attack_delta_crack_shot    = probability * cast(double)(attack_tokens.crack_shot  != m_initial_attack_tokens.crack_shot ? -1.0 : 0.0);
-
-        result.defense_delta_focus_tokens = probability * cast(double)(defense_tokens.focus       - m_initial_defense_tokens.focus     );
-        result.defense_delta_evade_tokens = probability * cast(double)(defense_tokens.evade       - m_initial_defense_tokens.evade     );
-        result.defense_delta_stress       = probability * cast(double)(defense_tokens.stress      - m_initial_defense_tokens.stress    );
+            result.defense_delta_focus_tokens = probability * cast(double)(state.defense_tokens.focus       - m_initial_defense_tokens.focus     );
+            result.defense_delta_evade_tokens = probability * cast(double)(state.defense_tokens.evade       - m_initial_defense_tokens.evade     );
+            result.defense_delta_stress       = probability * cast(double)(state.defense_tokens.stress      - m_initial_defense_tokens.stress    );
         
-        m_total_sum = accumulate_result(m_total_sum, result);
 
-        // Accumulate into the right bin of the total hits PDF
-        int total_hits = hits + crits;
-        if (total_hits >= m_total_hits_pdf.length)
-            m_total_hits_pdf.length = total_hits + 1;
-        m_total_hits_pdf[total_hits] = accumulate_result(m_total_hits_pdf[total_hits], result);
+            // Accumulate into the total results structure
+            results.total_sum = accumulate_result(results.total_sum, result);
 
-        // If there was at least one uncanceled crit, accumulate probability
-        if (crits > 0)
-            m_at_least_one_crit_probability += probability;
+            // Accumulate into the right bin of the total hits PDF
+            int total_hits = state.final_hits + state.final_crits;
+            if (total_hits >= results.total_hits_pdf.length)
+                results.total_hits_pdf.length = total_hits + 1;
+            results.total_hits_pdf[total_hits] = accumulate_result(results.total_hits_pdf[total_hits], result);
+
+            // If there was at least one uncanceled crit, accumulate probability
+            if (state.final_crits > 0)
+                results.at_least_one_crit_probability += probability;
+        }
+
+        return results;
     }
-
-    public SimulationResult[] total_hits_pdf() const
-    {
-        return m_total_hits_pdf.dup;
-    }
-
-    public SimulationResult total_sum() const
-    {
-        return m_total_sum;
-    }
-
-    public double at_least_one_crit_probability() const
-    {
-        return m_at_least_one_crit_probability;
-    }
-
 
     // These are the core states that are updated as attacks chain
     private SimulationStateMap m_states;
@@ -1307,13 +1303,6 @@ class Simulation
     private SimulationSetup m_setup;
     private bool m_attacker_final_attack = true;
     private bool m_defender_final_attack = true;
-
-    // Accumulated results
-    private SimulationResult[] m_total_hits_pdf;
-    private SimulationResult m_total_sum;
-    private double m_at_least_one_crit_probability = 0.0;
-
-    
 };
 
 
