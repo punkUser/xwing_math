@@ -169,6 +169,8 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
 {
     SimulationSetup setup;
 
+    setup.type                                              = cast(MultiAttackType)form.attack_type;
+
     setup.attack_dice                                       = form.attack_dice;    
     
     setup.attack_fire_control_system                        = form.attack_fire_control_system;

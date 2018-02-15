@@ -4,6 +4,73 @@ import core.stdc.string : memcpy;
 
 import vibe.d;
 
+// Common enums
+enum AttackPilot : ubyte
+{
+    None = 0,
+    Backdraft,
+    HortonSalm,
+    Ibtisam,
+    RearAdmiralChiraneau,
+    Rey,
+    SunnyBounder,
+    PoeDameron,
+
+    // TODO
+    // NorraWexley
+    // JessPava... weird and probably better to just do via advanced
+    // BobaFettScum... weird like Jess
+    // TarnMison... but only matters in some very contrived circumstances w/ gunner
+    // HobbieKlivian
+    // WesJanson... again would only matter w/ multi-attack which he can't get currently
+    // LieutenantBlount... again very specific cases
+    // HanSolo
+    // EadenVrill... only because it depends on stress which could change for multi-attack
+    // LieutenantKestal... logic could be complex, but probably just keep it opportunistic
+    // ColonelVessery... easy enough to model for any reason scenarios by just giving him tokens
+    // Wampa
+    // WingedGundark    
+    // KirKanos
+    // SoontirFel
+    // OmegaAce
+    // OmegaLeader
+    // KrassisTrelix... only secondaries
+    // Imperial Kath Scarlet
+    // Inaldra?
+    // DreaRenthal
+    // Bossk
+    // KeyanFarlander
+    // TenNumb
+
+    // Aura abilities that probably don't belong in this enum
+    // Howlrunner... also another ship ability
+    // CarnorJax... also another ship
+    // CaptainJonus... also affects friendlies instead
+    // EtahnAbaht is weird since he affects other people's attacks...
+}
+enum DefensePilot : ubyte
+{
+    None = 0,
+    EzraBridger,
+    Ibtisam,
+    LukeSkywalker,
+    Rey,
+    SabineWrenLancer,
+    SunnyBounder,
+    PoeDameron,
+
+    // TODO
+    // DarkCurse
+    // Countdown
+    // Inaldra?
+    // LaetinAshera
+    // ZebOrrelios
+
+    // Aura abilities that don't belong in this enum
+    // Serissu
+}
+
+
 // Handy utility from vibe.d
 private template isPublicMember(T, string M)
 {

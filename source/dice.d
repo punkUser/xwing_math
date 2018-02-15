@@ -37,11 +37,12 @@ public struct DiceState
     }
 
     // "Finalize" dice state "final_results"
-    // Converts all focus results into blanks but maintains the total dice count (for things like lightwight frame)
+    // Removes all focus and blank results. Note that for LWF we'll have to keep these around in some form
+    // (at least binary whether to trigger it or not), but for now they are just hurting performance.
     void finalize()
     {
         final_results[] += results[] + rerolled_results[];
-        final_results[DieResult.Blank] += final_results[DieResult.Focus];
+        final_results[DieResult.Blank] = 0;
         final_results[DieResult.Focus] = 0;
 
         results[] = 0;

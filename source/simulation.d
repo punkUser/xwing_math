@@ -37,6 +37,8 @@ struct PassiveModifier
 
 struct SimulationSetup
 {
+    MultiAttackType type = MultiAttackType.Single;
+
     // Attack
     int attack_dice = 0;
 
@@ -1181,28 +1183,27 @@ class Simulation
  
     // Public entry point for simulating one or two attacks from the same attacker
     public void simulate_attack(
-        MultiAttackType type,
         ref const(SimulationSetup) setup,
         bool attacker_final_attack = true,
         bool defender_final_attack = true)
     {
-        if (type == MultiAttackType.Single)
+        if (setup.type == MultiAttackType.Single)
         {
             simulate_single_attack(setup, attacker_final_attack, defender_final_attack, true, true);
         }
-        else if (type == MultiAttackType.SecondaryPerformTwice)
+        else if (setup.type == MultiAttackType.SecondaryPerformTwice)
         {
             // NOTE: After attack triggers do not happen on the first of two "secondary perform twice" attacks
             // Secondary perform twice attacks are considered to have hit if either sub-attack hits.
             simulate_single_attack(setup, false, false, false, false);
             simulate_single_attack(setup, attacker_final_attack, defender_final_attack, true, true);
         }
-        else if (type == MultiAttackType.AfterAttack)
+        else if (setup.type == MultiAttackType.AfterAttack)
         {
             simulate_single_attack(setup, false, false, true, true);
             simulate_single_attack(setup, attacker_final_attack, defender_final_attack, true, true);
         }
-        else if (type == MultiAttackType.AfterAttackDoesNotHit)
+        else if (setup.type == MultiAttackType.AfterAttackDoesNotHit)
         {
             // NOTE: Maintain the attack_hit flag so we can separate out the states
             simulate_single_attack(setup, false, false, true, false);

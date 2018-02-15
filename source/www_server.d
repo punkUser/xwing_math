@@ -36,6 +36,7 @@ public class WWWServer
         router.get("/about/", &about);
         router.post("/simulate_basic.json", &simulate_basic);
         router.post("/simulate_advanced.json", &simulate_advanced);
+        router.post("/simulate_alpha.json", &simulate_alpha);
     
         debug
         {
@@ -99,7 +100,6 @@ public class WWWServer
         auto basic_form = create_form_from_fields!BasicForm(req.form);
         string form_state_string = serialize_form_to_url(basic_form);
 
-        MultiAttackType multi_attack_type   = cast(MultiAttackType)basic_form.attack_type;
         SimulationSetup setup               = basic_form.to_simulation_setup();
         TokenState attack_tokens            = basic_form.to_attack_tokens();
         TokenState defense_tokens           = basic_form.to_defense_tokens();
@@ -109,7 +109,7 @@ public class WWWServer
             auto sw = StopWatch(AutoStart.yes);
 
             auto simulation = new Simulation(attack_tokens, defense_tokens);
-            simulation.simulate_attack(multi_attack_type, setup);
+            simulation.simulate_attack(setup);
             results = simulation.compute_results();
 
             // NOTE: This is kinda similar to the access log, but convenient for now
@@ -129,8 +129,7 @@ public class WWWServer
         auto advanced_form = create_form_from_fields!AdvancedForm(req.form);
         string form_state_string = serialize_form_to_url(advanced_form);
 
-        MultiAttackType multi_attack_type   = cast(MultiAttackType)advanced_form.attack_type;
-        SimulationSetup setup               = to_simulation_setup(advanced_form);
+        SimulationSetup setup               = advanced_form.to_simulation_setup();
         TokenState attack_tokens            = advanced_form.to_attack_tokens();
         TokenState defense_tokens           = advanced_form.to_defense_tokens();
 
@@ -139,8 +138,7 @@ public class WWWServer
             auto sw = StopWatch(AutoStart.yes);
 
             auto simulation = new Simulation(attack_tokens, defense_tokens);
-            simulation.simulate_attack(multi_attack_type, setup);
-
+            simulation.simulate_attack(setup);
             results = simulation.compute_results();
 
             // NOTE: This is kinda similar to the access log, but convenient for now
@@ -153,12 +151,73 @@ public class WWWServer
         simulate_response(res, results, form_state_string);
     }
 
+    private void simulate_alpha(HTTPServerRequest req, HTTPServerResponse res)
+    {
+        //debug writeln(req.form.serializeToPrettyJson());
+
+        auto alpha_form = create_form_from_fields!AlphaForm(req.form);
+        string form_state_string = serialize_form_to_url(alpha_form);
+
+        SimulationResults results;
+        {
+            auto sw = StopWatch(AutoStart.yes);
+
+            TokenState defense_tokens = alpha_form.to_defense_tokens();
+
+            auto simulation = new Simulation(TokenState.init, defense_tokens);
+
+            // Attack 1
+            {
+                SimulationSetup setup_1    = alpha_form.to_simulation_setup!"a1"();
+                TokenState attack_tokens_1 = alpha_form.to_attack_tokens!"a1"();
+                simulation.replace_attack_tokens(attack_tokens_1);
+                simulation.simulate_attack(setup_1);
+            }
+            // Attack 2
+            {
+                SimulationSetup setup_2    = alpha_form.to_simulation_setup!"a2"();
+                TokenState attack_tokens_2 = alpha_form.to_attack_tokens!"a2"();
+                simulation.replace_attack_tokens(attack_tokens_2);
+                simulation.simulate_attack(setup_2);
+            }
+            // Attack 3
+            {
+                SimulationSetup setup_3    = alpha_form.to_simulation_setup!"a3"();
+                TokenState attack_tokens_3 = alpha_form.to_attack_tokens!"a3"();
+                simulation.replace_attack_tokens(attack_tokens_3);
+                simulation.simulate_attack(setup_3);
+            }
+            // Attack 4
+            {
+                SimulationSetup setup_4    = alpha_form.to_simulation_setup!"a4"();
+                TokenState attack_tokens_4 = alpha_form.to_attack_tokens!"a4"();
+                simulation.replace_attack_tokens(attack_tokens_4);
+                simulation.simulate_attack(setup_4);
+            }
+            
+            // Just to reset it to defaults; stats for token deltas shouldn't really be
+            // used for the attacker since they aren't meaningful with multiple attackers
+            simulation.replace_attack_tokens(TokenState.init);
+
+            results = simulation.compute_results();
+
+            // NOTE: This is kinda similar to the access log, but convenient for now
+            log_message("%s %s Simulated %s states in %s msec",
+                        req.clientAddress.toAddressString(),
+                        "/alpha/?q=" ~ form_state_string,
+                        results.total_sum.evaluation_count, sw.peek().total!"msecs");
+        }
+
+        simulate_response(res, results, form_state_string);
+    }
+
     private void simulate_response(HTTPServerResponse res,
                                    SimulationResults results,
-                                   string form_state_string = "")
+                                   string form_state_string = "",
+                                   int graph_min_hits = 7)
     {
         // Always nice to show at least 0..6 hits on the graph
-        int graph_max_hits = max(7, cast(int)results.total_hits_pdf.length);
+        int graph_max_hits = max(graph_min_hits, cast(int)results.total_hits_pdf.length);
 
         // Setup page content
         SimulateJsonContent content;

@@ -49,87 +49,95 @@ var token_chart_data =
 
 window.onload = function()
 {
-	var pdf_ctx = document.getElementById("pdf-canvas").getContext("2d");	
-	window.pdf_chart = new Chart(pdf_ctx, {
-		type: 'bar',
-		data: pdf_chart_data,
-		options: {
-			responsive: true,
-			maintainAspectRatio: false,
-			title: {
-				display: true,
-				text: 'Total Hit Probability Distribution',
-				fontSize: 22,
-			},
-			legend: {
-				onClick: (e) => e.stopPropagation()
-			},
-			tooltips: {
-				mode: 'index',
-				intersect: true,
-				callbacks: {
-					title: function(tooltipItems, data) {
-						var sum = 0;
-						tooltipItems.forEach(function(tooltipItem) {
-							if (tooltipItem.datasetIndex > 0)
-								sum += data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
-						});
-						return sum.toFixed(2) + '%';
-					},
-					label: function(tooltipItem, data) {
-						return data.datasets[tooltipItem.datasetIndex].label + ': ' + tooltipItem.yLabel.toFixed(2) + '%';
+	var pdf_element = document.getElementById("pdf-canvas");
+	if (pdf_element != null)
+	{
+		var pdf_ctx = pdf_element.getContext("2d");	
+		window.pdf_chart = new Chart(pdf_ctx, {
+			type: 'bar',
+			data: pdf_chart_data,
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				title: {
+					display: true,
+					text: 'Total Hit Probability Distribution',
+					fontSize: 22,
+				},
+				legend: {
+					onClick: (e) => e.stopPropagation()
+				},
+				tooltips: {
+					mode: 'index',
+					intersect: true,
+					callbacks: {
+						title: function(tooltipItems, data) {
+							var sum = 0;
+							tooltipItems.forEach(function(tooltipItem) {
+								if (tooltipItem.datasetIndex > 0)
+									sum += data.datasets[tooltipItem.datasetIndex].data[tooltipItem.index];
+							});
+							return sum.toFixed(2) + '%';
+						},
+						label: function(tooltipItem, data) {
+							return data.datasets[tooltipItem.datasetIndex].label + ': ' + tooltipItem.yLabel.toFixed(2) + '%';
+						},
 					},
 				},
-			},
-			scales: {
-				xAxes: [{
-					stacked: true,
-				}],
-				yAxes: [{
-					ticks: {
-						min: 0,
-						max: 100,
-					},
-					stacked: true
-				}]
+				scales: {
+					xAxes: [{
+						stacked: true,
+					}],
+					yAxes: [{
+						ticks: {
+							min: 0,
+							max: 100,
+						},
+						stacked: true
+					}]
+				}
 			}
-		}
-	});
-	
-	var token_ctx = document.getElementById("token-canvas").getContext("2d");
-	window.token_chart = new Chart(token_ctx, {
-		type: 'bar',
-		data: token_chart_data,
-		options: {
-			responsive: true,
-			maintainAspectRatio: false,
-			title: {
-				display: true,
-				text: 'Expected Token Delta',
-				fontSize: 22,
-			},
-			legend: {
-				position: 'top',
-			},
-			tooltips: {
-				mode: 'index',
-				intersect: true,
-				callbacks: {
-					label: function(tooltipItem, data) {
-						return data.datasets[tooltipItem.datasetIndex].label + ': ' + tooltipItem.yLabel.toFixed(3);
+		});
+	}
+
+	var token_element = document.getElementById("token-canvas");
+	if (token_element != null)
+	{
+		var token_ctx = token_element.getContext("2d");
+		window.token_chart = new Chart(token_ctx, {
+			type: 'bar',
+			data: token_chart_data,
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				title: {
+					display: true,
+					text: 'Expected Token Delta',
+					fontSize: 22,
+				},
+				legend: {
+					position: 'top',
+				},
+				tooltips: {
+					mode: 'index',
+					intersect: true,
+					callbacks: {
+						label: function(tooltipItem, data) {
+							return data.datasets[tooltipItem.datasetIndex].label + ': ' + tooltipItem.yLabel.toFixed(3);
+						},
 					},
 				},
-			},
-			scales: {
-				yAxes: [{
-					ticks: {
-						suggestedMin: -1,
-						suggestedMax:  1,
-					},
-				}]
+				scales: {
+					yAxes: [{
+						ticks: {
+							suggestedMin: -1,
+							suggestedMax:  1,
+						},
+					}]
+				}
 			}
-		}
-	});
+		});
+	}
 };
 
 function simulateUpdate(updateHistory = false)
@@ -142,18 +150,23 @@ function simulateUpdate(updateHistory = false)
 		pdf_chart_data.datasets[0].data = data.hit_inv_cdf;
 		pdf_chart_data.datasets[1].data = data.hit_pdf;
 		pdf_chart_data.datasets[2].data = data.crit_pdf;
-				
-		window.pdf_chart.options.title.text = [
-			("Expected Total Hits: " + data.expected_total_hits.toFixed(3)),
-			("At Least One Crit: " + data.at_least_one_crit.toFixed(2)) + "%"
+		
+		if (window.pdf_chart != null)
+		{
+			window.pdf_chart.options.title.text = [
+				("Expected Total Hits: " + data.expected_total_hits.toFixed(3)),
+				("At Least One Crit: " + data.at_least_one_crit.toFixed(2)) + "%"
 			];
+			window.pdf_chart.update();		
+		}
 		
-		window.pdf_chart.update();
-		
-		token_chart_data.labels = data.exp_token_labels;
-		token_chart_data.datasets[0].data = data.exp_attack_tokens;
-		token_chart_data.datasets[1].data = data.exp_defense_tokens;
-		window.token_chart.update();
+		if (window.token_chart != null)
+		{
+			token_chart_data.labels = data.exp_token_labels;
+			token_chart_data.datasets[0].data = data.exp_attack_tokens;
+			token_chart_data.datasets[1].data = data.exp_defense_tokens;
+			window.token_chart.update();
+		}
 		
 		$("#pdf-table").html(data.pdf_table_html);
 		$("#token-table").html(data.token_table_html);	
