@@ -2,13 +2,17 @@ thead
     tr
         th Total Hits
         th Probability
+        th At Least # Hits
         th Crit Fraction
 tbody
     - import std.format;
+    - double hit_inv_cdf = 1.0;
     - foreach(i, total; total_hits_pdf)
-        - double total_probability = total.hits + total.crits;
-        - double crit_fraction = total_probability > 0.0 ? total.crits / total_probability : 0.0;
+        - double total_hits = total.hits + total.crits;
+        - double crit_fraction = total_hits > 0.0 ? total.crits / total_hits : 0.0;
         tr
             td= i
             td #{format("%.9f", total.probability)}
+            td #{format("%.9f", hit_inv_cdf)}
             td #{format("%.9f", crit_fraction)}
+        - hit_inv_cdf -= total.probability;

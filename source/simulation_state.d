@@ -107,13 +107,19 @@ public struct TokenState
     // Available once per round/turn abilities
     // Bitfield since it's important this structure remain small as it is part of the hashes...
     mixin(bitfields!(
-         bool, "amad_any_to_hit",                      1,
-         bool, "amad_any_to_crit",                     1,
-         bool, "sunny_bounder",                        1,       // Both attack and defense
-         bool, "defense_guess_evades",                 1,
-         bool, "palpatine",                            1,       // Both attack (crit) and defense (evade)
-         bool, "crack_shot",                           1,
-         ubyte, "",                                    2));
+        bool, "amad_any_to_hit",                      1,
+        bool, "amad_any_to_crit",                     1,
+        bool, "sunny_bounder",                        1,        // Both attack and defense
+        bool, "defense_guess_evades",                 1,
+        bool, "palpatine",                            1,        // Both attack (crit) and defense (evade)
+        bool, "crack_shot",                           1,
+        int,  "",                                     2)
+    );
+
+    mixin(bitfields!(
+        int, "harpooned",                             3,        // Harpooned condition count (0..7)
+        int, "",                                      5)
+    );
 
     int opCmp(ref const TokenState s) const
     {

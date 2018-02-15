@@ -166,6 +166,7 @@ public class WWWServer
 
             auto simulation = new Simulation(TokenState.init, defense_tokens);
 
+            // TODO: Refactor and add separate perf timings to each attack for logging purposes
             // Attack 1
             {
                 SimulationSetup setup_1    = alpha_form.to_simulation_setup!"a1"();
@@ -197,6 +198,7 @@ public class WWWServer
             
             // Just to reset it to defaults; stats for token deltas shouldn't really be
             // used for the attacker since they aren't meaningful with multiple attackers
+            // Not strictly necessary but feels cleaner :)
             simulation.replace_attack_tokens(TokenState.init);
 
             results = simulation.compute_results();
@@ -278,6 +280,13 @@ public class WWWServer
             exp_token_labels    ~= "Crack Shot";
             exp_attack_tokens   ~= results.total_sum.attack_delta_crack_shot;
             exp_defense_tokens  ~= 0.0;     // N/A
+        }
+
+        if (results.total_sum.defense_delta_harpooned != 0.0)
+        {
+            exp_token_labels    ~= "Harpooned!";
+            exp_attack_tokens   ~= 0.0;     // N/A
+            exp_defense_tokens  ~= results.total_sum.defense_delta_harpooned;
         }
 
         content.exp_token_labels   = exp_token_labels;

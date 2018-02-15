@@ -91,6 +91,7 @@ struct SimulationSetup
     bool attack_one_damage_on_hit = false;          // If attack hits, 1 damage (TLT, Ion, etc)
     bool attack_lose_stress_on_hit = false;         // If attack hits, lose one stress
     bool attack_crack_shot = false;                 // At the start of compare results, can spend to cancel an evade
+    bool attack_harpooned_on_hit = false;           // Apply "harpooned" condition on hit
 
     // Defense
     int defense_dice = 0;
@@ -164,6 +165,7 @@ struct SimulationResult
     double defense_delta_focus_tokens = 0;
     double defense_delta_evade_tokens = 0;
     double defense_delta_stress       = 0;
+    double defense_delta_harpooned    = 0;
 };
 
 SimulationResult accumulate_result(SimulationResult a, SimulationResult b)
@@ -889,9 +891,13 @@ class Simulation
                 attack_tokens.target_lock = 1;
         }
 
-        if (attack_hit && m_setup.attack_lose_stress_on_hit)
+
+        if (attack_hit)
         {
-            if (attack_tokens.stress > 0)
+            if (m_setup.attack_harpooned_on_hit)
+                attack_tokens.harpooned = attack_tokens.harpooned + 1;
+            
+            if (m_setup.attack_lose_stress_on_hit && attack_tokens.stress > 0)
                 --attack_tokens.stress;
         }
     }
@@ -1290,6 +1296,7 @@ class Simulation
             result.defense_delta_focus_tokens = probability * cast(double)(state.defense_tokens.focus       - m_initial_defense_tokens.focus     );
             result.defense_delta_evade_tokens = probability * cast(double)(state.defense_tokens.evade       - m_initial_defense_tokens.evade     );
             result.defense_delta_stress       = probability * cast(double)(state.defense_tokens.stress      - m_initial_defense_tokens.stress    );
+            result.defense_delta_harpooned    = probability * cast(double)(state.defense_tokens.harpooned   - m_initial_defense_tokens.harpooned );
         
 
             // Accumulate into the total results structure
