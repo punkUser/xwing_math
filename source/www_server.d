@@ -67,8 +67,13 @@ public class WWWServer
     private HTTPServerRequestDelegate redirect_append_slash(HTTPStatus status = HTTPStatus.found)
     {
         return (HTTPServerRequest req, HTTPServerResponse res) {
+            // This is a bit awkward but seems to do the trick for the moment...
             auto url = req.fullURL();
-            url.path.endsWithSlash = true;
+            auto path = url.path;
+            path.endsWithSlash = true;
+
+            url.path = path;
+            writefln("%s -> %s", req.fullURL(), url);
             res.redirect(url, status);
         };
     }
