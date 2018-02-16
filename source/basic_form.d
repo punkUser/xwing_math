@@ -89,7 +89,9 @@ align(1) struct BasicForm
         bool, "attack_crack_shot",            1,
         bool, "attack_a_score_to_settle",     1,
 
-        uint, "",                            28,
+        bool, "defense_glitterstim",          1,
+
+        uint, "",                            27,
         ));
 
     // TODO (near term):
@@ -236,6 +238,7 @@ public SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.DMDD.reroll_any_count.stressed        += form.defense_pilot == DefensePilot.Ibtisam       ? 1 : 0;
 
     // Change results
+    setup.DMDD.focus_to_evade_count.always      += form.defense_glitterstim                         ? k_all_dice_count : 0;
     setup.DMDD.focus_to_evade_count.always      += form.defense_pilot == DefensePilot.LukeSkywalker ? 1 : 0;
     setup.DMDD.focus_to_evade_count.stressed    += form.defense_pilot == DefensePilot.EzraBridger   ? 2 : 0;
     setup.DMDD.focus_to_evade_count.focused     += form.defense_pilot == DefensePilot.PoeDameron    ? 1 : 0;

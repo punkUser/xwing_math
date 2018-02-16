@@ -121,8 +121,9 @@ block form
                         - switch_control_t!"defense_sensor_jammer"      ("Sensor Jammer");
 
                     fieldset.fieldset
-                        legend Modifications
+                        legend Modifications and Illicits
                         - switch_control_t!"defense_autothrusters"      ("Autothrusters");
+                        - switch_control_t!"defense_glitterstim"        ("Glitterstim");
 
                     fieldset.fieldset
                         legend Titles

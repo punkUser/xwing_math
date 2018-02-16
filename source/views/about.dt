@@ -1,7 +1,7 @@
 extends layout
 
 block content
-    h1 About
+    h1 Frequently Asked Questions
 
     p.
         This is a tool for calculating dice probabilities and outcomes for

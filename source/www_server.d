@@ -33,7 +33,8 @@ public class WWWServer
         router.get("/", &basic);
         router.get("/advanced/", &advanced);
         router.get("/alpha/", &alpha);
-        router.get("/about/", &about);
+        router.get("/faq/", &about);
+        router.get("/about/", staticRedirect("/faq/", HTTPStatus.movedPermanently));
         router.post("/simulate_basic.json", &simulate_basic);
         router.post("/simulate_advanced.json", &simulate_advanced);
         router.post("/simulate_alpha.json", &simulate_alpha);
@@ -166,34 +167,41 @@ public class WWWServer
 
             auto simulation = new Simulation(TokenState.init, defense_tokens);
 
-            // TODO: Refactor and add separate perf timings to each attack for logging purposes
-            // Attack 1
+            // TODO: Refactor and add separate perf timings to each attack for logging purposes            
+            if (alpha_form.a1_weapon != AlphaAttackWeapon.None)
             {
                 SimulationSetup setup_1    = alpha_form.to_simulation_setup!"a1"();
                 TokenState attack_tokens_1 = alpha_form.to_attack_tokens!"a1"();
                 simulation.replace_attack_tokens(attack_tokens_1);
                 simulation.simulate_attack(setup_1);
             }
-            // Attack 2
+            if (alpha_form.a2_weapon != AlphaAttackWeapon.None)
             {
                 SimulationSetup setup_2    = alpha_form.to_simulation_setup!"a2"();
                 TokenState attack_tokens_2 = alpha_form.to_attack_tokens!"a2"();
                 simulation.replace_attack_tokens(attack_tokens_2);
                 simulation.simulate_attack(setup_2);
             }
-            // Attack 3
+            if (alpha_form.a3_weapon != AlphaAttackWeapon.None)
             {
                 SimulationSetup setup_3    = alpha_form.to_simulation_setup!"a3"();
                 TokenState attack_tokens_3 = alpha_form.to_attack_tokens!"a3"();
                 simulation.replace_attack_tokens(attack_tokens_3);
                 simulation.simulate_attack(setup_3);
             }
-            // Attack 4
+            if (alpha_form.a4_weapon != AlphaAttackWeapon.None)
             {
                 SimulationSetup setup_4    = alpha_form.to_simulation_setup!"a4"();
                 TokenState attack_tokens_4 = alpha_form.to_attack_tokens!"a4"();
                 simulation.replace_attack_tokens(attack_tokens_4);
                 simulation.simulate_attack(setup_4);
+            }
+            if (alpha_form.a5_weapon != AlphaAttackWeapon.None)
+            {
+                SimulationSetup setup_5    = alpha_form.to_simulation_setup!"a5"();
+                TokenState attack_tokens_5 = alpha_form.to_attack_tokens!"a5"();
+                simulation.replace_attack_tokens(attack_tokens_5);
+                simulation.simulate_attack(setup_5);
             }
             
             // Just to reset it to defaults; stats for token deltas shouldn't really be

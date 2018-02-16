@@ -48,6 +48,7 @@ block form
                 - attacker_panel_t!"a2"("Attack 2");
                 - attacker_panel_t!"a3"("Attack 3");
                 - attacker_panel_t!"a4"("Attack 4");
+                - attacker_panel_t!"a5"("Attack 5");
 
             .cell
                 .callout.small.success
@@ -89,8 +90,9 @@ block form
                         - switch_control_t!"defense_sensor_jammer"      ("Sensor Jammer");
 
                     fieldset.fieldset
-                        legend Modifications
+                        legend Modifications and Illicits
                         - switch_control_t!"defense_autothrusters"      ("Autothrusters");
+                        - switch_control_t!"defense_glitterstim"        ("Glitterstim");
 
                     fieldset.fieldset
                         legend Titles

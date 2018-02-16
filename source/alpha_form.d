@@ -58,17 +58,19 @@ align(1) struct AlphaForm
         bool, "defense_c3p0_1",                 1,
         bool, "defense_palpatine_evade",        1,
 
-        ubyte, "",                              28,
-    ));
+        bool, "defense_glitterstim",            1,
 
-    mixin(bitfields!(
+        ubyte, "",                              11,
+
         ubyte, "a1_weapon",                     8, // AlphaAttackWeapon enum
         bool,  "a1_focus",                      1,
         bool,  "a1_target_lock",                1,
         bool,  "a1_guidance_chips_hit",         1,
         bool,  "a1_guidance_chips_crit",        1,
         ubyte, "a1__unused",                    4,
+    ));
 
+    mixin(bitfields!(
         ubyte, "a2_weapon",                     8, // AlphaAttackWeapon enum
         bool,  "a2_focus",                      1,
         bool,  "a2_target_lock",                1,
@@ -89,6 +91,13 @@ align(1) struct AlphaForm
         bool,  "a4_guidance_chips_hit",         1,
         bool,  "a4_guidance_chips_crit",        1,
         ubyte, "a4__unused",                    4,
+
+        ubyte, "a5_weapon",                     8, // AlphaAttackWeapon enum
+        bool,  "a5_focus",                      1,
+        bool,  "a5_target_lock",                1,
+        bool,  "a5_guidance_chips_hit",         1,
+        bool,  "a5_guidance_chips_crit",        1,
+        ubyte, "a5__unused",                    4,
     ));
 
     // Can always add more on the end, so no need to reserve space explicitly
@@ -209,8 +218,8 @@ static SimulationSetup to_simulation_setup(alias prefix)(ref const(AlphaForm) fo
             break;
 
         case AlphaAttackWeapon._4d_HarpoonMissile:
-            setup.attack_dice = 4;
-            // TODO: Harpoon effect!
+            setup.attack_dice                                   = 4;
+            setup.attack_harpooned_on_hit                       = true;     // Harpoon
             break;
 
         case AlphaAttackWeapon._4d_ProtonTorpedo:
@@ -234,8 +243,8 @@ static SimulationSetup to_simulation_setup(alias prefix)(ref const(AlphaForm) fo
             break;
 
         case AlphaAttackWeapon._5d_HarpoonMissile:
-            setup.attack_dice = 5;
-            // TODO: Harpoon effect!
+            setup.attack_dice                                   = 5;
+            setup.attack_harpooned_on_hit                       = true;     // Harpoon
             break;
 
         case AlphaAttackWeapon._5d_Maul1Ezra:
@@ -280,6 +289,7 @@ static SimulationSetup to_simulation_setup(alias prefix)(ref const(AlphaForm) fo
     setup.DMDD.reroll_any_count.stressed        += form.defense_pilot == DefensePilot.Ibtisam       ? 1 : 0;
 
     // Change results
+    setup.DMDD.focus_to_evade_count.always      += form.defense_glitterstim                         ? k_all_dice_count : 0;
     setup.DMDD.focus_to_evade_count.always      += form.defense_pilot == DefensePilot.LukeSkywalker ? 1 : 0;
     setup.DMDD.focus_to_evade_count.stressed    += form.defense_pilot == DefensePilot.EzraBridger   ? 2 : 0;
     setup.DMDD.focus_to_evade_count.focused     += form.defense_pilot == DefensePilot.PoeDameron    ? 1 : 0;

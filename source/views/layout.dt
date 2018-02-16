@@ -26,7 +26,7 @@ html(class="no-js", lang="en")
                         a(href="/advanced/") Advanced
                     li.divider
                     li
-                        a(href="/about/") About
+                        a(href="/faq/") FAQ
 
         #content
             .grid-container

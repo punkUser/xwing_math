@@ -870,6 +870,19 @@ class Simulation
 
         bool attack_hit = (attack_results[DieResult.Hit] + attack_results[DieResult.Crit]) > 0;
 
+        // NOTE: The below effects don't actually deal damage via dice but for now just setting
+        // attack dice for the relevant damage is equivalent. Can revisit if/when the calling
+        // code does anything other than add hits/crits to final state and cancel all dice.
+
+        // Trigger harpooned! if present (FAQ says it goes here, before TLT/Ion canceling)
+        if (defense_tokens.harpooned > 0 && attack_results[DieResult.Crit] > 0)
+        {
+            // Deal one damage directly to the defender per harpooned condition
+            // This is a good enough proxy for what the card does
+            attack_results[DieResult.Hit] += defense_tokens.harpooned;
+            defense_tokens.harpooned = 0;
+        }
+
         // TLT/ion does one damage if it hits, regardless of the dice results
         if (m_setup.attack_one_damage_on_hit && attack_hit)
         {
@@ -891,11 +904,10 @@ class Simulation
                 attack_tokens.target_lock = 1;
         }
 
-
         if (attack_hit)
         {
             if (m_setup.attack_harpooned_on_hit)
-                attack_tokens.harpooned = attack_tokens.harpooned + 1;
+                defense_tokens.harpooned = defense_tokens.harpooned + 1;
             
             if (m_setup.attack_lose_stress_on_hit && attack_tokens.stress > 0)
                 --attack_tokens.stress;
@@ -1347,14 +1359,21 @@ unittest
             return ((abs(v - expected) / expected) < 1e-7);    // Relative error
     }
 
-    static void assert_hits_pdf(string name, ref const(SimulationSetup) setup, const(double)[] expected_p)
+    static void assert_hits_pdf(
+        string name,
+        ref const(SimulationSetup) setup,
+        ref const(TokenState) attack_tokens,
+        ref const(TokenState) defense_tokens,
+        const(double)[] expected_p)
     {
         writefln("RUNNING TEST %s...", name);
 
-        auto simulation = new Simulation(setup);
-        simulation.simulate_attack();
-        auto total_hits_pdf = simulation.total_hits_pdf();
-        auto total_sum = simulation.total_sum();
+        auto simulation = new Simulation(attack_tokens, defense_tokens);
+        simulation.simulate_attack(setup);
+        auto results = simulation.compute_results();
+
+        auto total_hits_pdf = results.total_hits_pdf;
+        auto total_sum = results.total_sum;
 
         assert(total_hits_pdf.length >= expected_p.length);
 
@@ -1377,36 +1396,49 @@ unittest
     // Basic sanity checks
     {
         SimulationSetup setup;
+        TokenState attack_tokens;
+        TokenState defense_tokens;
+
         setup.attack_dice = 3;
         setup.defense_dice = 3;
-        assert_hits_pdf("basic_3_3", setup, [0.53369140625, 0.289306640625, 0.146484375, 0.030517578125]);
+        assert_hits_pdf("basic_3_3", setup, attack_tokens, defense_tokens,
+                        [0.53369140625, 0.289306640625, 0.146484375, 0.030517578125]);
 
-        setup.attack_tokens.focus = 1;
-        setup.attack_tokens.target_lock = 1;
-        setup.defense_tokens.focus = 1;
-        setup.defense_tokens.evade = 1;
-        assert_hits_pdf("basic_3_3_tokens", setup, [0.730598926544189, 0.225949287414551, 0.043451786041259]);
+       attack_tokens.focus = 1;
+       attack_tokens.target_lock = 1;
+       defense_tokens.focus = 1;
+       defense_tokens.evade = 1;
+        assert_hits_pdf("basic_3_3_tokens", setup, attack_tokens, defense_tokens,
+                        [0.730598926544189, 0.225949287414551, 0.043451786041259]);
 
         setup.type = MultiAttackType.SecondaryPerformTwice;
-        assert_hits_pdf("basic_secondary_perform_twice",setup, [0.419614922167966, 0.295413697109325, 0.191800311527913, 0.076275200204690, 0.016023014264646, 0.000872854725457]);
+        assert_hits_pdf("basic_secondary_perform_twice",setup, attack_tokens, defense_tokens,
+                        [0.419614922167966, 0.295413697109325, 0.191800311527913, 0.076275200204690, 0.016023014264646, 0.000872854725457]);
+
         // Same as above as no "after attack" triggers are present
         setup.type = MultiAttackType.AfterAttack;
-        assert_hits_pdf("basic_after_attack", setup, [0.419614922167966, 0.295413697109325, 0.191800311527913, 0.076275200204690, 0.016023014264646, 0.000872854725457]);
+        assert_hits_pdf("basic_after_attack", setup, attack_tokens, defense_tokens,
+                        [0.419614922167966, 0.295413697109325, 0.191800311527913, 0.076275200204690, 0.016023014264646, 0.000872854725457]);
     }
 
     // Maul rerolling any = target lock
     {
         SimulationSetup setup;
+        TokenState attack_tokens;
+        TokenState defense_tokens;
+
         setup.attack_dice = 3;
         setup.defense_dice = 0;
 
-        setup.attack_tokens.focus = 1;
-        setup.attack_tokens.target_lock = 1;
-        assert_hits_pdf("target_lock_reroll", setup, [0.000244140625000, 0.010986328125000, 0.164794921875000, 0.823974609375000]);
+        attack_tokens.focus = 1;
+        attack_tokens.target_lock = 1;
+        assert_hits_pdf("target_lock_reroll", setup, attack_tokens, defense_tokens,
+                        [0.000244140625000, 0.010986328125000, 0.164794921875000, 0.823974609375000]);
 
-        setup.attack_tokens.focus = 1;
-        setup.attack_tokens.target_lock = 0;
+        attack_tokens.focus = 1;
+        attack_tokens.target_lock = 0;
         setup.AMAD.reroll_any_gain_stress_count.unstressed = setup.attack_dice;
-        assert_hits_pdf("maul_reroll", setup, [0.000244140625000, 0.010986328125000, 0.164794921875000, 0.823974609375000]);
+        assert_hits_pdf("maul_reroll", setup, attack_tokens, defense_tokens,
+                        [0.000244140625000, 0.010986328125000, 0.164794921875000, 0.823974609375000]);
     }
 }

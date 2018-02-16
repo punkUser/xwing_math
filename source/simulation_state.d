@@ -117,7 +117,7 @@ public struct TokenState
     );
 
     mixin(bitfields!(
-        int, "harpooned",                             3,        // Harpooned condition count (0..7)
+        uint, "harpooned",                            3,        // Harpooned condition count (0..7)
         int, "",                                      5)
     );
 
