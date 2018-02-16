@@ -129,7 +129,7 @@ public string serialize_form_to_url(T)(const(T) form)
 {
     ubyte[T.sizeof] data;
     memcpy(data.ptr, &form, T.sizeof);
-    return Base64URL.encode(data);
+    return Base64URLNoPadding.encode(data);
 }
 
 // NOTE: If url is empty, simply returns form defaults
@@ -141,7 +141,17 @@ public T create_form_from_url(T)(string url)
     {
         // NOTE: Must handle cases where data size is less than basic form size
         // as users could be using an old link. Allow any new fields to just use defaults
-        ubyte[] data = Base64URL.decode(url);    
+        ubyte[] data;
+        try
+        {
+            data = Base64URLNoPadding.decode(url);
+        }
+        catch (Base64Exception e)
+        {
+            // Try decoding with the older padded version instead
+            data = Base64URL.decode(url);
+        }
+
         if (data.length > T.sizeof)
         {
             // Invalid - TODO: handle this better
