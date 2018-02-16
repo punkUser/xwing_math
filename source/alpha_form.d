@@ -7,7 +7,9 @@ import std.bitmanip;
 
 enum AlphaAttackWeapon : ubyte
 {
+    // NOTE: Do not change the order or it will invalidate links!
     None = 0,
+    _2d,
     _3d,
     _3d_TwinLaserTurret,
     _3d_TwinLaserTurret_Maul1Ezra,
@@ -156,6 +158,10 @@ static SimulationSetup to_simulation_setup(alias prefix)(ref const(AlphaForm) fo
     switch (weapon)
     {
         case AlphaAttackWeapon.None:
+            break;
+
+        case AlphaAttackWeapon._2d:
+            setup.attack_dice = 2;
             break;
 
         case AlphaAttackWeapon._3d:

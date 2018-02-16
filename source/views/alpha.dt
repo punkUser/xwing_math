@@ -9,6 +9,7 @@ block form
             h3= title
             select(name="#{prefix}_weapon")
                 - select_control_option_t!(prefix ~ "_weapon") ("None",                         AlphaAttackWeapon.None);
+                - select_control_option_t!(prefix ~ "_weapon") ("2 Dice",                       AlphaAttackWeapon._2d);
                 - select_control_option_t!(prefix ~ "_weapon") ("3 Dice",                       AlphaAttackWeapon._3d);
                 - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, TLT",                  AlphaAttackWeapon._3d_TwinLaserTurret);
                 - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, TLT, Maul(1), Ezra",   AlphaAttackWeapon._3d_TwinLaserTurret_Maul1Ezra);
