@@ -8,15 +8,20 @@ import std.bitmanip;
 enum AlphaAttackWeapon : ubyte
 {
     // NOTE: Do not change the order or it will invalidate links!
-    None = 0,
-    _2d,
+    _2d = 0,
+    _2d_CrackShot,
     _3d,
+    _3d_CrackShot,
+    _3d_LoneWolf,
+    _3d_ManglerCannon,
+    _3d_ManglerCannonLoneWolf,
     _3d_TwinLaserTurret,
     _3d_TwinLaserTurret_Maul1Ezra,
     _3d_ReyFinn,
     _4d,
     _4d_HeavyLaserCannon,
-    _4d_HeavyLaserCannonLinked,
+    _4d_HeavyLaserCannonLoneWolf,
+    _4d_LoneWolf,
     _4d_Maul1Ezra,
     _4d_MaulAllEzra,
     _4d_ConcussionMissile,
@@ -61,10 +66,11 @@ align(1) struct AlphaForm
         bool, "defense_palpatine_evade",        1,
 
         bool, "defense_glitterstim",            1,
-
-        ubyte, "",                              11,
+        ubyte, "",                              6,
 
         ubyte, "a1_weapon",                     8, // AlphaAttackWeapon enum
+        ubyte, "a1_reroll_any_count",           4,
+        bool,  "a1_enabled",                    1,
         bool,  "a1_focus",                      1,
         bool,  "a1_target_lock",                1,
         bool,  "a1_guidance_chips_hit",         1,
@@ -74,6 +80,8 @@ align(1) struct AlphaForm
 
     mixin(bitfields!(
         ubyte, "a2_weapon",                     8, // AlphaAttackWeapon enum
+        ubyte, "a2_reroll_any_count",           4,
+        bool,  "a2_enabled",                    1,
         bool,  "a2_focus",                      1,
         bool,  "a2_target_lock",                1,
         bool,  "a2_guidance_chips_hit",         1,
@@ -81,6 +89,8 @@ align(1) struct AlphaForm
         ubyte, "a2__unused",                    4,
 
         ubyte, "a3_weapon",                     8, // AlphaAttackWeapon enum
+        ubyte, "a3_reroll_any_count",           4,
+        bool,  "a3_enabled",                    1,
         bool,  "a3_focus",                      1,
         bool,  "a3_target_lock",                1,
         bool,  "a3_guidance_chips_hit",         1,
@@ -88,18 +98,28 @@ align(1) struct AlphaForm
         ubyte, "a3__unused",                    4,
 
         ubyte, "a4_weapon",                     8, // AlphaAttackWeapon enum
+        ubyte, "a4_reroll_any_count",           4,
+        bool,  "a4_enabled",                    1,
         bool,  "a4_focus",                      1,
         bool,  "a4_target_lock",                1,
         bool,  "a4_guidance_chips_hit",         1,
         bool,  "a4_guidance_chips_crit",        1,
         ubyte, "a4__unused",                    4,
 
+        ubyte, "",                              1,
+    ));
+
+    mixin(bitfields!(
         ubyte, "a5_weapon",                     8, // AlphaAttackWeapon enum
+        ubyte, "a5_reroll_any_count",           4,
+        bool,  "a5_enabled",                    1,
         bool,  "a5_focus",                      1,
         bool,  "a5_target_lock",                1,
         bool,  "a5_guidance_chips_hit",         1,
         bool,  "a5_guidance_chips_crit",        1,
         ubyte, "a5__unused",                    4,
+
+        ubyte, "",                             11,
     ));
 
     // Can always add more on the end, so no need to reserve space explicitly
@@ -111,6 +131,14 @@ align(1) struct AlphaForm
         defaults.defense_dice       = 3;
 
         defaults.a1_weapon          = AlphaAttackWeapon._3d;
+        defaults.a2_weapon          = AlphaAttackWeapon._3d;
+        defaults.a3_weapon          = AlphaAttackWeapon._3d;
+        defaults.a4_weapon          = AlphaAttackWeapon._3d;
+        defaults.a5_weapon          = AlphaAttackWeapon._3d;
+
+        defaults.a1_enabled         = true;
+        defaults.a2_enabled         = true;
+        defaults.a3_enabled         = true;
 
         return defaults;
     }
@@ -120,10 +148,16 @@ public TokenState to_attack_tokens(alias prefix)(ref const(AlphaForm) form)
 {
     TokenState attack_tokens;
 
-    mixin("attack_tokens.focus            = form." ~ prefix ~ "_focus;");
-    mixin("attack_tokens.target_lock      = form." ~ prefix ~ "_target_lock;");
+    mixin("attack_tokens.focus            = form." ~ prefix ~ "_focus ? 1 : 0;");
+    mixin("attack_tokens.target_lock      = form." ~ prefix ~ "_target_lock ? 1 : 0;");
     mixin("attack_tokens.amad_any_to_hit  = form." ~ prefix ~ "_guidance_chips_hit;");
     mixin("attack_tokens.amad_any_to_crit = form." ~ prefix ~ "_guidance_chips_crit;");
+
+    // "Tokens" based on the weapon
+    mixin("const AlphaAttackWeapon weapon = cast(AlphaAttackWeapon)form." ~ prefix ~ "_weapon;");
+    attack_tokens.crack_shot = 
+        (weapon == AlphaAttackWeapon._2d_CrackShot ||
+         weapon == AlphaAttackWeapon._3d_CrackShot);
 
     return attack_tokens;
 }
@@ -151,21 +185,38 @@ static SimulationSetup to_simulation_setup(alias prefix)(ref const(AlphaForm) fo
 
     // Grab the relevant form values for this attacker
     mixin("const AlphaAttackWeapon weapon = cast(AlphaAttackWeapon)form." ~ prefix ~ "_weapon;");
+    mixin("const int reroll_any_count     = form." ~ prefix ~ "_reroll_any_count;");
 
     // Hotshot on defender can be relevant for TLT attacks
-    setup.attack_must_spend_focus       = form.defense_hotshot_copilot;     // NOTE: Affects the *other* person
+    setup.AMAD.reroll_any_count.always   = reroll_any_count;
+    setup.attack_must_spend_focus        = form.defense_hotshot_copilot;     // NOTE: Affects the *other* person
 
     switch (weapon)
     {
-        case AlphaAttackWeapon.None:
-            break;
-
         case AlphaAttackWeapon._2d:
-            setup.attack_dice = 2;
+        case AlphaAttackWeapon._2d_CrackShot:                   // Crack shot handled in tokens
+            setup.attack_dice                                   = 2;
             break;
 
         case AlphaAttackWeapon._3d:
-            setup.attack_dice = 3;
+        case AlphaAttackWeapon._3d_CrackShot:                   // Crack shot handled in tokens
+            setup.attack_dice                                   = 3;
+            break;
+
+        case AlphaAttackWeapon._3d_LoneWolf:
+            setup.attack_dice                                   = 3;
+            setup.AMAD.reroll_blank_count.always                = 1;        // Lone Wolf
+            break;
+
+        case AlphaAttackWeapon._3d_ManglerCannon:
+            setup.attack_dice                                   = 3;
+            setup.AMAD.hit_to_crit_count                        = 1;        // Mangler Cannon
+            break;
+
+        case AlphaAttackWeapon._3d_ManglerCannonLoneWolf:
+            setup.attack_dice                                   = 3;
+            setup.AMAD.reroll_blank_count.always                = 1;        // Lone Wolf
+            setup.AMAD.hit_to_crit_count                        = 1;        // Mangler Cannon
             break;
 
         case AlphaAttackWeapon._3d_TwinLaserTurret:
@@ -190,7 +241,7 @@ static SimulationSetup to_simulation_setup(alias prefix)(ref const(AlphaForm) fo
             break;
 
         case AlphaAttackWeapon._4d:
-            setup.attack_dice = 4;
+            setup.attack_dice                                   = 4;
             break;
 
         case AlphaAttackWeapon._4d_HeavyLaserCannon:
@@ -198,10 +249,15 @@ static SimulationSetup to_simulation_setup(alias prefix)(ref const(AlphaForm) fo
             setup.attack_heavy_laser_cannon                     = true;     // HLC
             break;
 
-        case AlphaAttackWeapon._4d_HeavyLaserCannonLinked:
+        case AlphaAttackWeapon._4d_HeavyLaserCannonLoneWolf:
             setup.attack_dice                                   = 4;
             setup.attack_heavy_laser_cannon                     = true;     // HLC
-            setup.AMAD.reroll_any_count.always                  = 1;        // Linked battery
+            setup.AMAD.reroll_blank_count.always                = 1;        // Lone Wolf
+            break;
+
+        case AlphaAttackWeapon._4d_LoneWolf:
+            setup.attack_dice                                   = 4;
+            setup.AMAD.reroll_blank_count.always                = 1;        // Lone Wolf
             break;
 
         case AlphaAttackWeapon._4d_Maul1Ezra:
@@ -240,7 +296,7 @@ static SimulationSetup to_simulation_setup(alias prefix)(ref const(AlphaForm) fo
             break;
 
         case AlphaAttackWeapon._5d:
-            setup.attack_dice = 5;
+            setup.attack_dice                                   = 5;
             break;
 
         case AlphaAttackWeapon._5d_AdvancedProtonTorpedo:

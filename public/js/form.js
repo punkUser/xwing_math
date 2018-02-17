@@ -210,6 +210,14 @@ $(document).ready(function()
 		$input.val(val + delta);
 		$input.trigger("change");
 	});
+	// Stepper set value buttons
+	$('.stepper-button-set').click(function() {
+		var $input = $(this).parents('.stepper-group').find('.stepper-number');
+		var val   = +($input.val());
+		var set   = +($(this).data("set"));
+		$input.val(set);
+		$input.trigger("change");
+	});
 	
 	// If the user goes "back" after we've changed the URL, force a page reload
 	// since we don't currently handle all of the content/form updates via AJAX.

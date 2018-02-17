@@ -106,13 +106,20 @@ ul.faq ul {
 	margin: 0;
 }
 
-.stepper-group .stepper-button {
+.stepper-group .stepper-button, .stepper-group .stepper-button-set {
 	text-align: center;
 	vertical-align: middle;
 	font-weight: bold;
 	font-size: 1.5rem;
-	padding-left: 0.7rem;
-	padding-right: 0.7rem;
+	padding-left: 0;
+	padding-right: 0;
+	width: 2.2rem;
 	height: 2.0rem;
 	border-radius: 0;
+}
+
+.stepper-group .stepper-button-set {
+	width: 1.4rem;
+	margin-left: 0.1rem;
+	margin-right: 0.1rem;
 }

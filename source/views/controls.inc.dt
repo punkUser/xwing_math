@@ -12,7 +12,7 @@
                     input.switch-input(id="#{name}", name="#{name}", type="checkbox")
                 label.switch-paddle(for="#{name}")
 
-- void stepper_control_t(alias name)(string label, int min, int max)
+- void stepper_control_t(alias name)(string label, int min, int max, bool set_buttons = false)
     - import std.algorithm.comparison;
     - mixin("int init = clamp(form_values." ~ name ~ ", min, max);");
 
@@ -21,11 +21,17 @@
             label(for="#{name}") #{label}
         .shrink.cell
             .input-group.stepper-group
+                - if (set_buttons)
+                    .input-group-button
+                        button.button.stepper-button-set(type="button", data-set="#{min}") <
                 .input-group-button
                     button.button.stepper-button(type="button", data-delta="-1") -
                 input.input-group-field.stepper-number(id="#{name}", name="#{name}", type="number", value="#{init}", min="#{min}", max="#{max}", required)
                 .input-group-button
                     button.button.stepper-button(type="button", data-delta="1") +
+                - if (set_buttons)
+                    .input-group-button
+                        button.button.stepper-button-set(type="button", data-set="#{max}") >
 
 - void radio_switch_control_t(alias name)(string label, int value, int max)
     - mixin("int init_value = form_values." ~ name ~ ";");

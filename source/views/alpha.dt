@@ -5,38 +5,61 @@ block form
     - void attacker_panel_t(alias prefix)(string title)
         - import alpha_form;
 
-        .callout.small.alert
-            h3= title
-            select(name="#{prefix}_weapon")
-                - select_control_option_t!(prefix ~ "_weapon") ("None",                         AlphaAttackWeapon.None);
-                - select_control_option_t!(prefix ~ "_weapon") ("2 Dice",                       AlphaAttackWeapon._2d);
-                - select_control_option_t!(prefix ~ "_weapon") ("3 Dice",                       AlphaAttackWeapon._3d);
-                - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, TLT",                  AlphaAttackWeapon._3d_TwinLaserTurret);
-                - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, TLT, Maul(1), Ezra",   AlphaAttackWeapon._3d_TwinLaserTurret_Maul1Ezra);
-                - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, Rey(Pilot), Finn",     AlphaAttackWeapon._3d_ReyFinn);
-                - select_control_option_t!(prefix ~ "_weapon") ("4 Dice",                       AlphaAttackWeapon._4d);
-                - select_control_option_t!(prefix ~ "_weapon") ("4 Dice, HLC",                  AlphaAttackWeapon._4d_HeavyLaserCannon);
-                - select_control_option_t!(prefix ~ "_weapon") ("4 Dice, HLC, Linked",          AlphaAttackWeapon._4d_HeavyLaserCannonLinked);
-                - select_control_option_t!(prefix ~ "_weapon") ("4 Dice, Maul(1), Ezra",        AlphaAttackWeapon._4d_Maul1Ezra);
-                - select_control_option_t!(prefix ~ "_weapon") ("4 Dice, Maul(all), Ezra",      AlphaAttackWeapon._4d_MaulAllEzra);
-                - select_control_option_t!(prefix ~ "_weapon") ("4 Dice, Concussion",           AlphaAttackWeapon._4d_ConcussionMissile);
-                - select_control_option_t!(prefix ~ "_weapon") ("4 Dice, Harpoon",              AlphaAttackWeapon._4d_HarpoonMissile);
-                - select_control_option_t!(prefix ~ "_weapon") ("4 Dice, Proton",               AlphaAttackWeapon._4d_ProtonTorpedo);
-                - select_control_option_t!(prefix ~ "_weapon") ("4 Dice, Rey(Pilot), Finn",     AlphaAttackWeapon._4d_ReyFinn);
-                - select_control_option_t!(prefix ~ "_weapon") ("5 Dice",                       AlphaAttackWeapon._5d);
-                - select_control_option_t!(prefix ~ "_weapon") ("5 Dice, Advanced Proton",      AlphaAttackWeapon._5d_AdvancedProtonTorpedo);
-                - select_control_option_t!(prefix ~ "_weapon") ("5 Dice, Harpoon",              AlphaAttackWeapon._5d_HarpoonMissile);
-                - select_control_option_t!(prefix ~ "_weapon") ("5 Dice, Maul(1), Ezra",        AlphaAttackWeapon._5d_Maul1Ezra);
-                - select_control_option_t!(prefix ~ "_weapon") ("5 Dice, Maul(all), Ezra",      AlphaAttackWeapon._5d_MaulAllEzra);
+        - mixin("bool enabled = form_values." ~ prefix ~ "_enabled;");
+        - string name = prefix ~ "_enabled";
 
-            .grid-x.grid-margin-x.small-up-2.medium-up-2.large-up-2
-                .cell
-                    - switch_control_t!(prefix ~ "_focus")       ("Focus");
-                    - switch_control_t!(prefix ~ "_target_lock") ("Target Lock");
-                .cell
-                    .switch-mutex
-                        - switch_control_t!(prefix ~ "_guidance_chips_hit" ) ("Chips (hit)");
-                        - switch_control_t!(prefix ~ "_guidance_chips_crit") ("Chips (crit)");
+        .callout.small.alert
+            .grid-x
+                .cell.auto
+                    label(for="#{name}")
+                        h3= title
+                .cell.shrink
+                    .switch
+                        - if (enabled)
+                            input.switch-input(id="#{name}", name="#{name}", type="checkbox", data-toggle="#{prefix}_panel", checked)
+                        - else
+                            input.switch-input(id="#{name}", name="#{name}", type="checkbox", data-toggle="#{prefix}_panel")
+                        label.switch-paddle(for="#{name}")
+
+            - string initial_visibility = enabled ? "" : "hide";
+            div(id="#{prefix}_panel", data-toggler=".hide", class="#{initial_visibility}")
+                select(name="#{prefix}_weapon")
+                    - select_control_option_t!(prefix ~ "_weapon") ("2 Dice",                       AlphaAttackWeapon._2d);
+                    - select_control_option_t!(prefix ~ "_weapon") ("2 Dice, Crack Shot",           AlphaAttackWeapon._2d_CrackShot);
+                    - select_control_option_t!(prefix ~ "_weapon") ("3 Dice",                       AlphaAttackWeapon._3d);
+                    - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, Crack Shot",           AlphaAttackWeapon._3d_CrackShot);
+                    - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, Mangler",              AlphaAttackWeapon._3d_ManglerCannon);
+                    - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, Mangler, Lone Wolf",   AlphaAttackWeapon._3d_ManglerCannonLoneWolf);
+                    - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, TLT",                  AlphaAttackWeapon._3d_TwinLaserTurret);
+                    - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, TLT, Maul(1), Ezra",   AlphaAttackWeapon._3d_TwinLaserTurret_Maul1Ezra);
+                    - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, Rey(Pilot), Finn",     AlphaAttackWeapon._3d_ReyFinn);
+                    - select_control_option_t!(prefix ~ "_weapon") ("4 Dice",                       AlphaAttackWeapon._4d);
+                    - select_control_option_t!(prefix ~ "_weapon") ("4 Dice, HLC",                  AlphaAttackWeapon._4d_HeavyLaserCannon);
+                    - select_control_option_t!(prefix ~ "_weapon") ("4 Dice, HLC, Lone Wolf",       AlphaAttackWeapon._4d_HeavyLaserCannonLoneWolf);
+                    - select_control_option_t!(prefix ~ "_weapon") ("4 Dice, Lone Wolf",            AlphaAttackWeapon._4d_LoneWolf);
+                    - select_control_option_t!(prefix ~ "_weapon") ("4 Dice, Maul(1), Ezra",        AlphaAttackWeapon._4d_Maul1Ezra);
+                    - select_control_option_t!(prefix ~ "_weapon") ("4 Dice, Maul(all), Ezra",      AlphaAttackWeapon._4d_MaulAllEzra);
+                    - select_control_option_t!(prefix ~ "_weapon") ("4 Dice, Concussion",           AlphaAttackWeapon._4d_ConcussionMissile);
+                    - select_control_option_t!(prefix ~ "_weapon") ("4 Dice, Harpoon",              AlphaAttackWeapon._4d_HarpoonMissile);
+                    - select_control_option_t!(prefix ~ "_weapon") ("4 Dice, Proton",               AlphaAttackWeapon._4d_ProtonTorpedo);
+                    - select_control_option_t!(prefix ~ "_weapon") ("4 Dice, Rey(Pilot), Finn",     AlphaAttackWeapon._4d_ReyFinn);
+                    - select_control_option_t!(prefix ~ "_weapon") ("5 Dice",                       AlphaAttackWeapon._5d);
+                    - select_control_option_t!(prefix ~ "_weapon") ("5 Dice, Advanced Proton",      AlphaAttackWeapon._5d_AdvancedProtonTorpedo);
+                    - select_control_option_t!(prefix ~ "_weapon") ("5 Dice, Harpoon",              AlphaAttackWeapon._5d_HarpoonMissile);
+                    - select_control_option_t!(prefix ~ "_weapon") ("5 Dice, Maul(1), Ezra",        AlphaAttackWeapon._5d_Maul1Ezra);
+                    - select_control_option_t!(prefix ~ "_weapon") ("5 Dice, Maul(all), Ezra",      AlphaAttackWeapon._5d_MaulAllEzra);
+                    
+                .grid-x
+                    .cell.large-5.medium-6.small-6
+                        - switch_control_t! (prefix ~ "_focus")            ("Focus");
+                        - switch_control_t! (prefix ~ "_target_lock")      ("Target Lock");
+                    .cell.auto
+                    .cell.large-5.medium-5.small-5
+                        .switch-mutex
+                            - switch_control_t!(prefix ~ "_guidance_chips_hit" ) ("Chips (hit)");
+                            - switch_control_t!(prefix ~ "_guidance_chips_crit") ("Chips (crit)");
+
+                - stepper_control_t!(prefix ~ "_reroll_any_count") ("Rerolls", 0, 6);
 
 
     form#simulate-form(action="/simulate_alpha.json", method="POST", autocomplete="off")
@@ -116,4 +139,3 @@ block form
         .cell
             table#pdf-table
                 include pdf_table
-
