@@ -172,41 +172,45 @@ public class WWWServer
 
             auto simulation = new Simulation(TokenState.init, defense_tokens);
 
+            // NOTE: Every attack is the "final" one for the attacker, since these are modeled as
+            // separate attackers with separate token usage.
+            int defender_final_attack = 0;
+            if      (alpha_form.a5_enabled) defender_final_attack = 5;
+            else if (alpha_form.a4_enabled) defender_final_attack = 4;
+            else if (alpha_form.a3_enabled) defender_final_attack = 3;
+            else if (alpha_form.a2_enabled) defender_final_attack = 2;
+            else if (alpha_form.a1_enabled) defender_final_attack = 1;
+
             // TODO: Refactor and add separate perf timings to each attack for logging purposes            
             if (alpha_form.a1_enabled)
             {
-                SimulationSetup setup_1    = alpha_form.to_simulation_setup!"a1"();
-                TokenState attack_tokens_1 = alpha_form.to_attack_tokens!"a1"();
-                simulation.replace_attack_tokens(attack_tokens_1);
-                simulation.simulate_attack(setup_1);
+                SimulationSetup setup_1 = alpha_form.to_simulation_setup!"a1"();
+                simulation.replace_attack_tokens(alpha_form.to_attack_tokens!"a1"());
+                simulation.simulate_attack(setup_1, true, (defender_final_attack == 1));
             }
             if (alpha_form.a2_enabled)
             {
-                SimulationSetup setup_2    = alpha_form.to_simulation_setup!"a2"();
-                TokenState attack_tokens_2 = alpha_form.to_attack_tokens!"a2"();
-                simulation.replace_attack_tokens(attack_tokens_2);
-                simulation.simulate_attack(setup_2);
+                SimulationSetup setup_2 = alpha_form.to_simulation_setup!"a2"();
+                simulation.replace_attack_tokens(alpha_form.to_attack_tokens!"a2"());
+                simulation.simulate_attack(setup_2, true, (defender_final_attack == 2));
             }
             if (alpha_form.a3_enabled)
             {
-                SimulationSetup setup_3    = alpha_form.to_simulation_setup!"a3"();
-                TokenState attack_tokens_3 = alpha_form.to_attack_tokens!"a3"();
-                simulation.replace_attack_tokens(attack_tokens_3);
-                simulation.simulate_attack(setup_3);
+                SimulationSetup setup_3 = alpha_form.to_simulation_setup!"a3"();
+                simulation.replace_attack_tokens(alpha_form.to_attack_tokens!"a3"());
+                simulation.simulate_attack(setup_3, true, (defender_final_attack == 3));
             }
             if (alpha_form.a4_enabled)
             {
-                SimulationSetup setup_4    = alpha_form.to_simulation_setup!"a4"();
-                TokenState attack_tokens_4 = alpha_form.to_attack_tokens!"a4"();
-                simulation.replace_attack_tokens(attack_tokens_4);
-                simulation.simulate_attack(setup_4);
+                SimulationSetup setup_4 = alpha_form.to_simulation_setup!"a4"();
+                simulation.replace_attack_tokens(alpha_form.to_attack_tokens!"a4"());
+                simulation.simulate_attack(setup_4, true, (defender_final_attack == 4));
             }
             if (alpha_form.a5_enabled)
             {
-                SimulationSetup setup_5    = alpha_form.to_simulation_setup!"a5"();
-                TokenState attack_tokens_5 = alpha_form.to_attack_tokens!"a5"();
-                simulation.replace_attack_tokens(attack_tokens_5);
-                simulation.simulate_attack(setup_5);
+                SimulationSetup setup_5 = alpha_form.to_simulation_setup!"a5"();
+                simulation.replace_attack_tokens(alpha_form.to_attack_tokens!"a5"());
+                simulation.simulate_attack(setup_5, true, (defender_final_attack == 5));
             }
             
             // Just to reset it to defaults; stats for token deltas shouldn't really be

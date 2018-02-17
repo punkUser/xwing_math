@@ -1077,10 +1077,10 @@ class Simulation
     //
     private void simulate_single_attack(
         ref const(SimulationSetup) setup,
-        bool attacker_final_attack = true,
-        bool defender_final_attack = true,
-        bool trigger_after_attack = true,
-        bool clear_attack_hit = true)
+        bool attacker_final_attack,
+        bool defender_final_attack,
+        bool trigger_after_attack,
+        bool clear_attack_hit)
     {
         // Update internal state (just more convenient than passing it around every time)
         m_setup = setup;
