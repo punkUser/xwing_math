@@ -12,6 +12,7 @@ enum AlphaAttackWeapon : ubyte
     _2d_CrackShot,
     _3d,
     _3d_CrackShot,
+    _3d_IonCannon,
     _3d_LoneWolf,
     _3d_ManglerCannon,
     _3d_ManglerCannonLoneWolf,
@@ -201,6 +202,11 @@ static SimulationSetup to_simulation_setup(alias prefix)(ref const(AlphaForm) fo
         case AlphaAttackWeapon._3d:
         case AlphaAttackWeapon._3d_CrackShot:                   // Crack shot handled in tokens
             setup.attack_dice                                   = 3;
+            break;
+
+        case AlphaAttackWeapon._3d_IonCannon:
+            setup.attack_dice                                   = 3;
+            setup.attack_one_damage_on_hit                      = true;     // Ion Cannon
             break;
 
         case AlphaAttackWeapon._3d_LoneWolf:
