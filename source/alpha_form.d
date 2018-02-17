@@ -19,6 +19,7 @@ enum AlphaAttackWeapon : ubyte
     _3d_TwinLaserTurret_Maul1Ezra,
     _3d_ReyFinn,
     _4d,
+    _4d_CrackShot,
     _4d_HeavyLaserCannon,
     _4d_HeavyLaserCannonLoneWolf,
     _4d_LoneWolf,
@@ -137,8 +138,6 @@ align(1) struct AlphaForm
         defaults.a5_weapon          = AlphaAttackWeapon._3d;
 
         defaults.a1_enabled         = true;
-        defaults.a2_enabled         = true;
-        defaults.a3_enabled         = true;
 
         return defaults;
     }
@@ -157,7 +156,8 @@ public TokenState to_attack_tokens(alias prefix)(ref const(AlphaForm) form)
     mixin("const AlphaAttackWeapon weapon = cast(AlphaAttackWeapon)form." ~ prefix ~ "_weapon;");
     attack_tokens.crack_shot = 
         (weapon == AlphaAttackWeapon._2d_CrackShot ||
-         weapon == AlphaAttackWeapon._3d_CrackShot);
+         weapon == AlphaAttackWeapon._3d_CrackShot ||
+         weapon == AlphaAttackWeapon._4d_CrackShot);
 
     return attack_tokens;
 }
@@ -241,6 +241,7 @@ static SimulationSetup to_simulation_setup(alias prefix)(ref const(AlphaForm) fo
             break;
 
         case AlphaAttackWeapon._4d:
+        case AlphaAttackWeapon._4d_CrackShot:                   // Crack shot handled in tokens
             setup.attack_dice                                   = 4;
             break;
 
