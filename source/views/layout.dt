@@ -26,6 +26,9 @@ html(class="no-js", lang="en")
                         a(href="/advanced/") Advanced
                     li.divider
                     li
+                        a(href="/alpha/") Alpha
+                    li.divider
+                    li
                         a(href="/faq/") FAQ
 
         #content

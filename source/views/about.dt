@@ -43,6 +43,18 @@ block content
                     reference card names when it is more concise to do so versus spelling out the underlying effect.
 
         li.accordion-item(data-accordion-item)
+            a.accordion-title(href="#alpha") What's the "Alpha" form for?
+            #alpha.accordion-content(data-tab-content)
+                p.
+                    The "alpha strike" form also uses the same underlying simulation, but it is organized to model several different
+                    attackers all attacking the same defender in sequence. This is useful for determining the probability of
+                    a ship being destroyed by an alpha strike before getting to fire, among other things.
+                p.
+                    The options on the alpha form are somewhat more limited due to UI space/complexity considerations, but most
+                    of the common attacks can be modeled using a combination of the options in the dropdown menu together with the
+                    available tokens and effect toggles.
+
+        li.accordion-item(data-accordion-item)
             a.accordion-title(href="#links") How can I link or bookmark a specific result?
             #links.accordion-content(data-tab-content)
                 p.
@@ -55,8 +67,8 @@ block content
                 p.
                     One a result is simulated, simply hover over (or tap) any bar in the charts to see the probabilities.
                 p.
-                    Alternatively, the "Advanced" form additionally outputs a data table which makes it easy to copy the results
-                    into an external spreadsheet or similar.
+                    Alternatively, the "Advanced" and "Alpha" forms additionally output a data table which makes it easy to copy
+                    the results into an external spreadsheet or similar.
 
         li.accordion-item(data-accordion-item)
             a.accordion-title(href="#triggers") Which effects and triggers are active?
@@ -166,6 +178,8 @@ block content
             #palpatine.accordion-content(data-tab-content)
                 p.
                     If there are any dice rolled (on attack) or any hits or crits to cancel (on defense), Palpatine will be used.
+                    Palpatine happens right after dice are rolled, before the opponent modifies them. The die that is modified by
+                    Palpatine cannot be modified further as per the game rules.
                 p.
                     Simple logic based on the passive mods available determines which die to change. No attempt is made to do complex
                     reasoning about potential outcomes of rerolling dice, etc.
