@@ -25,8 +25,10 @@ block form
             div(id="#{prefix}_panel", data-toggler=".hide", class="#{initial_visibility}")
                 select(name="#{prefix}_weapon")
                     - select_control_option_t!(prefix ~ "_weapon") ("2 Dice",                       AlphaAttackWeapon._2d);
-                    - select_control_option_t!(prefix ~ "_weapon") ("2 Dice, Crack Shot",           AlphaAttackWeapon._2d_CrackShot);
+                    - select_control_option_t!(prefix ~ "_weapon") ("2 Dice, Backdraft (Rear)",     AlphaAttackWeapon._2d_BackdraftRearArc);
+                    - select_control_option_t!(prefix ~ "_weapon") ("2 Dice, Crack Shot",           AlphaAttackWeapon._2d_CrackShot);                    
                     - select_control_option_t!(prefix ~ "_weapon") ("3 Dice",                       AlphaAttackWeapon._3d);
+                    - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, Backdraft (Rear)",     AlphaAttackWeapon._3d_BackdraftRearArc);
                     - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, Crack Shot",           AlphaAttackWeapon._3d_CrackShot);
                     - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, Ion Cannon",           AlphaAttackWeapon._3d_IonCannon);
                     - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, Mangler",              AlphaAttackWeapon._3d_ManglerCannon);
