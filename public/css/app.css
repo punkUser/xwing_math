@@ -100,6 +100,7 @@ ul.faq ul {
 
 .stepper-group .stepper-number {
 	width: 3.5rem;
+	min-width: 3.5rem;
 	height: 2.0rem;
 	text-align: center;
 	vertical-align: middle;
@@ -114,12 +115,14 @@ ul.faq ul {
 	padding-left: 0;
 	padding-right: 0;
 	width: 2.2rem;
+	min-width: 2.2rem;
 	height: 2.0rem;
 	border-radius: 0;
 }
 
 .stepper-group .stepper-button-set {
 	width: 1.4rem;
+	min-width: 1.4rem;
 	margin-left: 0.1rem;
 	margin-right: 0.1rem;
 }
