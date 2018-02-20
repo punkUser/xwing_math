@@ -35,8 +35,8 @@ enum AlphaAttackWeapon : ubyte
     _5d_HarpoonMissile,
     _5d_Maul1Ezra,
     _5d_MaulAllEzra,
-    _2d_BackdraftRearArc,
-    _3d_BackdraftRearArc,
+    _2d_Backdraft,
+    _3d_Backdraft,
 }
 
 align(1) struct AlphaForm
@@ -201,7 +201,7 @@ static SimulationSetup to_simulation_setup(alias prefix)(ref const(AlphaForm) fo
             setup.attack_dice                                   = 2;
             break;
 
-        case AlphaAttackWeapon._2d_BackdraftRearArc:
+        case AlphaAttackWeapon._2d_Backdraft:
             setup.attack_dice                                   = 2;
             setup.AMAD.add_crit_count                           = 1;       // Backdraft/ATC
             break;
@@ -211,7 +211,7 @@ static SimulationSetup to_simulation_setup(alias prefix)(ref const(AlphaForm) fo
             setup.attack_dice                                   = 3;
             break;
 
-        case AlphaAttackWeapon._3d_BackdraftRearArc:
+        case AlphaAttackWeapon._3d_Backdraft:
             setup.attack_dice                                   = 3;
             setup.AMAD.add_crit_count                           = 1;       // Backdraft/ATC
             break;
