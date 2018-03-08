@@ -95,17 +95,6 @@ align(1) struct BasicForm
         uint, "",                            26,
         ));
 
-    // TODO (near term):
-    // Tactition
-    // 4-LOM
-    // Bossk (crew)
-    // C-3PO (crew)
-    // Captain Rex (crew)
-    // Palpatine?
-    // Zuckuss
-    // Autoblaster
-    // Synced Turret (2/3)?
-
     // Can always add more on the end, so no need to reserve space explicitly
 
     static BasicForm defaults()

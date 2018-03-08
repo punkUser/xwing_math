@@ -130,9 +130,10 @@ struct SimulationSetup
     int defense_guess_evades = 0;                   // If initially roll this many evades, add another evade (C-3P0). Once per turn so see related token
 
     // TODO: Autoblaster (hit results cannot be canceled)
+    // TODO: Ten Numb (1 crit result cannot be canceled)
+    // TODO: Synced Turret (2/3)?
     // TODO: Lightweight frame
 
-    // TODO: Crack shot? (gets a little bit complex as presence affects defender logic and as well)
     // TODO: 4-LOM Crew
     // TODO: Bossk Crew
     // TODO: Captain rex (only affects multi-attack)
