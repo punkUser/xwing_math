@@ -99,6 +99,7 @@ struct SimulationSetup
     struct DefenderModifyAttackDice
     {
         int hit_to_focus_no_reroll_count = 0;
+        int reroll_any_count = 0;
     };
     DefenderModifyAttackDice DMAD;
 
@@ -384,8 +385,28 @@ class Simulation
 
     private int dmad_before_reroll(ref DiceState attack_dice, ref TokenState attack_tokens) const
     {
-        // Nothing to do here yet
-        return 0;
+        int rerolled_count = 0;
+
+        // Reroll any
+        if (m_setup.DMAD.reroll_any_count > 0)
+        {
+            int reroll_any_count = m_setup.DMAD.reroll_any_count;
+            reroll_any_count -= attack_dice.remove_dice_for_reroll(DieResult.Crit, reroll_any_count);
+            reroll_any_count -= attack_dice.remove_dice_for_reroll(DieResult.Hit,  reroll_any_count);
+
+            // If attacker can modify focus results into hits/crits, reroll those too
+            int focus_results = attack_dice.count(DieResult.Focus);
+            int useful_focus_results = m_setup.AMAD.focus_to_hit_count(attack_tokens) + m_setup.AMAD.focus_to_crit_count(attack_tokens);                        
+            if (attack_tokens.focus)
+                useful_focus_results = k_all_dice_count;
+
+            if (useful_focus_results >= focus_results)
+                reroll_any_count -= attack_dice.remove_dice_for_reroll(DieResult.Focus, reroll_any_count);
+
+            rerolled_count += (m_setup.DMAD.reroll_any_count - reroll_any_count);
+        }
+
+        return rerolled_count;
     }
 
     private void dmad_after_reroll(ref DiceState attack_dice, ref TokenState attack_tokens) const

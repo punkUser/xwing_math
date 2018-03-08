@@ -108,8 +108,11 @@ align(1) struct AdvancedForm
         bool,  "attack_palpatine_crit",                      1,
         bool,  "defense_palpatine_evade",                    1,
         bool,  "attack_crack_shot",                          1,
+        bool,  "_unused",                                    1,
+
+        ubyte, "dmad_reroll_any_count",                      4,
         
-        ubyte, "",                                          13,
+        ubyte, "",                                           8,
     ));
 
     // Can always add more on the end, so no need to reserve space explicitly
@@ -238,6 +241,7 @@ SimulationSetup to_simulation_setup(ref const(AdvancedForm) form)
     setup.DMDD.spend_attacker_stress_add_evade              = form.dmdd_spend_attacker_stress_add_evade;
 
     setup.DMAD.hit_to_focus_no_reroll_count                 = form.dmad_hit_to_focus_no_reroll_count;
+    setup.DMAD.reroll_any_count                             = form.dmad_reroll_any_count;
 
     return setup;
 }

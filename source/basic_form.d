@@ -90,8 +90,9 @@ align(1) struct BasicForm
         bool, "attack_a_score_to_settle",     1,
 
         bool, "defense_glitterstim",          1,
+        bool, "defense_m9g8_attack_die",      1,
 
-        uint, "",                            27,
+        uint, "",                            26,
         ));
 
     // TODO (near term):
@@ -249,7 +250,8 @@ public SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.DMDD.spend_attacker_stress_add_evade   = form.defense_latts_razzi;
 
     // Modify attack dice
-    setup.DMAD.hit_to_focus_no_reroll_count     += form.defense_sensor_jammer ? 1 : 0;
+    setup.DMAD.hit_to_focus_no_reroll_count     += form.defense_sensor_jammer                       ? 1 : 0;
+    setup.DMAD.reroll_any_count                 += form.defense_m9g8_attack_die                     ? 1 : 0;
 
     return setup;
 }

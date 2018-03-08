@@ -27,6 +27,9 @@ block form
                 .callout.small.success
                     h3 Defender Modify Attack Dice
                     fieldset.fieldset
+                        legend Free Rerolls
+                        - stepper_control_t!"dmad_reroll_any_count" ("Any", 0, 15);
+                    fieldset.fieldset
                         legend Change Results
                         - stepper_control_t!"dmad_hit_to_focus_no_reroll_count" ("Hit to Focus (No Reroll)",  0, 15);
 

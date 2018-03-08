@@ -70,7 +70,9 @@ align(1) struct AlphaForm
         bool, "defense_palpatine_evade",        1,
 
         bool, "defense_glitterstim",            1,
-        ubyte, "",                              6,
+        bool, "defense_m9g8_attack_die",        1,
+
+        ubyte, "",                              5,
 
         ubyte, "a1_weapon",                     8, // AlphaAttackWeapon enum
         ubyte, "a1_reroll_any_count",           4,
@@ -381,7 +383,8 @@ static SimulationSetup to_simulation_setup(alias prefix)(ref const(AlphaForm) fo
     setup.DMDD.spend_attacker_stress_add_evade   = form.defense_latts_razzi;
 
     // Modify attack dice
-    setup.DMAD.hit_to_focus_no_reroll_count     += form.defense_sensor_jammer ? 1 : 0;
+    setup.DMAD.hit_to_focus_no_reroll_count     += form.defense_sensor_jammer                       ? 1 : 0;
+    setup.DMAD.reroll_any_count                 += form.defense_m9g8_attack_die                     ? 1 : 0;
 
     return setup;
 }
