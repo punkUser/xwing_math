@@ -17,7 +17,7 @@ enum AlphaAttackWeapon : ubyte
     _3d_ManglerCannon,
     _3d_ManglerCannonLoneWolf,
     _3d_TwinLaserTurret,
-    _3d_TwinLaserTurret_Maul1Ezra,
+    _3d_TwinLaserTurretMaul1Ezra,
     _3d_ReyFinn,
     _4d,
     _4d_CrackShot,
@@ -37,6 +37,7 @@ enum AlphaAttackWeapon : ubyte
     _5d_MaulAllEzra,
     _2d_Backdraft,
     _3d_Backdraft,
+    _3d_TwinLaserTurretAccCorrector,
 }
 
 align(1) struct AlphaForm
@@ -245,13 +246,20 @@ static SimulationSetup to_simulation_setup(alias prefix)(ref const(AlphaForm) fo
             setup.attack_one_damage_on_hit                      = true;     // TLT
             break;
 
-        case AlphaAttackWeapon._3d_TwinLaserTurret_Maul1Ezra:
+        case AlphaAttackWeapon._3d_TwinLaserTurretMaul1Ezra:
             setup.attack_dice                                   = 3;
             setup.type                                          = MultiAttackType.SecondaryPerformTwice;
             setup.attack_one_damage_on_hit                      = true;     // TLT
             setup.attack_lose_stress_on_hit                     = true;     // Maul
             setup.AMAD.reroll_any_gain_stress_count.unstressed  = 1;        // Maul
             setup.AMAD.focus_to_crit_count.stressed             = 1;        // Ezra
+            break;
+
+        case AlphaAttackWeapon._3d_TwinLaserTurretAccCorrector:
+            setup.attack_dice                                   = 3;
+            setup.type                                          = MultiAttackType.SecondaryPerformTwice;
+            setup.attack_one_damage_on_hit                      = true;     // TLT
+            setup.AMAD.accuracy_corrector                       = true;     // Accuracy corrector
             break;
 
         case AlphaAttackWeapon._3d_ReyFinn:

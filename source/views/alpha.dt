@@ -34,7 +34,8 @@ block form
                     - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, Mangler",              AlphaAttackWeapon._3d_ManglerCannon);
                     - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, Mangler, Lone Wolf",   AlphaAttackWeapon._3d_ManglerCannonLoneWolf);
                     - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, TLT",                  AlphaAttackWeapon._3d_TwinLaserTurret);
-                    - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, TLT, Maul(1), Ezra",   AlphaAttackWeapon._3d_TwinLaserTurret_Maul1Ezra);
+                    - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, TLT, Acc. Corrector",  AlphaAttackWeapon._3d_TwinLaserTurretAccCorrector);
+                    - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, TLT, Maul(1), Ezra",   AlphaAttackWeapon._3d_TwinLaserTurretMaul1Ezra);
                     - select_control_option_t!(prefix ~ "_weapon") ("3 Dice, Rey(Pilot), Finn",     AlphaAttackWeapon._3d_ReyFinn);
                     - select_control_option_t!(prefix ~ "_weapon") ("4 Dice",                       AlphaAttackWeapon._4d);
                     - select_control_option_t!(prefix ~ "_weapon") ("4 Dice, Crack Shot",           AlphaAttackWeapon._4d_CrackShot);
