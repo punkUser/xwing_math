@@ -20,3 +20,11 @@ Additional Setup on Linux
 -------------------------
 On Linux you may also need to install the dependencies for vibe.d. See the Linux section on
 [this page](https://github.com/vibe-d/vibe.d) for more information.
+
+In the default config, the application will attempt to listen on port 80 (HTTP) which several Linux
+distributions do not allow for non-priviledged accounts. Other than running with an elevated account or
+changing the default port, on recent versions of Linux it is possible to allow an executable to bind to
+these priviledged ports via the following command (after building):
+```
+sudo setcap 'cap_net_bind_service=+ep' ./xwing_math
+```
