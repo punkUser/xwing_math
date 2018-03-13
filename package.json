@@ -5,12 +5,9 @@
 	"copyright": "Copyright © 2018, Andrew Lauritzen",
 	"authors": ["Andrew Lauritzen"],
 	"dependencies": {
-		"vibe-d": "~>0.8.2",
-		"diet-ng": "~>1.4.3"
-	},	
-	"versions": ["VibeDisableCommandLineParsing", "UseOpenSSL"],
-	
-	"targetType": "executable",
-	"mainSourceFile": "source/main.d",
+		"vibe-d": "~>0.8.3",
+		"diet-ng": "~>1.4.4"
+	},
+	"versions": ["VibeDisableCommandLineParsing", "VibeNoSSL"],
 	"stringImportPaths": ["source/views/"]
 }
