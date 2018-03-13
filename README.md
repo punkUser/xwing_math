@@ -26,5 +26,5 @@ distributions do not allow for non-priviledged accounts. Other than running with
 changing the default port, on recent versions of Linux it is possible to allow an executable to bind to
 these priviledged ports via the following command (after building):
 ```
-sudo setcap 'cap_net_bind_service=+ep' ./xwing_math
+sudo setcap 'cap_net_bind_service=+ep' /[path]/xwing_math
 ```
