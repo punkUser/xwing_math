@@ -149,7 +149,7 @@ function simulateUpdate(updateHistory = false)
 		
 		if (window.pdf_chart != null)
 		{
-			window.pdf_chart.update();		
+			window.pdf_chart.update();
 		}
 		
 		if (window.token_chart != null)
@@ -171,6 +171,12 @@ function simulateUpdate(updateHistory = false)
 		{
 			window.history.pushState(null, null, "?q="+data.form_state_string);
 		}
+		
+		document.querySelector('#pdf-table').scrollIntoView({ 
+			behavior: 'smooth',
+			block: 'start',
+			inline: 'nearest'
+		});
 	}, 'json');
 }
 
