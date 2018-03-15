@@ -60,9 +60,7 @@ window.onload = function()
 				responsive: true,
 				maintainAspectRatio: false,
 				title: {
-					display: true,
-					text: 'Total Hit Probability Distribution',
-					fontSize: 22,
+					display: false,
 				},
 				legend: {
 					onClick: (e) => e.stopPropagation()
@@ -111,9 +109,7 @@ window.onload = function()
 				responsive: true,
 				maintainAspectRatio: false,
 				title: {
-					display: true,
-					text: 'Expected Token Delta',
-					fontSize: 22,
+					display: false,
 				},
 				legend: {
 					position: 'top',
@@ -153,10 +149,6 @@ function simulateUpdate(updateHistory = false)
 		
 		if (window.pdf_chart != null)
 		{
-			window.pdf_chart.options.title.text = [
-				("Expected Total Hits: " + data.expected_total_hits.toFixed(3)),
-				("At Least One Crit: " + data.at_least_one_crit.toFixed(2)) + "%"
-			];
 			window.pdf_chart.update();		
 		}
 		
@@ -167,6 +159,10 @@ function simulateUpdate(updateHistory = false)
 			token_chart_data.datasets[1].data = data.exp_defense_tokens;
 			window.token_chart.update();
 		}
+		
+		$("#pdf-title").html( 
+			"Expected Total Hits: " + data.expected_total_hits.toFixed(3) +
+			"<br>At Least One Crit: " + data.at_least_one_crit.toFixed(2) + "%");
 		
 		$("#pdf-table").html(data.pdf_table_html);
 		$("#token-table").html(data.token_table_html);	

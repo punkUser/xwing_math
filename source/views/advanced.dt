@@ -163,16 +163,18 @@ block form
         - double[] exp_defense_tokens = [0.0, 0.0, 0.0, 0.0];
 
         .cell
-            .pdf-container
-                canvas#pdf-canvas(height="300")
+            .chart-title#pdf-title Total Hits<br>Probability Distribution
+            .chart-container
+                canvas#pdf-canvas(height="240")
 
         .cell
             table#pdf-table
                 include pdf_table
 
         .cell
-            .token-container
-                canvas#token-canvas(height="300")
+            .chart-title#token-title Expected Token Delta
+            .chart-container
+                canvas#token-canvas(height="240")
 
         .cell
             table#token-table

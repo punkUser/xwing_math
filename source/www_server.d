@@ -106,9 +106,9 @@ public class WWWServer
         auto basic_form = create_form_from_fields!BasicForm(req.form);
         string form_state_string = serialize_form_to_url(basic_form);
 
-        SimulationSetup setup               = basic_form.to_simulation_setup();
-        TokenState attack_tokens            = basic_form.to_attack_tokens();
-        TokenState defense_tokens           = basic_form.to_defense_tokens();
+        SimulationSetup setup        = basic_form.to_simulation_setup();
+        TokenState attack_tokens     = basic_form.to_attack_tokens();
+        TokenState defense_tokens    = basic_form.to_defense_tokens();
         
         SimulationResults results;
         {
@@ -135,9 +135,9 @@ public class WWWServer
         auto advanced_form = create_form_from_fields!AdvancedForm(req.form);
         string form_state_string = serialize_form_to_url(advanced_form);
 
-        SimulationSetup setup               = advanced_form.to_simulation_setup();
-        TokenState attack_tokens            = advanced_form.to_attack_tokens();
-        TokenState defense_tokens           = advanced_form.to_defense_tokens();
+        SimulationSetup setup       = advanced_form.to_simulation_setup();
+        TokenState attack_tokens    = advanced_form.to_attack_tokens();
+        TokenState defense_tokens   = advanced_form.to_defense_tokens();
 
         SimulationResults results;
         {

@@ -139,8 +139,9 @@ block form
         - SimulationResult total_sum;
 
         .cell
-            .pdf-container
-                canvas#pdf-canvas(height="300")
+            .chart-title#pdf-title Total Hits<br>Probability Distribution
+            .chart-container
+                canvas#pdf-canvas(height="240")
 
         .cell
             table#pdf-table

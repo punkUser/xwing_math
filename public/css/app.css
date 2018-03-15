@@ -8,6 +8,19 @@ canvas {
 	-ms-user-select: none;
 }
 
+.chart-title {
+	text-align: center;
+	font-family: "Arial", sans-serif;
+	color: #666;
+	font-weight: bold;
+	font-size: 1.4rem;
+	line-height: 1.2;
+}
+
+.chart-container {
+	margin-bottom: 1.5rem;
+}
+
 .switch {
 	margin-bottom: 0.3rem;
 }
