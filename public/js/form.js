@@ -172,11 +172,9 @@ function simulateUpdate(updateHistory = false)
 			window.history.pushState(null, null, "?q="+data.form_state_string);
 		}
 		
-		document.querySelector('#pdf-table').scrollIntoView({ 
-			behavior: 'smooth',
-			block: 'start',
-			inline: 'nearest'
-		});
+		$('html, body').animate({
+			scrollTop: $("#pdf-table").offset().top
+		}, 300);		
 	}, 'json');
 }
 
