@@ -80,23 +80,29 @@ public class WWWServer
 
     private struct SimulateJsonContent
     {
+        struct Result
+        {
+            double expected_total_hits;
+            double at_least_one_crit;       // Percent
+
+            // PDF/CDF chart
+            string[] pdf_x_labels;
+            double[] hit_pdf;               // Percent
+            double[] crit_pdf;              // Percent
+            double[] hit_inv_cdf;           // Percent
+            string pdf_table_html;          // HTML for data table
+
+            // Token chart
+            string[] exp_token_labels;
+            double[] exp_attack_tokens;
+            double[] exp_defense_tokens;
+            string token_table_html;        // HTML for data table
+        };
+
+        Result[] results;
+
         // Query string that can be used in the URL to get back to the form state that generated this
         string form_state_string;
-
-        double expected_total_hits;
-        double at_least_one_crit;       // Percent
-        string[] pdf_x_labels;
-        double[] hit_pdf;               // Percent
-        double[] crit_pdf;              // Percent
-        double[] hit_inv_cdf;           // Percent
-
-        string[] exp_token_labels;
-        double[] exp_attack_tokens;
-        double[] exp_defense_tokens;
-
-        // HTML string of table contents
-        string pdf_table_html;
-        string token_table_html;
     };
 
     private void simulate_basic(HTTPServerRequest req, HTTPServerResponse res)
@@ -230,18 +236,15 @@ public class WWWServer
         simulate_response(res, results, form_state_string);
     }
 
-    private void simulate_response(HTTPServerResponse res,
-                                   SimulationResults results,
-                                   string form_state_string = "",
-                                   int graph_min_hits = 7)
+    private SimulateJsonContent.Result assemble_json_result(
+        SimulationResults results,
+        int graph_min_hits = 7)
     {
+        SimulateJsonContent.Result content;
+
         // Always nice to show at least 0..6 hits on the graph
         int graph_max_hits = max(graph_min_hits, cast(int)results.total_hits_pdf.length);
 
-        // Setup page content
-        SimulateJsonContent content;
-        content.form_state_string = form_state_string;
-        
         content.expected_total_hits = (results.total_sum.hits + results.total_sum.crits);
         content.at_least_one_crit = 100.0 * results.at_least_one_crit_probability;
 
@@ -323,6 +326,19 @@ public class WWWServer
             token_html.compileHTMLDietFile!("token_table.dt", exp_token_labels, exp_attack_tokens, exp_defense_tokens);
             content.token_table_html = token_html.data;
         }
+
+        return content;
+    }
+
+    private void simulate_response(HTTPServerResponse res,
+                                   SimulationResults results,
+                                   string form_state_string = "")
+    {
+        SimulateJsonContent content;
+        content.form_state_string = form_state_string;
+
+        content.results = new SimulateJsonContent.Result[1];
+        content.results[0] = assemble_json_result(results);
 
         res.writeJsonBody(content);
     }

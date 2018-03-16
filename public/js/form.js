@@ -136,43 +136,52 @@ window.onload = function()
 	}
 };
 
+function updateCharts(result)
+{
+	pdf_chart_data.labels = result.pdf_x_labels;
+	pdf_chart_data.datasets[0].data = result.hit_inv_cdf;
+	pdf_chart_data.datasets[1].data = result.hit_pdf;
+	pdf_chart_data.datasets[2].data = result.crit_pdf;
+	
+	if (window.pdf_chart != null)
+	{
+		window.pdf_chart.update();
+	}
+	
+	if (window.token_chart != null)
+	{
+		token_chart_data.labels = result.exp_token_labels;
+		token_chart_data.datasets[0].data = result.exp_attack_tokens;
+		token_chart_data.datasets[1].data = result.exp_defense_tokens;
+		window.token_chart.update();
+	}
+	
+	$("#pdf-title").html(
+		"Expected Total Hits: " + result.expected_total_hits.toFixed(3) +
+		"<br>At Least One Crit: " + result.at_least_one_crit.toFixed(2) + "%");
+	
+	$("#pdf-table").html(result.pdf_table_html);
+	$("#token-table").html(result.token_table_html);
+}
+
 function simulateUpdate(updateHistory = false)
 {
 	var simulateForm = $("#simulate-form").first();
 	var data = simulateForm.serializeArray();
 	
-	$.post(simulateForm.attr("action"), data, function(data) {
-		pdf_chart_data.labels = data.pdf_x_labels;
-		pdf_chart_data.datasets[0].data = data.hit_inv_cdf;
-		pdf_chart_data.datasets[1].data = data.hit_pdf;
-		pdf_chart_data.datasets[2].data = data.crit_pdf;
+	$.post(simulateForm.attr("action"), data, function(data)
+	{
+		//console.log(data);
 		
-		if (window.pdf_chart != null)
-		{
-			window.pdf_chart.update();
-		}
-		
-		if (window.token_chart != null)
-		{
-			token_chart_data.labels = data.exp_token_labels;
-			token_chart_data.datasets[0].data = data.exp_attack_tokens;
-			token_chart_data.datasets[1].data = data.exp_defense_tokens;
-			window.token_chart.update();
-		}
-		
-		$("#pdf-title").html( 
-			"Expected Total Hits: " + data.expected_total_hits.toFixed(3) +
-			"<br>At Least One Crit: " + data.at_least_one_crit.toFixed(2) + "%");
-		
-		$("#pdf-table").html(data.pdf_table_html);
-		$("#token-table").html(data.token_table_html);	
+		updateCharts(data.results[0]);
 
 		if (updateHistory && window.history.pushState && data.form_state_string.length > 0)
 		{
 			window.history.pushState(null, null, "?q="+data.form_state_string);
 		}
 		
-		$('html, body').animate({
+		$('html, body').animate(
+		{
 			scrollTop: $("#pdf-table").offset().top
 		}, 300);		
 	}, 'json');
