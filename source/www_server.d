@@ -73,7 +73,7 @@ public class WWWServer
             path.endsWithSlash = true;
 
             url.path = path;
-            writefln("%s -> %s", req.fullURL(), url);
+            //writefln("%s -> %s", req.fullURL(), url);
             res.redirect(url, status);
         };
     }
