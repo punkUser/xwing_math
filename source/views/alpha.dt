@@ -145,7 +145,7 @@ block form
                         span.input-group-label After attack #
                         input.input-group-field.attack_results_number#attack_results_number(type="number", disabled)
                 .auto.cell
-                    .slider#attack_results_slider(data-slider, data-start="1", data-end="5", data-initial-start="5")
+                    .slider.disabled#attack_results_slider(data-slider, data-start="1", data-end="1", data-initial-start="1")
                         span.slider-handle(data-slider-handle role="slider", tabindex="1", aria-controls="attack_results_number")
                         span.slider-fill(data-slider-fill)
 
