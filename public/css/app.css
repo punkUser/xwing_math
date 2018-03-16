@@ -70,6 +70,18 @@ ul.faq ul {
 	margin-bottom: 1.25rem;
 }
 
+/**************** ATTACK RESULTS # + SLIDER ****************/
+
+.attack_results_number::-webkit-inner-spin-button,
+.attack_results_number::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.attack_results_number {
+	text-align: center;
+}
+
 
 /************************* NAV BAR *********************/
 .top-bar {

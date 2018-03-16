@@ -9,6 +9,8 @@ window.chartColors =
 	grey: 'rgb(231,233,237)'
 };
 
+var simulate_results = []
+
 var pdf_chart_data =
 {
 	labels: ["0", "1", "2", "3", "4", "5", "6"],
@@ -136,8 +138,23 @@ window.onload = function()
 	}
 };
 
-function updateCharts(result)
-{
+function updateCharts()
+{	
+	// Grab the attack index from the slider if it is present, otherwise use the last element
+	var attack_number = simulate_results.length;
+	if (simulate_results.length == 0) return;
+		
+	var input = $("#attack_results_number");
+	if (input.length > 0)
+	{
+		attack_number = Math.min(input.val(), simulate_results.length);
+	}
+	
+	//console.log("updateCharts " + attack_number);
+	
+	// NOTE: UI/attack_number is 1-based
+	var result = simulate_results[attack_number - 1];
+	
 	pdf_chart_data.labels = result.pdf_x_labels;
 	pdf_chart_data.datasets[0].data = result.hit_inv_cdf;
 	pdf_chart_data.datasets[1].data = result.hit_pdf;
@@ -164,69 +181,104 @@ function updateCharts(result)
 	$("#token-table").html(result.token_table_html);
 }
 
+var current_attack_result_index = -1;
+function attackResultsSliderChanged()
+{
+	var input = $("#attack_results_number");
+	var value = input.val();
+	if (value == current_attack_result_index) return;
+	current_attack_result_index = value;
+	
+	updateCharts();
+}
+
 function simulateUpdate(updateHistory = false)
 {
 	var simulateForm = $("#simulate-form").first();
-	var data = simulateForm.serializeArray();
+	var params = simulateForm.serializeArray();
 	
-	$.post(simulateForm.attr("action"), data, function(data)
+	$.post(simulateForm.attr("action"), params, function(data)
 	{
-		//console.log(data);
+		//console.log(simulate_data);
+				
+		simulate_results = data.results;
 		
-		updateCharts(data.results[0]);
+		// Resize attack index slider (if present)
+		var slider = $('#attack_results_slider');
+		if (slider.length > 0)
+		{
+			if (simulate_results.length == 1)
+				slider.addClass("disabled");
+			else
+				slider.removeClass("disabled");
+		
+			// NOTE: Seems like replacing the slider with a new instance is the only way
+			// to get it to reset properly when endpoints are changed.		
+			new Foundation.Slider(slider, {
+				start:		    1,
+				end:          	simulate_results.length,
+				initialStart: 	simulate_results.length,
+			});
+		}
+		
+		updateCharts();
 
 		if (updateHistory && window.history.pushState && data.form_state_string.length > 0)
 		{
 			window.history.pushState(null, null, "?q="+data.form_state_string);
 		}
 		
-		$('html, body').animate(
+		$("html, body").animate(
 		{
 			scrollTop: $("#pdf-table").offset().top
-		}, 300);		
+		}, 300);
 	}, 'json');
 }
 
 $(document).ready(function()
 {
 	// AJAX form submission
-	$('#simulate-form').submit(function(event) {
+	$("#simulate-form").submit(function(event) {
 		event.preventDefault();
 		// Form submitted by user, so update the history
 		simulateUpdate(true);
 	});
 	
 	// Mutually exclusive checkboxes
-	$('.switch-mutex').find('input').change(function () {
-		var root = $(this).parents('.switch-mutex');
+	$(".switch-mutex").find("input").change(function () {
+		var root = $(this).parents(".switch-mutex");
 		var state = this.checked;
-		root.find('input').prop("checked", false);
+		root.find("input").prop("checked", false);
 		$(this).prop("checked", state);
 	});
 	
 	// Stepper range clamping
 	$(".stepper-number").change(function() {
-		var max = +($(this).attr('max'));
-		var min = +($(this).attr('min'));
+		var max = +($(this).attr("max"));
+		var min = +($(this).attr("min"));
 		var val = +($(this).val());
 		$(this).val(Math.min(Math.max(val, min), max));
     });
 	// Stepper +/- buttons
-	$('.stepper-button').click(function() {
-		var $input = $(this).parents('.stepper-group').find('.stepper-number');
-		var val   = +($input.val());
+	$(".stepper-button").click(function() {
+		var input = $(this).parents(".stepper-group").find(".stepper-number");
+		var val   = +(input.val());
 		var delta = +($(this).data("delta"));
-		$input.val(val + delta);
-		$input.trigger("change");
+		input.val(val + delta);
+		input.trigger("change");
 	});
 	// Stepper set value buttons
-	$('.stepper-button-set').click(function() {
-		var $input = $(this).parents('.stepper-group').find('.stepper-number');
-		var val   = +($input.val());
+	$(".stepper-button-set").click(function() {
+		var input = $(this).parents(".stepper-group").find(".stepper-number");
+		var val   = +(input.val());
 		var set   = +($(this).data("set"));
-		$input.val(set);
-		$input.trigger("change");
+		input.val(set);
+		input.trigger("change");
 	});
+	
+	// Attack results number
+	$("#attack_results_number").change(attackResultsSliderChanged);
+	$("#attack_results_slider").on("moved.zf.slider", attackResultsSliderChanged);
 	
 	// If the user goes "back" after we've changed the URL, force a page reload
 	// since we don't currently handle all of the content/form updates via AJAX.

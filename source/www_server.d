@@ -131,7 +131,11 @@ public class WWWServer
                         results.total_sum.evaluation_count, sw.peek().total!"msecs");
         }
 
-        simulate_response(res, results, form_state_string);
+        SimulateJsonContent content;
+        content.form_state_string = form_state_string;
+        content.results = new SimulateJsonContent.Result[1];
+        content.results[0] = assemble_json_result(results);
+        res.writeJsonBody(content);
     }
 
     private void simulate_advanced(HTTPServerRequest req, HTTPServerResponse res)
@@ -160,7 +164,11 @@ public class WWWServer
                         results.total_sum.evaluation_count, sw.peek().total!"msecs");
         }
 
-        simulate_response(res, results, form_state_string);
+        SimulateJsonContent content;
+        content.form_state_string = form_state_string;
+        content.results = new SimulateJsonContent.Result[1];
+        content.results[0] = assemble_json_result(results);
+        res.writeJsonBody(content);
     }
 
     private void simulate_alpha(HTTPServerRequest req, HTTPServerResponse res)
@@ -170,7 +178,9 @@ public class WWWServer
         auto alpha_form = create_form_from_fields!AlphaForm(req.form);
         string form_state_string = serialize_form_to_url(alpha_form);
 
-        SimulationResults results;
+        // Save results for each attack as we accumulate
+        int max_enabled_attack = 1;
+        SimulationResults[5] results_after_attack;
         {
             auto sw = StopWatch(AutoStart.yes);
 
@@ -193,57 +203,74 @@ public class WWWServer
                 SimulationSetup setup_1 = alpha_form.to_simulation_setup!"a1"();
                 simulation.replace_attack_tokens(alpha_form.to_attack_tokens!"a1"());
                 simulation.simulate_attack(setup_1, true, (defender_final_attack == 1));
+                max_enabled_attack = 1;
             }
+            results_after_attack[0] = simulation.compute_results();
             if (alpha_form.a2_enabled)
             {
                 SimulationSetup setup_2 = alpha_form.to_simulation_setup!"a2"();
                 simulation.replace_attack_tokens(alpha_form.to_attack_tokens!"a2"());
                 simulation.simulate_attack(setup_2, true, (defender_final_attack == 2));
+                max_enabled_attack = 2;
             }
+            results_after_attack[1] = simulation.compute_results();
             if (alpha_form.a3_enabled)
             {
                 SimulationSetup setup_3 = alpha_form.to_simulation_setup!"a3"();
                 simulation.replace_attack_tokens(alpha_form.to_attack_tokens!"a3"());
                 simulation.simulate_attack(setup_3, true, (defender_final_attack == 3));
+                max_enabled_attack = 3;
             }
+            results_after_attack[2] = simulation.compute_results();
             if (alpha_form.a4_enabled)
             {
                 SimulationSetup setup_4 = alpha_form.to_simulation_setup!"a4"();
                 simulation.replace_attack_tokens(alpha_form.to_attack_tokens!"a4"());
                 simulation.simulate_attack(setup_4, true, (defender_final_attack == 4));
+                max_enabled_attack = 4;
             }
+            results_after_attack[3] = simulation.compute_results();
             if (alpha_form.a5_enabled)
             {
                 SimulationSetup setup_5 = alpha_form.to_simulation_setup!"a5"();
                 simulation.replace_attack_tokens(alpha_form.to_attack_tokens!"a5"());
                 simulation.simulate_attack(setup_5, true, (defender_final_attack == 5));
+                max_enabled_attack = 5;
             }
-            
-            // Just to reset it to defaults; stats for token deltas shouldn't really be
-            // used for the attacker since they aren't meaningful with multiple attackers
-            // Not strictly necessary but feels cleaner :)
-            simulation.replace_attack_tokens(TokenState.init);
-
-            results = simulation.compute_results();
+            results_after_attack[4] = simulation.compute_results();
 
             // NOTE: This is kinda similar to the access log, but convenient for now
-            log_message("%s %s Simulated %s states in %s msec",
+            log_message("%s %s Simulated in %s msec",
                         req.clientAddress.toAddressString(),
                         "/alpha/?q=" ~ form_state_string,
-                        results.total_sum.evaluation_count, sw.peek().total!"msecs");
+                        sw.peek().total!"msecs");
         }
 
-        simulate_response(res, results, form_state_string);
+        SimulateJsonContent content;
+        content.form_state_string = form_state_string;
+
+        // NOTE: max_enabled_attack is 1-based
+        content.results = new SimulateJsonContent.Result[max_enabled_attack];
+        
+        // Make sure all the graphs/tables have the same dimensions (worst case)
+        int min_hits = 7;
+        foreach(i; 0 .. max_enabled_attack)
+            min_hits = max(min_hits, cast(int)results_after_attack[i].total_hits_pdf.length);
+
+        foreach(i; 0 .. max_enabled_attack)
+            content.results[i] = assemble_json_result(results_after_attack[i], min_hits);
+
+        res.writeJsonBody(content);
     }
 
     private SimulateJsonContent.Result assemble_json_result(
-        SimulationResults results,
-        int graph_min_hits = 7)
+        ref const(SimulationResults) results,
+        int min_hits = 7)
     {
         SimulateJsonContent.Result content;
 
         // Always nice to show at least 0..6 hits on the graph
-        int graph_max_hits = max(graph_min_hits, cast(int)results.total_hits_pdf.length);
+        int graph_max_hits = max(min_hits, cast(int)results.total_hits_pdf.length);
 
         content.expected_total_hits = (results.total_sum.hits + results.total_sum.crits);
         content.at_least_one_crit = 100.0 * results.at_least_one_crit_probability;
@@ -315,7 +342,9 @@ public class WWWServer
 
         // Render HTML for tables
         {
-            SimulationResult[] total_hits_pdf = results.total_hits_pdf;
+            SimulationResult[] total_hits_pdf = results.total_hits_pdf.dup;
+            if (total_hits_pdf.length < min_hits)
+                total_hits_pdf.length = min_hits;
 
             auto pdf_html = appender!string();
             pdf_html.compileHTMLDietFile!("pdf_table.dt", total_hits_pdf);
@@ -329,20 +358,6 @@ public class WWWServer
 
         return content;
     }
-
-    private void simulate_response(HTTPServerResponse res,
-                                   SimulationResults results,
-                                   string form_state_string = "")
-    {
-        SimulateJsonContent content;
-        content.form_state_string = form_state_string;
-
-        content.results = new SimulateJsonContent.Result[1];
-        content.results[0] = assemble_json_result(results);
-
-        res.writeJsonBody(content);
-    }
-
 
     private void basic(HTTPServerRequest req, HTTPServerResponse res)
     {
