@@ -512,15 +512,17 @@ class Simulation
             // a bit tricky in the arbitrary case, so we're sticking to the simpler logic that we will
             // prefer not gaining stress where possible.
 
-            // For now, since there's currently no way to lost stress in the Modify Attack Dice phase (only
+            // For now, since there's currently no way to lose stress in the Modify Attack Dice phase (only
             // after an attack), it's safe to assume that any passive dice mods that depend on being unstressed
             // can (and should) be used now before gaining the additional stress. Otherwise we'd have to try
             // and track which effects we've used between the phases which implies we also need to split
             // out and separately track each card which turns into a UI nightmare.
-
-            // NOTE: Use *only* the "unstressed" effects as we're going to be turning those off anyways
-            attack_dice.change_dice(DieResult.Focus, DieResult.Crit,  m_setup.AMAD.focus_to_crit_count.unstressed);
-            attack_dice.change_dice(DieResult.Focus, DieResult.Hit,   m_setup.AMAD.focus_to_hit_count.unstressed);
+            if (attack_tokens.stress == 0)
+            {
+                // NOTE: Use *only* the "unstressed" effects as we're going to be turning those off anyways
+                attack_dice.change_dice(DieResult.Focus, DieResult.Crit,  m_setup.AMAD.focus_to_crit_count.unstressed);
+                attack_dice.change_dice(DieResult.Focus, DieResult.Hit,   m_setup.AMAD.focus_to_hit_count.unstressed);
+            }
 
             int total_rerolls = m_setup.AMAD.reroll_any_gain_stress_count(attack_tokens);
             int rerolled_count  = attack_dice.remove_dice_for_reroll(DieResult.Blank, min(blank_to_reroll, total_rerolls));
@@ -726,12 +728,7 @@ class Simulation
         // Spend regular focus or evade tokens?
         if (required_evades > 0 && (can_spend_focus || can_spend_evade))
         {
-            // NOTE: Optimal strategy here depends on quite a lot of factors, but this is good enough in most cases
-            // - If defender must spend focus (ex. hotshot copilot), prefer to spend focus.
-            // - If attacker can modify evades into focus (ex. juke), prefer to spend evade.
-            // - Generally prefer to spend focus if none of the above conditions apply                
-            bool prefer_spend_focus = (m_setup.AMDD.evade_to_focus_count == 0) || (m_setup.defense_must_spend_focus);
-
+            // - Generally prefer to spend focus as evade is normally more useful on defense
             bool can_cancel_all_with_focus = can_spend_focus && (mutable_focus_results >= required_evades);
             bool can_cancel_all_with_evade = can_spend_evade && (1 >= required_evades);
 
@@ -741,7 +738,7 @@ class Simulation
                 spent_focus = can_spend_focus;
                 spent_evade = can_spend_evade;
             }
-            else if (prefer_spend_focus)      // Hold onto evade primarily
+            else
             {
                 if (can_cancel_all_with_focus)
                 {
@@ -752,19 +749,6 @@ class Simulation
                 {
                     assert(can_cancel_all_with_evade);
                     spent_evade = can_spend_evade;
-                }
-            }
-            else                              // Hold on to focus primarily
-            {
-                if (can_cancel_all_with_evade)
-                {
-                    assert(can_spend_evade);
-                    spent_evade = true;
-                }
-                else
-                {
-                    assert(can_cancel_all_with_focus);
-                    spent_focus = can_spend_focus;
                 }
             }
         }

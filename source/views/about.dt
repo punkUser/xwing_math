@@ -96,9 +96,9 @@ block content
                     The defender tries to minimize or entirely avoid taking hits. In cases where there are token spending choices,
                     the defender will prefer to keep tokens that are more useful on defense in case there is a second attack.
                     For instance, if a defender can spend either a focus or evade to fully evade an attack, it will normally
-                    prefer to spend the focus and hang onto the evade unless the attacker has Juke, in which case it will hang
-                    on to the focus instead. While the "optimal" choice depends on additional factors (dice, mods and tokens
-                    available to each player), this heuristic works well for the typical situations encountered in X-Wing.
+                    prefer to spend the focus and hang onto the evade. While the "optimal" choice depends on additional factors
+                    (dice, mods and tokens available to each player), this heuristic works well for the typical situations
+                    encountered in X-Wing.
 
         li.accordion-item(data-accordion-item)
             a.accordion-title(href="#optimal") Do the attacker and defender play optimally?
