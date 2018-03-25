@@ -67,7 +67,7 @@ block form
                 - stepper_control_t!(prefix ~ "_reroll_any_count") ("Rerolls", 0, 6);
 
 
-    form#simulate-form(action="/simulate_alpha.json", method="POST", autocomplete="off")
+    form#simulate-form(action="javascript:void(0);", method="POST", autocomplete="off")
         include controls.inc
         - import form;
         

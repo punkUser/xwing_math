@@ -1,7 +1,7 @@
 extends form_layout
 
 block form
-    form#simulate-form(action="/simulate_basic.json", method="POST", autocomplete="off")
+    form#simulate-form(action="javascript:void(0);", method="POST", autocomplete="off")
         include controls.inc
         - import form;
         

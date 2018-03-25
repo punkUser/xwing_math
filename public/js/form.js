@@ -197,7 +197,7 @@ function simulateUpdate(updateHistory = false)
 	var simulateForm = $("#simulate-form").first();
 	var params = simulateForm.serializeArray();
 	
-	$.post(simulateForm.attr("action"), params, function(data)
+	$.post("simulate.json", params, function(data)
 	{
 		//console.log(simulate_data);
 				

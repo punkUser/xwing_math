@@ -19,26 +19,29 @@ public class WWWServer
 {
     public this()
     {
+        m_server_settings.url_root = "/";
+
         auto settings = new HTTPServerSettings;
         settings.errorPageHandler = toDelegate(&error_page);
         settings.port = 80;
-
-        //settings.sessionStore = new MemorySessionStore();
 
         //settings.accessLogFormat = "%h - %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\" %D";
         //settings.accessLogToConsole = true;
 
         auto router = new URLRouter;
     
-        router.get("/", &basic);
-        router.get("/advanced/", &advanced);
-        router.get("/alpha/", &alpha);
-        router.get("/faq/", &about);
-        router.get("/about/", staticRedirect("/faq/", HTTPStatus.movedPermanently));
-        router.post("/simulate_basic.json", &simulate_basic);
-        router.post("/simulate_advanced.json", &simulate_advanced);
-        router.post("/simulate_alpha.json", &simulate_alpha);
-    
+        router.get (m_server_settings.url_root, &basic);
+        router.post(m_server_settings.url_root ~ "simulate.json", &simulate_basic);
+
+        router.get (m_server_settings.url_root ~ "advanced/", &advanced);
+        router.post(m_server_settings.url_root ~ "advanced/simulate.json", &simulate_advanced);
+
+        router.get (m_server_settings.url_root ~ "alpha/", &alpha);
+        router.post(m_server_settings.url_root ~ "alpha/simulate.json", &simulate_alpha);
+
+        router.get (m_server_settings.url_root ~ "faq/", &about);
+        router.get (m_server_settings.url_root ~ "about/", staticRedirect(m_server_settings.url_root ~ "faq/", HTTPStatus.movedPermanently));
+            
         debug
         {
             // Show routes in debug for convenience
@@ -57,7 +60,9 @@ public class WWWServer
             }
         }
 
-        router.get("*", serveStaticFiles("./public/"));    
+        auto file_server_settings = new HTTPFileServerSettings;
+        file_server_settings.serverPathPrefix = m_server_settings.url_root;
+        router.get(m_server_settings.url_root ~ "*", serveStaticFiles("./public/", file_server_settings));
 
         listenHTTP(settings, router);
     }
@@ -364,7 +369,9 @@ public class WWWServer
         // Load values from URL if present
         string form_state_string = req.query.get("q", "");
         BasicForm form_values = create_form_from_url!BasicForm(form_state_string);
-        res.render!("basic.dt", form_values);
+
+        auto server_settings = m_server_settings;
+        res.render!("basic.dt", server_settings, form_values);
     }
 
     private void advanced(HTTPServerRequest req, HTTPServerResponse res)
@@ -372,7 +379,9 @@ public class WWWServer
         // Load values from URL if present
         string form_state_string = req.query.get("q", "");
         AdvancedForm form_values = create_form_from_url!AdvancedForm(form_state_string);
-        res.render!("advanced.dt", form_values);
+
+        auto server_settings = m_server_settings;
+        res.render!("advanced.dt", server_settings, form_values);
     }
 
     private void alpha(HTTPServerRequest req, HTTPServerResponse res)
@@ -380,22 +389,23 @@ public class WWWServer
         // Load values from URL if present
         string form_state_string = req.query.get("q", "");
         AlphaForm form_values = create_form_from_url!AlphaForm(form_state_string);
-        res.render!("alpha.dt", form_values);
+
+        auto server_settings = m_server_settings;
+        res.render!("alpha.dt", server_settings, form_values);
     }
 
     private void about(HTTPServerRequest req, HTTPServerResponse res)
     {
-        res.render!("about.dt");
+        auto server_settings = m_server_settings;
+        res.render!("about.dt", server_settings);
     }
 
     // *************************************** ERROR ************************************************
 
     private void error_page(HTTPServerRequest req, HTTPServerResponse res, HTTPServerErrorInfo error)
     {
-        // To be extra safe we avoid DB queries in the error page for now
-        //auto recent_tournaments = m_data_store.tournaments(true);
-
-        res.render!("error.dt", req, error);
+        auto server_settings = m_server_settings;
+        res.render!("error.dt", server_settings, req, error);
     }
 
 
@@ -403,4 +413,10 @@ public class WWWServer
 
     // NOTE: Be a bit careful with state here. These functions can be parallel and re-entrant due to
     // triggering blocking calls and then having other requests submitted by separate fibers.
+
+    struct ServerSettings
+    {
+        string url_root = "/";
+    };
+    immutable ServerSettings m_server_settings;
 }

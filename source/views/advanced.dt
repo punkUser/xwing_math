@@ -1,7 +1,7 @@
 extends form_layout
 
 block form
-    form#simulate-form(action="/simulate_advanced.json", method="POST")
+    form#simulate-form(action="javascript:void(0);", method="POST")
         include controls.inc
 
         .grid-x.grid-margin-x.small-up-1.medium-up-2.large-up-2

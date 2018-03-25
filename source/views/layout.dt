@@ -12,32 +12,32 @@ html(class="no-js", lang="en")
         
         title X-Wing Probability Calculator
         
-        link(rel="stylesheet", href="/css/foundation.css?v=#{file_version}")
-        link(rel="stylesheet", href="/css/app.css?v=#{file_version}")
+        link(rel="stylesheet", href="#{server_settings.url_root}css/foundation.css?v=#{file_version}")
+        link(rel="stylesheet", href="#{server_settings.url_root}css/app.css?v=#{file_version}")
 
     body
         nav.top-bar
             .top-bar-left
                 ul.dropdown.menu(data-dropdown-menu)
                     li
-                        a(href="/") Basic
+                        a(href="#{server_settings.url_root}") Basic
                     li.divider
                     li
-                        a(href="/advanced/") Advanced
+                        a(href="#{server_settings.url_root}advanced/") Advanced
                     li.divider
                     li
-                        a(href="/alpha/") Alpha
+                        a(href="#{server_settings.url_root}alpha/") Alpha
                     li.divider
                     li
-                        a(href="/faq/") FAQ
+                        a(href="#{server_settings.url_root}faq/") FAQ
 
         #content
             .grid-container
                 block content
                         
-        script(src="/js/vendor/jquery.js")
-        script(src="/js/vendor/what-input.js")
-        script(src="/js/vendor/foundation.min.js")
-        script(src="/js/vendor/Chart.bundle.min.js?v=#{file_version}")
-        script(src="/js/app.js?v=#{file_version}")
+        script(src="#{server_settings.url_root}js/vendor/jquery.js")
+        script(src="#{server_settings.url_root}js/vendor/what-input.js")
+        script(src="#{server_settings.url_root}js/vendor/foundation.min.js")
+        script(src="#{server_settings.url_root}js/vendor/Chart.bundle.min.js?v=#{file_version}")
+        script(src="#{server_settings.url_root}js/app.js?v=#{file_version}")
         block scripts
