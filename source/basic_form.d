@@ -91,8 +91,10 @@ align(1) struct BasicForm
 
         bool, "defense_glitterstim",          1,
         bool, "defense_m9g8_attack_die",      1,
+        bool, "attack_is_duncan_howard",      1,
+        bool, "defense_is_duncan_howard",     1,
 
-        uint, "",                            26,
+        uint, "",                            24,
         ));
 
     // Can always add more on the end, so no need to reserve space explicitly
@@ -161,6 +163,7 @@ public SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     setup.attack_one_damage_on_hit                          = form.attack_one_damage_on_hit;
     setup.attack_must_spend_focus                           = form.defense_hotshot_copilot;    // NOTE: Affects the *other* person
     setup.attack_lose_stress_on_hit                         = (form.attack_maul_1 || form.attack_maul_all);
+    setup.attack_is_duncan_howard                           = form.attack_is_duncan_howard;
 
     // Add results
     setup.AMAD.add_hit_count                                += form.attack_fearlessness                     ? 1 : 0;
@@ -215,6 +218,7 @@ public SimulationSetup to_simulation_setup(ref const(BasicForm) form)
     // Special effects
     setup.defense_guess_evades                  = form.defense_c3p0_1 ? 1 : 0;
     setup.defense_must_spend_focus              = form.attack_hotshot_copilot;     // NOTE: Affects the *other* person
+    setup.defense_is_duncan_howard              = form.defense_is_duncan_howard;
 
     // Add results
     setup.DMDD.add_evade_count                  += form.defense_concord_dawn                        ? 1 : 0;

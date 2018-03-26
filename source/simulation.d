@@ -92,6 +92,7 @@ struct SimulationSetup
     bool attack_lose_stress_on_hit = false;         // If attack hits, lose one stress
     bool attack_crack_shot = false;                 // At the start of compare results, can spend to cancel an evade
     bool attack_harpooned_on_hit = false;           // Apply "harpooned" condition on hit
+    bool attack_is_duncan_howard = false;           // Palpatine rules casual (tm)
 
     // Defense
     int defense_dice = 0;
@@ -127,7 +128,8 @@ struct SimulationSetup
 
     // Special effects
     bool defense_must_spend_focus = false;          // Defender must spend focus (hotshot copilot on attacker)
-    int defense_guess_evades = 0;                   // If initially roll this many evades, add another evade (C-3P0). Once per turn so see related token
+    int  defense_guess_evades = 0;                  // If initially roll this many evades, add another evade (C-3P0). Once per turn so see related token
+    bool defense_is_duncan_howard = false;          // Palpatine rules casual (tm)
 
     // TODO: Autoblaster (hit results cannot be canceled)
     // TODO: Ten Numb (1 crit result cannot be canceled)
@@ -561,6 +563,19 @@ class Simulation
         attack_dice.change_dice(DieResult.Focus, DieResult.Crit,  m_setup.AMAD.focus_to_crit_count(attack_tokens));
         attack_dice.change_dice(DieResult.Focus, DieResult.Hit,   m_setup.AMAD.focus_to_hit_count(attack_tokens));
 
+        // Duncan gets to do palpatine here instead!
+        if (attack_tokens.palpatine && m_setup.attack_dice > 0 && m_setup.attack_is_duncan_howard)
+        {
+            if (attack_dice.change_dice_final(DieResult.Blank, DieResult.Crit, 1) == 0 &&
+                attack_dice.change_dice_final(DieResult.Focus, DieResult.Crit, 1) == 0 &&
+                attack_dice.change_dice_final(DieResult.Hit,   DieResult.Crit, 1) == 0 &&
+                attack_dice.change_dice_final(DieResult.Crit,  DieResult.Crit, 1) == 0)
+            {
+                // Uhh... unclear what we're supposed to do here with Duncan's rules...
+            }
+            attack_tokens.palpatine = false;
+        }
+
         // TODO: We should technically take one damage on hit and a bunch of details about
         // the defender's maximum defense results into account here with respect to spending
         // tokens and once per round abilities. i.e. in certain situations there's no need to
@@ -708,6 +723,18 @@ class Simulation
         // NOTE: Order matters here - do the most useful changes first
         defense_dice.change_dice(DieResult.Blank, DieResult.Evade, m_setup.DMDD.blank_to_evade_count);
         defense_dice.change_dice(DieResult.Focus, DieResult.Evade, m_setup.DMDD.focus_to_evade_count(defense_tokens));
+
+        // Duncan gets to do palpatine here instead!
+        if (defense_tokens.palpatine && m_setup.defense_dice > 0 && m_setup.defense_is_duncan_howard)
+        {
+            if (defense_dice.change_dice_final(DieResult.Blank, DieResult.Evade, 1) == 0 &&
+                defense_dice.change_dice_final(DieResult.Focus, DieResult.Evade, 1) == 0 &&
+                defense_dice.change_dice_final(DieResult.Evade, DieResult.Evade, 1) == 0)
+            {
+                // Uhh... unclear what we're supposed to do here with Duncan's rules...
+            }
+            defense_tokens.palpatine = false;
+        }
 
         // Figure out if we should spend focus or evade tokens (regular effect)
         int uncanceled_hits = attack_results[DieResult.Hit] + attack_results[DieResult.Crit];
@@ -930,7 +957,8 @@ class Simulation
         // but only really affects some edge cases since the changed die cannot be modified again.
         // FAQ says palpatine still works even if locked by Omega Leader, while Omega Leader shuts
         // off the HLC effect though, so best current determination is that palpatine should happen first.
-        if (state.attack_tokens.palpatine && m_setup.attack_dice > 0)
+        // NOTE: Duncan gets to do palpatine in the modify step
+        if (state.attack_tokens.palpatine && m_setup.attack_dice > 0 && !m_setup.attack_is_duncan_howard)
         {
             do_attack_palpatine(state.attack_dice, state.attack_tokens);
             state.attack_tokens.palpatine = false;
@@ -979,7 +1007,7 @@ class Simulation
 
         // Only palp on defense if there are hits to cancel and we're rolling at least one die
         int uncanceled_hits = state.attack_dice.final_results[DieResult.Hit] + state.attack_dice.final_results[DieResult.Crit];
-        if (uncanceled_hits > 0 && state.defense_tokens.palpatine && m_setup.defense_dice > 0)
+        if (uncanceled_hits > 0 && state.defense_tokens.palpatine && m_setup.defense_dice > 0 && !m_setup.defense_is_duncan_howard)
         {
             do_defense_palpatine(state.defense_dice, state.defense_tokens);
             state.defense_tokens.palpatine = false;

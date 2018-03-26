@@ -15,14 +15,20 @@ canvas {
 	font-weight: bold;
 	font-size: 1.4rem;
 	line-height: 1.2;
+	background-color: #ffffff;
 }
 
 .chart-container {
 	margin-bottom: 1.5rem;
+	background-color: #ffffff;
 }
 
 .switch {
 	margin-bottom: 0.3rem;
+}
+
+.switch-hidden {
+	display: none;
 }
 
 .input-group {
@@ -46,6 +52,10 @@ canvas {
 
 body {
 	line-height: 1.0;
+}
+
+.duncan {
+	background-image:url("../duncan.jpg");
 }
 
 label {
