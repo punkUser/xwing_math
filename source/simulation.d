@@ -329,6 +329,24 @@ class Simulation
         }
     }
 
+    // Work out the maximum number of evades the defender can possibly get
+    private int compute_maximum_evades(ref TokenState defense_tokens) const
+    {
+        int maximum_evades = m_setup.defense_dice;
+            
+        // NOTE: Slightly imperfect as we're assuming they could find a way to make these all into evades
+        // Will tighten this up later but it doesn't affect many real world situations at the moment.
+        maximum_evades += m_setup.DMDD.add_evade_count;
+        maximum_evades += m_setup.DMDD.add_focus_count;
+        maximum_evades += m_setup.DMDD.add_blank_count;
+
+        maximum_evades += defense_tokens.evade > 0            ? 1 : 0;      // Evade token
+        maximum_evades += defense_tokens.defense_guess_evades ? 1 : 0;      // C-3P0
+        maximum_evades += defense_tokens.sunny_bounder        ? 1 : 0;      // Sunny bounder
+
+        return maximum_evades;
+    }
+
     // Offensive palpatine - change one die to a (final) crit
     private void do_attack_palpatine(ref DiceState dice, ref TokenState attack_tokens) const
     {
@@ -1002,29 +1020,40 @@ class Simulation
 
     private SimulationState defense_dice_before_attacker_reroll(SimulationState state) const
     {
-        // NOTE: Again, FAQ doesn't specify the ordering of some of these since they can never occur with current game rules,
-        // so we're extrapolating a bit here...
-
-        // Only palp on defense if there are hits to cancel and we're rolling at least one die
-        int uncanceled_hits = state.attack_dice.final_results[DieResult.Hit] + state.attack_dice.final_results[DieResult.Crit];
-        if (uncanceled_hits > 0 && state.defense_tokens.palpatine && m_setup.defense_dice > 0 && !m_setup.defense_is_duncan_howard)
+        const int uncanceled_hits = state.attack_dice.final_results[DieResult.Hit] + state.attack_dice.final_results[DieResult.Crit];
+        const int maximum_evades = compute_maximum_evades(state.defense_tokens);
+        const bool can_evade = (maximum_evades >= uncanceled_hits);
+        
+        // For "one damage on hit" attacks, only use these if there's a possible way for us to avoid this attack
+        if (uncanceled_hits > 0 && m_setup.defense_dice > 0 && (!m_setup.attack_one_damage_on_hit || can_evade))
         {
-            do_defense_palpatine(state.defense_dice, state.defense_tokens);
-            state.defense_tokens.palpatine = false;
-        }
+            writeln(uncanceled_hits);
 
-        // "After rolling" events
-        if (state.defense_tokens.sunny_bounder)
-            state.defense_tokens.sunny_bounder = do_sunny_bounder(state.defense_dice);
+            // "After rolling" events
+            // NOTE: Again, FAQ doesn't specify the ordering of some of these since they can never occur with current game rules,
+            // so we're extrapolating a bit here...
 
-        // Use our "guess evade results" (C-3P0) if available
-        // NOTE: Only works if we are rolling at least one die
-        if (state.defense_tokens.defense_guess_evades && m_setup.defense_dice > 0)
-        {
-            // Try out guess and mark it as used
-            if (m_setup.defense_guess_evades == state.defense_dice.count(DieResult.Evade))
-                ++state.defense_dice.results[DieResult.Evade];
-            state.defense_tokens.defense_guess_evades = false;
+            if (state.defense_tokens.sunny_bounder)
+                state.defense_tokens.sunny_bounder = do_sunny_bounder(state.defense_dice);
+            
+            // NOTE: Don't use the actual defense dice state here as these effects need to be declared before rolling!            
+            // Use our "guess evade results" (C-3P0) if available
+
+            // TODO: Make this a bit smarter in one damage on hit scenarios. Ex. don't use if the guess would
+            // still not allow us to evade the attack (i.e. guess 0 on 1 defense die vs. two hit results).
+            if (state.defense_tokens.defense_guess_evades)
+            {
+                if (m_setup.defense_guess_evades == state.defense_dice.count(DieResult.Evade))
+                    ++state.defense_dice.results[DieResult.Evade];
+                state.defense_tokens.defense_guess_evades = false;
+            }
+
+            // Palpatine
+            if (state.defense_tokens.palpatine && !m_setup.defense_is_duncan_howard)
+            {
+                do_defense_palpatine(state.defense_dice, state.defense_tokens);
+                state.defense_tokens.palpatine = false;
+            }
         }
 
         // Attacker reroll defense dice
