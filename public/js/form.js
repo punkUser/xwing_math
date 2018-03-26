@@ -239,9 +239,15 @@ function updateDuncan()
 {
 	var checkedCount = $(".switch-hidden").find("input:checked:visible").length;
 	if (checkedCount > 0)
+	{
 		$("body").addClass("duncan");
+		$("#simulate").html("Rules Casual");
+	}
 	else
+	{
 		$("body").removeClass("duncan");
+		$("#simulate").html("Simulate");
+	}
 }
 
 $(document).ready(function()
