@@ -1027,8 +1027,6 @@ class Simulation
         // For "one damage on hit" attacks, only use these if there's a possible way for us to avoid this attack
         if (uncanceled_hits > 0 && m_setup.defense_dice > 0 && (!m_setup.attack_one_damage_on_hit || can_evade))
         {
-            writeln(uncanceled_hits);
-
             // "After rolling" events
             // NOTE: Again, FAQ doesn't specify the ordering of some of these since they can never occur with current game rules,
             // so we're extrapolating a bit here...
