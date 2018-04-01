@@ -263,14 +263,15 @@ public class WWWServer
             min_hits = max(min_hits, cast(int)results_after_attack[i].total_hits_pdf.length);
 
         foreach(i; 0 .. max_enabled_attack)
-            content.results[i] = assemble_json_result(results_after_attack[i], min_hits);
+            content.results[i] = assemble_json_result(results_after_attack[i], min_hits, i);
 
         res.writeJsonBody(content);
     }
 
     private SimulateJsonContent.Result assemble_json_result(
         ref const(SimulationResults) results,
-        int min_hits = 7)
+        int min_hits = 7,
+        int attacker_index = -1, int defender_index = -1)
     {
         SimulateJsonContent.Result content;
 
@@ -357,7 +358,7 @@ public class WWWServer
         }
         {
             auto token_html = appender!string();
-            token_html.compileHTMLDietFile!("token_table.dt", exp_token_labels, exp_attack_tokens, exp_defense_tokens);
+            token_html.compileHTMLDietFile!("token_table.dt", exp_token_labels, exp_attack_tokens, exp_defense_tokens, attacker_index, defender_index);
             content.token_table_html = token_html.data;
         }
 

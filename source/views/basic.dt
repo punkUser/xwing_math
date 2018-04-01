@@ -156,6 +156,8 @@ block form
         - string[] exp_token_labels = ["Focus", "Target Lock", "Evade", "Stress"];
         - double[] exp_attack_tokens = [0.0, 0.0, 0.0, 0.0];
         - double[] exp_defense_tokens = [0.0, 0.0, 0.0, 0.0];
+        - int attacker_index = -1;
+        - int defender_index = -1;
 
         .cell
             .chart-title#pdf-title Total Hits<br>Probability Distribution
