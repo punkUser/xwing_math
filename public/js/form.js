@@ -235,21 +235,6 @@ function simulateUpdate(updateHistory = false)
 	}, 'json');
 }
 
-function updateDuncan()
-{
-	var checkedCount = $(".switch-hidden").find("input:checked:visible").length;
-	if (checkedCount > 0)
-	{
-		$("body").addClass("duncan");
-		$("#simulate").html("Rules Casual");
-	}
-	else
-	{
-		$("body").removeClass("duncan");
-		$("#simulate").html("Simulate");
-	}
-}
-
 $(document).ready(function()
 {
 	// AJAX form submission
@@ -274,16 +259,10 @@ $(document).ready(function()
 			others.show();
 		else
 			others.hide();
-		updateDuncan();
 	});
 	// Trigger an update in case we had preloaded form data
 	$(".switch-toggle-hidden").find("input").trigger("change");
-	
-	$(".switch-hidden").find("input").change(function () {
-		updateDuncan();
-	});
-	updateDuncan();
-		
+			
 	// Stepper range clamping
 	$(".stepper-number").change(function() {
 		var max = +($(this).attr("max"));
