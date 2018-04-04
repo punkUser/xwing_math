@@ -230,7 +230,7 @@ function simulateUpdate(updateHistory = false)
 		
 		$("html, body").animate(
 		{
-			scrollTop: $("#pdf-table").offset().top
+			scrollTop: $("#pdf-title").offset().top
 		}, 300);
 	}, 'json');
 }
