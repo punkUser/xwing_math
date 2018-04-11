@@ -237,21 +237,20 @@ class Simulation
         //
         // However taking the conservative approach tends to do better with the more common dice counts (and multi-attack
         // since it tends to spend fewer tokens) and is more typical of human reasoning, so we'll stick to that approach here.
-
+        //
+        // NOTE: We only want to do these extra rerolls if they are *free* (hence the separation), as spending tokens to maybe
+        // not spend tokens is not generally a good plan.
         int focus_to_reroll = useless_focus_count;
         int blank_to_reroll = useless_blank_count;
-        assert(useless_focus_count > 0 || useless_blank_count > 0);
-        if (focus_to_reroll < 0)
+        if (useless_focus_count < 0)
         {
             // Extra effects for focus available, so safe to reroll extra blanks (if free)
-            assert(blank_to_reroll > 0);
-            blank_to_reroll += -useless_focus_count;
+            blank_to_reroll = max(blank_to_reroll, -useless_focus_count);
         }
         else if (useless_blank_count < 0)
         {
             // Extra effects for blanks available, so safe to reroll extra focus (if free)
-            assert(focus_to_reroll > 0);
-            focus_to_reroll += -blank_to_reroll;
+            focus_to_reroll = max(focus_to_reroll, -useless_blank_count);
         }
         focus_to_reroll = max(0, focus_to_reroll);
         blank_to_reroll = max(0, blank_to_reroll);
@@ -279,8 +278,8 @@ class Simulation
         }
 
         // Indicate to the caller any additional dice that should be rerolled if possible (at cost)
-        out_focus_to_reroll = focus_to_reroll - rerolled_focus_count;
-        out_blank_to_reroll = blank_to_reroll - rerolled_blank_count;
+        out_focus_to_reroll = max(0, focus_to_reroll - rerolled_focus_count);
+        out_blank_to_reroll = max(0, blank_to_reroll - rerolled_blank_count);
 
         // Sanity
         assert(out_focus_to_reroll >= 0);
@@ -503,7 +502,8 @@ class Simulation
             (attack_tokens.amad_any_to_crit ? 1 : 0) +
             (attack_tokens.amad_any_to_hit  ? 1 : 0);
 
-        if ((focus_to_reroll + blank_to_reroll) <= change_any_count)
+        // NOTE: Must count any dice we rerolled here too as it could always get rerolled into the same result.
+        if ((focus_to_reroll + blank_to_reroll + dice_to_reroll) <= change_any_count)
             return dice_to_reroll;
 
         // If we have a target lock, we can reroll the additional stuff
