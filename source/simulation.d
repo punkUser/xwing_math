@@ -166,10 +166,11 @@ struct SimulationResult
     double attack_delta_stress       = 0;
     double attack_delta_crack_shot   = 0;
 
-    double defense_delta_focus_tokens = 0;
-    double defense_delta_evade_tokens = 0;
-    double defense_delta_stress       = 0;
-    double defense_delta_harpooned    = 0;
+    double defense_delta_focus_tokens   = 0;
+    double defense_delta_evade_tokens   = 0;
+    double defense_delta_stress         = 0;
+    double defense_delta_harpooned      = 0;
+    double defense_delta_stealth_device = 0;
 };
 
 SimulationResult accumulate_result(SimulationResult a, SimulationResult b)
@@ -185,9 +186,11 @@ SimulationResult accumulate_result(SimulationResult a, SimulationResult b)
     a.attack_delta_stress        += b.attack_delta_stress;
     a.attack_delta_crack_shot    += b.attack_delta_crack_shot;
 
-    a.defense_delta_focus_tokens += b.defense_delta_focus_tokens;
-    a.defense_delta_evade_tokens += b.defense_delta_evade_tokens;
-    a.defense_delta_stress       += b.defense_delta_stress;
+    a.defense_delta_focus_tokens   += b.defense_delta_focus_tokens;
+    a.defense_delta_evade_tokens   += b.defense_delta_evade_tokens;
+    a.defense_delta_stress         += b.defense_delta_stress;
+    a.defense_delta_harpooned      += b.defense_delta_harpooned;
+    a.defense_delta_stealth_device += b.defense_delta_stealth_device;
 
     return a;
 }
@@ -1087,6 +1090,10 @@ class Simulation
             state.defense_tokens, state.defense_dice.final_results,
             attack_results);
 
+        // Turn off stealth device if the defender was hit
+        if (attack_hit)
+            state.defense_tokens.stealth_device = false;
+
         state.final_hits  += attack_results[DieResult.Hit];
         state.final_crits += attack_results[DieResult.Crit];
         state.attack_hit   = state.attack_hit || attack_hit;        // Secondary perform twice attacks hit if *either* sub-attack hits
@@ -1119,7 +1126,11 @@ class Simulation
         states = roll_attack_dice!(false)(states, &attack_dice_after_reroll);
 
         // Roll and modify defense dice, and compare results
-        states = roll_defense_dice!(true)(states,  &defense_dice_before_attacker_reroll, cast(ubyte)m_setup.defense_dice);
+        ubyte defense_dice = cast(ubyte)m_setup.defense_dice;
+        if (defense_tokens.stealth_device)
+            ++defense_dice;
+
+        states = roll_defense_dice!(true)(states,  &defense_dice_before_attacker_reroll, defense_dice);
         states = roll_defense_dice!(false)(states, &defense_dice_before_defender_reroll);
         states = roll_defense_dice!(false)(states, &defense_dice_after_reroll);
 
@@ -1366,12 +1377,12 @@ class Simulation
             result.attack_delta_stress        = probability * cast(double)(state.attack_tokens.stress       - m_initial_attack_tokens.stress     );
             result.attack_delta_crack_shot    = probability * cast(double)(state.attack_tokens.crack_shot  != m_initial_attack_tokens.crack_shot ? -1.0 : 0.0);
 
-            result.defense_delta_focus_tokens = probability * cast(double)(state.defense_tokens.focus       - m_initial_defense_tokens.focus     );
-            result.defense_delta_evade_tokens = probability * cast(double)(state.defense_tokens.evade       - m_initial_defense_tokens.evade     );
-            result.defense_delta_stress       = probability * cast(double)(state.defense_tokens.stress      - m_initial_defense_tokens.stress    );
-            result.defense_delta_harpooned    = probability * cast(double)(state.defense_tokens.harpooned   - m_initial_defense_tokens.harpooned );
+            result.defense_delta_focus_tokens   = probability * cast(double)(state.defense_tokens.focus           - m_initial_defense_tokens.focus     );
+            result.defense_delta_evade_tokens   = probability * cast(double)(state.defense_tokens.evade           - m_initial_defense_tokens.evade     );
+            result.defense_delta_stress         = probability * cast(double)(state.defense_tokens.stress          - m_initial_defense_tokens.stress    );
+            result.defense_delta_harpooned      = probability * cast(double)(state.defense_tokens.harpooned       - m_initial_defense_tokens.harpooned );
+            result.defense_delta_stealth_device = probability * cast(double)(state.defense_tokens.stealth_device != m_initial_defense_tokens.stealth_device ? -1.0 : 0.0);
         
-
             // Accumulate into the total results structure
             results.total_sum = accumulate_result(results.total_sum, result);
 

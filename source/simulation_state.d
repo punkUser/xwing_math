@@ -113,7 +113,8 @@ public struct TokenState
         bool, "defense_guess_evades",                 1,
         bool, "palpatine",                            1,        // Both attack (crit) and defense (evade)
         bool, "crack_shot",                           1,
-        int,  "",                                     2)
+        bool, "stealth_device",                       1,
+        int,  "",                                     1)
     );
 
     mixin(bitfields!(

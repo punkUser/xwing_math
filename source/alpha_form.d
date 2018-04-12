@@ -72,8 +72,9 @@ align(1) struct AlphaForm
 
         bool, "defense_glitterstim",            1,
         bool, "defense_m9g8_attack_die",        1,
+        bool, "defense_stealth_device",         1,
 
-        ubyte, "",                              5,
+        ubyte, "",                              4,
 
         ubyte, "a1_weapon",                     8, // AlphaAttackWeapon enum
         ubyte, "a1_reroll_any_count",           4,
@@ -179,6 +180,7 @@ public TokenState to_defense_tokens(ref const(AlphaForm) form)
     // Once per round abilities are treated like "tokens" for simulation purposes
     defense_tokens.sunny_bounder          = form.defense_pilot == DefensePilot.SunnyBounder;
     defense_tokens.palpatine              = form.defense_palpatine_evade;
+    defense_tokens.stealth_device         = form.defense_stealth_device;
 
     defense_tokens.defense_guess_evades   = (form.defense_c3p0_0 || form.defense_c3p0_1);
 

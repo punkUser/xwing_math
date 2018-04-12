@@ -98,6 +98,7 @@ block form
                         - switch_control_t!"defense_must_spend_focus" ("Defender Must Spend Focus");
                         - switch_control_t!"defense_palpatine_evade"  ("Palpatine (evade)");
                         - switch_control_t!"defense_sunny_bounder"    ("Sunny Bounder");
+                        - switch_control_t!"defense_stealth_device"   ("Stealth Device");
 
                 .callout.small.alert
                     h3 Attacker Modify Defense Dice

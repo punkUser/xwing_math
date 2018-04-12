@@ -313,33 +313,42 @@ public class WWWServer
         }
 
         // Tokens (see labels above)
-        string[] exp_token_labels = ["Focus", "Target Lock", "Evade", "Stress"];
+        string[] exp_token_labels = ["Focus", "Target Lock", "Evade"];
         double[] exp_attack_tokens = [
             results.total_sum.attack_delta_focus_tokens,
             results.total_sum.attack_delta_target_locks,
-            0.0f,
-            results.total_sum.attack_delta_stress];
+            0.0f];
         double[] exp_defense_tokens = [
             results.total_sum.defense_delta_focus_tokens,
             0.0f,
-            results.total_sum.defense_delta_evade_tokens,
-            results.total_sum.defense_delta_stress];
+            results.total_sum.defense_delta_evade_tokens];
 
         // Tokens that we only show if they changed
         // NOTE: This is not perfect in cases where it just happens to average out to exactly 0, but
         // there are no cases where it can be positive for these "tokens" (really cards) at the moment.
+        if (results.total_sum.attack_delta_stress != 0.0 || results.total_sum.defense_delta_stress != 0.0)
+        {
+            exp_token_labels    ~= "Stress";
+            exp_attack_tokens   ~= results.total_sum.attack_delta_stress;
+            exp_defense_tokens  ~= results.total_sum.defense_delta_stress;
+        }
         if (results.total_sum.attack_delta_crack_shot != 0.0)
         {
             exp_token_labels    ~= "Crack Shot";
             exp_attack_tokens   ~= results.total_sum.attack_delta_crack_shot;
             exp_defense_tokens  ~= 0.0;     // N/A
         }
-
         if (results.total_sum.defense_delta_harpooned != 0.0)
         {
             exp_token_labels    ~= "Harpooned!";
             exp_attack_tokens   ~= 0.0;     // N/A
             exp_defense_tokens  ~= results.total_sum.defense_delta_harpooned;
+        }
+        if (results.total_sum.defense_delta_stealth_device != 0.0)
+        {
+            exp_token_labels    ~= "Stealth Device";
+            exp_attack_tokens   ~= 0.0;     // N/A
+            exp_defense_tokens  ~= results.total_sum.defense_delta_stealth_device;
         }
 
         content.exp_token_labels   = exp_token_labels;

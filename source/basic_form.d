@@ -94,7 +94,9 @@ align(1) struct BasicForm
         bool, "attack_is_duncan_howard",      1,
         bool, "defense_is_duncan_howard",     1,
 
-        uint, "",                            24,
+        bool, "defense_stealth_device",       1,
+
+        uint, "",                            23,
         ));
 
     // Can always add more on the end, so no need to reserve space explicitly
@@ -143,6 +145,7 @@ public TokenState to_defense_tokens(ref const(BasicForm) form)
     // Once per round abilities are treated like "tokens" for simulation purposes
     defense_tokens.sunny_bounder          = form.defense_pilot == DefensePilot.SunnyBounder;
     defense_tokens.palpatine              = form.defense_palpatine_evade;
+    defense_tokens.stealth_device         = form.defense_stealth_device;
 
     defense_tokens.defense_guess_evades   = (form.defense_c3p0_0 || form.defense_c3p0_1);
 

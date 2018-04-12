@@ -108,7 +108,7 @@ align(1) struct AdvancedForm
         bool,  "attack_palpatine_crit",                      1,
         bool,  "defense_palpatine_evade",                    1,
         bool,  "attack_crack_shot",                          1,
-        bool,  "_unused",                                    1,
+        bool,  "defense_stealth_device",                     1,
 
         ubyte, "dmad_reroll_any_count",                      4,
         
@@ -164,6 +164,7 @@ TokenState to_defense_tokens(ref const(AdvancedForm) form)
     defense_tokens.sunny_bounder         = form.defense_sunny_bounder;
     defense_tokens.defense_guess_evades  = (form.defense_guess_evades >= 0);
     defense_tokens.palpatine             = form.defense_palpatine_evade;
+    defense_tokens.stealth_device        = form.defense_stealth_device;
 
     return defense_tokens;
 }

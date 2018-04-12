@@ -123,6 +123,7 @@ block form
                         legend Modifications and Illicits
                         - switch_control_t!"defense_autothrusters"      ("Autothrusters");
                         - switch_control_t!"defense_glitterstim"        ("Glitterstim");
+                        - switch_control_t!"defense_stealth_device"     ("Stealth Device");
 
                     fieldset.fieldset
                         legend Titles
