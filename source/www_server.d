@@ -130,10 +130,10 @@ public class WWWServer
             results = simulation.compute_results();
 
             // NOTE: This is kinda similar to the access log, but convenient for now
-            log_message("%s %s Simulated %s states in %s msec",
+            log_message("%s %s Simulated in %s msec",
                         req.clientAddress.toAddressString(),
                         "/?q=" ~ form_state_string,
-                        results.total_sum.evaluation_count, sw.peek().total!"msecs");
+                        sw.peek().total!"msecs");
         }
 
         SimulateJsonContent content;
@@ -163,10 +163,10 @@ public class WWWServer
             results = simulation.compute_results();
 
             // NOTE: This is kinda similar to the access log, but convenient for now
-            log_message("%s %s Simulated %s states in %s msec",
+            log_message("%s %s Simulated in %s msec",
                         req.clientAddress.toAddressString(),
                         "/advanced/?q=" ~ form_state_string,
-                        results.total_sum.evaluation_count, sw.peek().total!"msecs");
+                        sw.peek().total!"msecs");
         }
 
         SimulateJsonContent content;
@@ -312,44 +312,29 @@ public class WWWServer
             content.hit_inv_cdf[i] = content.hit_inv_cdf[i+1] + content.hit_pdf[i] + content.crit_pdf[i];
         }
 
-        // Tokens (see labels above)
-        string[] exp_token_labels = ["Focus", "Target Lock", "Evade"];
-        double[] exp_attack_tokens = [
-            results.total_sum.attack_delta_focus_tokens,
-            results.total_sum.attack_delta_target_locks,
-            0.0f];
-        double[] exp_defense_tokens = [
-            results.total_sum.defense_delta_focus_tokens,
-            0.0f,
-            results.total_sum.defense_delta_evade_tokens];
+        // Tokens
+        string[TokenDelta.field_count()] token_labels;
+        double[TokenDelta.field_count()] attack_tokens;
+        double[TokenDelta.field_count()] defense_tokens;
+        size_t token_field_count = 0;
 
-        // Tokens that we only show if they changed
-        // NOTE: This is not perfect in cases where it just happens to average out to exactly 0, but
-        // there are no cases where it can be positive for these "tokens" (really cards) at the moment.
-        if (results.total_sum.attack_delta_stress != 0.0 || results.total_sum.defense_delta_stress != 0.0)
+        foreach (i; 0 .. token_labels.length)
         {
-            exp_token_labels    ~= "Stress";
-            exp_attack_tokens   ~= results.total_sum.attack_delta_stress;
-            exp_defense_tokens  ~= results.total_sum.defense_delta_stress;
+            double attack  = results.total_sum.attack_token_delta.delta(i);
+            double defense = results.total_sum.defense_token_delta.delta(i);
+            if (attack != 0.0 || defense != 0.0)
+            {
+                assert(token_field_count <= token_labels.length);
+                token_labels[token_field_count]   = TokenDelta.field_name(i);
+                attack_tokens[token_field_count]  = attack;
+                defense_tokens[token_field_count] = defense;
+                ++token_field_count;
+            }
         }
-        if (results.total_sum.attack_delta_crack_shot != 0.0)
-        {
-            exp_token_labels    ~= "Crack Shot";
-            exp_attack_tokens   ~= results.total_sum.attack_delta_crack_shot;
-            exp_defense_tokens  ~= 0.0;     // N/A
-        }
-        if (results.total_sum.defense_delta_harpooned != 0.0)
-        {
-            exp_token_labels    ~= "Harpooned!";
-            exp_attack_tokens   ~= 0.0;     // N/A
-            exp_defense_tokens  ~= results.total_sum.defense_delta_harpooned;
-        }
-        if (results.total_sum.defense_delta_stealth_device != 0.0)
-        {
-            exp_token_labels    ~= "Stealth Device";
-            exp_attack_tokens   ~= 0.0;     // N/A
-            exp_defense_tokens  ~= results.total_sum.defense_delta_stealth_device;
-        }
+
+        auto exp_token_labels = token_labels[0 .. token_field_count].dup;
+        auto exp_attack_tokens = attack_tokens[0 .. token_field_count].dup;
+        auto exp_defense_tokens = defense_tokens[0 .. token_field_count].dup;
 
         content.exp_token_labels   = exp_token_labels;
         content.exp_attack_tokens  = exp_attack_tokens;

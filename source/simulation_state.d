@@ -110,7 +110,7 @@ public struct TokenState
         bool, "amad_any_to_hit",                      1,
         bool, "amad_any_to_crit",                     1,
         bool, "sunny_bounder",                        1,        // Both attack and defense
-        bool, "defense_guess_evades",                 1,
+        bool, "c3p0",                                 1,
         bool, "palpatine",                            1,        // Both attack (crit) and defense (evade)
         bool, "crack_shot",                           1,
         bool, "stealth_device",                       1,
@@ -127,6 +127,54 @@ public struct TokenState
         return memcmp(&this, &s, TokenState.sizeof);
     }
 }
+
+public struct TokenDelta
+{
+    private struct Field
+    {
+        string field;       // Compile-time field name in TokenState. i.e. "attack_tokens.field" should be valid D code
+        string name;        // UI name to use for the field
+    };
+
+    // Order here is the order they will be shown in the chart and table
+    private static immutable Field[] k_delta_fields = [
+        { "focus",                  "Focus"             },
+        { "evade",                  "Evade"             },
+        { "target_lock",            "Target Lock"       },
+        { "stress",                 "Stress"            },
+        { "amad_any_to_hit",        "Chips (hit)"       },
+        { "amad_any_to_crit",       "Chips (crit)"      },
+        { "crack_shot",             "Crack Shot"        },
+        { "harpooned",              "Harpooned!"        },
+        { "palpatine",              "Palpatine"         },
+        { "c3p0",                   "C-3P0"             },
+        { "stealth_device",         "Stealth Device"    },
+    ];
+
+    private double[k_delta_fields.length] m_deltas = 0.0;
+
+    public this(double probability, TokenState before, TokenState after)
+    {
+        static foreach(i, field; k_delta_fields)
+        {
+            mixin("m_deltas[i] = probability * (cast(double)after." ~ field.field ~ " - cast(double)before." ~ field.field ~ ");");
+        }
+    }
+
+    // Used for computing weighted probabilities of various results
+    ref TokenDelta opOpAssign(string op)(in TokenDelta rhs) if (op == "+") {
+        m_deltas[] += rhs.m_deltas[];
+        return this;
+    }
+
+    // Could do an iteration range or something but this is good enough for now
+    static public size_t field_count() { return m_deltas.length; }
+    static public string field_name(size_t i) { return k_delta_fields[i].name; }
+    public double delta(size_t i) const { return m_deltas[i]; }
+};
+
+
+
 
 public struct SimulationState
 {

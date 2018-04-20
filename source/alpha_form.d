@@ -150,7 +150,7 @@ align(1) struct AlphaForm
     }
 };
 
-public TokenState to_attack_tokens(alias prefix)(ref const(AlphaForm) form)
+public TokenState to_attack_tokens(string prefix)(ref const(AlphaForm) form)
 {
     TokenState attack_tokens;
 
@@ -182,12 +182,12 @@ public TokenState to_defense_tokens(ref const(AlphaForm) form)
     defense_tokens.palpatine              = form.defense_palpatine_evade;
     defense_tokens.stealth_device         = form.defense_stealth_device;
 
-    defense_tokens.defense_guess_evades   = (form.defense_c3p0_0 || form.defense_c3p0_1);
+    defense_tokens.c3p0                   = (form.defense_c3p0_0 || form.defense_c3p0_1);
 
     return defense_tokens;
 }
 
-static SimulationSetup to_simulation_setup(alias prefix)(ref const(AlphaForm) form)
+static SimulationSetup to_simulation_setup(string prefix)(ref const(AlphaForm) form)
 {
     SimulationSetup setup;
 

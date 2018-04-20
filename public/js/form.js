@@ -1,14 +1,3 @@
-window.chartColors =
-{
-	red: 'rgb(255, 99, 132)',
-	orange: 'rgb(255, 159, 64)',
-	yellow: 'rgb(255, 205, 86)',
-	green: 'rgb(75, 192, 192)',
-	blue: 'rgb(54, 162, 235)',
-	purple: 'rgb(153, 102, 255)',
-	grey: 'rgb(231,233,237)'
-};
-
 var simulate_results = []
 
 var pdf_chart_data =
@@ -17,20 +6,20 @@ var pdf_chart_data =
 	datasets: [{
 		type: 'line',
 		label: 'At Least # Hits',
-		borderColor: window.chartColors.blue,
-		backgroundColor: window.chartColors.blue,
+		borderColor: 'rgb(54, 162, 235)',
+		backgroundColor: 'rgb(54, 162, 235)',
 		borderWidth: 2,
 		fill: false,
 		data: []
 	}, {
 		type: 'bar',
 		label: 'Hits',
-		backgroundColor: window.chartColors.red,
+		backgroundColor: 'rgb(255, 99, 132)',
 		data: []
 	}, {
 		type: 'bar',
 		label: 'Crits',
-		backgroundColor: window.chartColors.orange,
+		backgroundColor: 'rgb(255, 159, 64)',
 		data: [] 
 	}]
 };
@@ -40,11 +29,11 @@ var token_chart_data =
 	labels: ["Focus", "Target Lock", "Evade", "Stress"],
 	datasets: [{
 		label: 'Attacker',
-		backgroundColor: window.chartColors.red,
+		backgroundColor: 'rgb(255, 99, 132)',
 		data: []
 	}, {
 		label: 'Defender',
-		backgroundColor: window.chartColors.green,
+		backgroundColor: 'rgb(163, 226, 115)',
 		data: []
 	}]
 }
@@ -65,6 +54,7 @@ window.onload = function()
 					display: false,
 				},
 				legend: {
+					position: 'top',
 					onClick: (e) => e.stopPropagation()
 				},
 				tooltips: {
@@ -115,6 +105,7 @@ window.onload = function()
 				},
 				legend: {
 					position: 'top',
+					onClick: (e) => e.stopPropagation()
 				},
 				tooltips: {
 					mode: 'index',
@@ -128,6 +119,7 @@ window.onload = function()
 				scales: {
 					yAxes: [{
 						ticks: {
+							beginAtZero: true,
 							suggestedMin: -1,
 							suggestedMax:  1,
 						},
@@ -167,6 +159,10 @@ function updateCharts()
 	
 	if (window.token_chart != null)
 	{
+		// For horizontalBar
+		//$("#token-canvas").height(50 + result.exp_token_labels.length * 60);
+		//window.token_chart.resize();
+		
 		token_chart_data.labels = result.exp_token_labels;
 		token_chart_data.datasets[0].data = result.exp_attack_tokens;
 		token_chart_data.datasets[1].data = result.exp_defense_tokens;

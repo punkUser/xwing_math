@@ -152,46 +152,20 @@ struct SimulationSetup
 
 struct SimulationResult
 {
-    // Performance/debug metadata
-    int evaluation_count = 1;
-
     double probability = 0.0f;
-
     double hits = 0;
     double crits = 0;
-
-    // After - Before for all values here
-    double attack_delta_focus_tokens = 0;
-    double attack_delta_target_locks = 0;
-    double attack_delta_stress       = 0;
-    double attack_delta_crack_shot   = 0;
-
-    double defense_delta_focus_tokens   = 0;
-    double defense_delta_evade_tokens   = 0;
-    double defense_delta_stress         = 0;
-    double defense_delta_harpooned      = 0;
-    double defense_delta_stealth_device = 0;
+    TokenDelta attack_token_delta;
+    TokenDelta defense_token_delta;
 };
 
 SimulationResult accumulate_result(SimulationResult a, SimulationResult b)
 {
-    a.evaluation_count += b.evaluation_count;
     a.probability += b.probability;
-
     a.hits += b.hits;
     a.crits += b.crits;
-
-    a.attack_delta_focus_tokens  += b.attack_delta_focus_tokens;
-    a.attack_delta_target_locks  += b.attack_delta_target_locks;
-    a.attack_delta_stress        += b.attack_delta_stress;
-    a.attack_delta_crack_shot    += b.attack_delta_crack_shot;
-
-    a.defense_delta_focus_tokens   += b.defense_delta_focus_tokens;
-    a.defense_delta_evade_tokens   += b.defense_delta_evade_tokens;
-    a.defense_delta_stress         += b.defense_delta_stress;
-    a.defense_delta_harpooned      += b.defense_delta_harpooned;
-    a.defense_delta_stealth_device += b.defense_delta_stealth_device;
-
+    a.attack_token_delta  += b.attack_token_delta;
+    a.defense_token_delta += b.defense_token_delta;
     return a;
 }
 
@@ -343,7 +317,7 @@ class Simulation
         maximum_evades += m_setup.DMDD.add_blank_count;
 
         maximum_evades += defense_tokens.evade > 0            ? 1 : 0;      // Evade token
-        maximum_evades += defense_tokens.defense_guess_evades ? 1 : 0;      // C-3P0
+        maximum_evades += defense_tokens.c3p0                 ? 1 : 0;      // C-3P0
         maximum_evades += defense_tokens.sunny_bounder        ? 1 : 0;      // Sunny bounder
 
         return maximum_evades;
@@ -1042,11 +1016,11 @@ class Simulation
 
             // TODO: Make this a bit smarter in one damage on hit scenarios. Ex. don't use if the guess would
             // still not allow us to evade the attack (i.e. guess 0 on 1 defense die vs. two hit results).
-            if (state.defense_tokens.defense_guess_evades)
+            if (state.defense_tokens.c3p0)
             {
                 if (m_setup.defense_guess_evades == state.defense_dice.count(DieResult.Evade))
                     ++state.defense_dice.results[DieResult.Evade];
-                state.defense_tokens.defense_guess_evades = false;
+                state.defense_tokens.c3p0 = false;
             }
 
             // Palpatine
@@ -1259,9 +1233,11 @@ class Simulation
 
     // Replaces the attack tokens on *all* current states with the given ones
     // Generally this is done in preparation for simulating another attack *from a different attacker*
-    // Note that this makes the attacker token state deltas kind of meaningless, so they likely shouldn't be used
+    // Note that this also replaces the "initial" attack tokens so that the deltas are at least meaningful for any following attacks.
     public void replace_attack_tokens(TokenState attack_tokens)
     {
+        m_initial_attack_tokens = attack_tokens;
+
         SimulationStateMap new_states;
         foreach (state, probability; m_states)
         {
@@ -1372,16 +1348,8 @@ class Simulation
             result.hits  = probability * cast(double)state.final_hits;
             result.crits = probability * cast(double)state.final_crits;
 
-            result.attack_delta_focus_tokens  = probability * cast(double)(state.attack_tokens.focus        - m_initial_attack_tokens.focus      );
-            result.attack_delta_target_locks  = probability * cast(double)(state.attack_tokens.target_lock  - m_initial_attack_tokens.target_lock);
-            result.attack_delta_stress        = probability * cast(double)(state.attack_tokens.stress       - m_initial_attack_tokens.stress     );
-            result.attack_delta_crack_shot    = probability * cast(double)(state.attack_tokens.crack_shot  != m_initial_attack_tokens.crack_shot ? -1.0 : 0.0);
-
-            result.defense_delta_focus_tokens   = probability * cast(double)(state.defense_tokens.focus           - m_initial_defense_tokens.focus     );
-            result.defense_delta_evade_tokens   = probability * cast(double)(state.defense_tokens.evade           - m_initial_defense_tokens.evade     );
-            result.defense_delta_stress         = probability * cast(double)(state.defense_tokens.stress          - m_initial_defense_tokens.stress    );
-            result.defense_delta_harpooned      = probability * cast(double)(state.defense_tokens.harpooned       - m_initial_defense_tokens.harpooned );
-            result.defense_delta_stealth_device = probability * cast(double)(state.defense_tokens.stealth_device != m_initial_defense_tokens.stealth_device ? -1.0 : 0.0);
+            result.attack_token_delta  = TokenDelta(probability, m_initial_attack_tokens,  state.attack_tokens);
+            result.defense_token_delta = TokenDelta(probability, m_initial_defense_tokens, state.defense_tokens);
         
             // Accumulate into the total results structure
             results.total_sum = accumulate_result(results.total_sum, result);

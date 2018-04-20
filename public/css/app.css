@@ -54,10 +54,6 @@ body {
 	line-height: 1.0;
 }
 
-.duncan {
-	background-image:url("../duncan.jpg");
-}
-
 label {
 	font-size: 100%;
 }
@@ -90,6 +86,8 @@ ul.faq ul {
 
 .attack_results_number {
 	text-align: center;
+	width: 3.5rem;
+	min-width: 3.5rem;
 }
 
 

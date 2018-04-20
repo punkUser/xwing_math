@@ -162,7 +162,7 @@ TokenState to_defense_tokens(ref const(AdvancedForm) form)
     defense_tokens.evade                 = form.defense_evade_token_count;
     defense_tokens.stress                = form.defense_stress_count;
     defense_tokens.sunny_bounder         = form.defense_sunny_bounder;
-    defense_tokens.defense_guess_evades  = (form.defense_guess_evades >= 0);
+    defense_tokens.c3p0                  = (form.defense_guess_evades >= 0);
     defense_tokens.palpatine             = form.defense_palpatine_evade;
     defense_tokens.stealth_device        = form.defense_stealth_device;
 

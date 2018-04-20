@@ -147,7 +147,7 @@ public TokenState to_defense_tokens(ref const(BasicForm) form)
     defense_tokens.palpatine              = form.defense_palpatine_evade;
     defense_tokens.stealth_device         = form.defense_stealth_device;
 
-    defense_tokens.defense_guess_evades   = (form.defense_c3p0_0 || form.defense_c3p0_1);
+    defense_tokens.c3p0                   = (form.defense_c3p0_0 || form.defense_c3p0_1);
 
     return defense_tokens;
 }

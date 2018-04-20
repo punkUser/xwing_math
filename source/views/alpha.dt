@@ -2,7 +2,7 @@ extends form_layout
 
 block form
 
-    - void attacker_panel_t(alias prefix)(string title)
+    - void attacker_panel_t(string prefix)(string title)
         - import alpha_form;
 
         - mixin("bool enabled = form_values." ~ prefix ~ "_enabled;");
@@ -138,9 +138,9 @@ block form
         - import simulation;
         - SimulationResult[] total_hits_pdf;
         - SimulationResult total_sum;
-        - string[] exp_token_labels = ["Focus", "Target Lock", "Evade", "Stress"];
-        - double[] exp_attack_tokens = [0.0, 0.0, 0.0, 0.0];
-        - double[] exp_defense_tokens = [0.0, 0.0, 0.0, 0.0];
+        - string[] exp_token_labels = [];
+        - double[] exp_attack_tokens = [];
+        - double[] exp_defense_tokens = [];
         - int attacker_index = -1;
         - int defender_index = -1;
 

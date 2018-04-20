@@ -145,9 +145,9 @@ block form
         - import simulation;
         - SimulationResult[] total_hits_pdf;
         - SimulationResult total_sum;
-        - string[] exp_token_labels = ["Focus", "Target Lock", "Evade", "Stress"];
-        - double[] exp_attack_tokens = [0.0, 0.0, 0.0, 0.0];
-        - double[] exp_defense_tokens = [0.0, 0.0, 0.0, 0.0];
+        - string[] exp_token_labels = [];
+        - double[] exp_attack_tokens = [];
+        - double[] exp_defense_tokens = [];
         - int attacker_index = -1;
         - int defender_index = -1;
 
@@ -163,7 +163,7 @@ block form
         .cell
             .chart-title#token-title Expected Token Delta
             .chart-container
-                canvas#token-canvas(height="240")
+                canvas#token-canvas()
 
         .cell
             table#token-table
