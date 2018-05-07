@@ -1,10 +1,12 @@
 import simulation;
 import simulation_state;
 import form;
+import log;
+
 import basic_form;
 import advanced_form;
 import alpha_form;
-import log;
+import multi2_form;
 
 import std.array;
 import std.stdio;
@@ -38,6 +40,10 @@ public class WWWServer
 
         router.get (m_server_settings.url_root ~ "alpha/", &alpha);
         router.post(m_server_settings.url_root ~ "alpha/simulate.json", &simulate_alpha);
+
+        // 2.0 stuff
+
+        router.get (m_server_settings.url_root ~ "2/multi/", &multi2);
 
         router.get (m_server_settings.url_root ~ "faq/", &about);
         router.get (m_server_settings.url_root ~ "about/", staticRedirect(m_server_settings.url_root ~ "faq/", HTTPStatus.movedPermanently));
@@ -387,6 +393,16 @@ public class WWWServer
 
         auto server_settings = m_server_settings;
         res.render!("alpha.dt", server_settings, form_values);
+    }
+
+    private void multi2(HTTPServerRequest req, HTTPServerResponse res)
+    {
+        // Load values from URL if present (TODO - fix this all up)
+        string form_state_string = req.query.get("q", "");
+        Multi2Form form_values = create_form_from_url!Multi2Form(form_state_string);
+
+        auto server_settings = m_server_settings;
+        res.render!("multi2.dt", server_settings, form_values);
     }
 
     private void about(HTTPServerRequest req, HTTPServerResponse res)
