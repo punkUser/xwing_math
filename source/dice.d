@@ -1,3 +1,5 @@
+import math;
+
 import std.math;
 import std.algorithm;
 
@@ -37,8 +39,7 @@ public struct DiceState
     }
 
     // "Finalize" dice state "final_results"
-    // Removes all focus and blank results. Note that for LWF we'll have to keep these around in some form
-    // (at least binary whether to trigger it or not), but for now they are just hurting performance.
+    // Also removes all focus and blank results to reduce unnecessary state divergence
     void finalize()
     {
         final_results[] += results[] + rerolled_results[];
@@ -72,6 +73,16 @@ public struct DiceState
         results[from] -= rerolled_count;
 
         return rerolled_count;
+    }
+
+    // Prefers rerolling blanks, secondarily focus results
+    int remove_dice_for_reroll_blank_focus(int max_count = int.max)
+    {
+        int rerolled_results = remove_dice_for_reroll(DieResult.Blank, max_count);
+        if (rerolled_results >= max_count) return rerolled_results;
+
+        rerolled_results += remove_dice_for_reroll(DieResult.Focus,  max_count - rerolled_results);
+        return rerolled_results;
     }
 
     // Prefers changing rerolled dice first where limited as they are more constrained
@@ -177,5 +188,45 @@ public struct DiceState
 
         changed_results += change_dice(DieResult.Focus, to, max_count - changed_results);
         return changed_results;
+    }
+}
+
+
+// delegate params are (blank, focus, hit, crit, probability)
+public void roll_attack_dice(int dice_count, void delegate(int, int, int, int, double) dg)
+{
+    // TODO: Maybe optimize/specialize this more for small numbers of dice.
+    // Rerolling 1 die is likely to be more common than large counts.
+    for (int crit = 0; crit <= dice_count; ++crit)
+    {
+        for (int hit = 0; hit <= (dice_count - crit); ++hit)
+        {
+            for (int focus = 0; focus <= (dice_count - crit - hit); ++focus)
+            {
+                int blank = dice_count - crit - hit - focus;
+                assert(blank >= 0);
+
+                double roll_probability = compute_attack_roll_probability(blank, focus, hit, crit);
+                dg(blank, focus, hit, crit, roll_probability);
+            }
+        }
+    }
+}
+
+// delegate params are (blank, focus, evade, probability)
+public void roll_defense_dice(int dice_count, void delegate(int, int, int, double) dg)
+{
+    // TODO: Maybe optimize/specialize this more for small numbers of dice.
+    // Rerolling 1 die is likely to be more common than large counts.
+    for (int evade = 0; evade <= dice_count; ++evade)
+    {
+        for (int focus = 0; focus <= (dice_count - evade); ++focus)
+        {
+            int blank = dice_count - focus - evade;
+            assert(blank >= 0);
+
+            double roll_probability = compute_defense_roll_probability(blank, focus, evade);
+            dg(blank, focus, evade, roll_probability);
+        }
     }
 }

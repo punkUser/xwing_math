@@ -1,0 +1,92 @@
+- import form;
+
+- void attack_form_t(string form_name)(string title = "", bool include_enable_toggle = false, bool include_dice = true)
+    form(id="#{form_name}_form", action="javascript:void(0);", method="POST", autocomplete="off")
+        .callout.small.alert
+
+            - mixin("bool enabled = include_enable_toggle ? " ~ form_name ~ ".enabled : true;");
+            - if (title != "" || include_enable_toggle)
+                .grid-x
+                    .cell.auto
+                        label(for="#{form_name}_enabled")
+                            h3= title
+                    .cell.shrink
+                        - if (include_enable_toggle)
+                            .switch
+                                - if (enabled)
+                                    input.switch-input(id="#{form_name}_enabled", name="enabled", type="checkbox", data-toggle="#{form_name}_panel", checked)
+                                - else
+                                    input.switch-input(id="#{form_name}_enabled", name="enabled", type="checkbox", data-toggle="#{form_name}_panel")
+                                label.switch-paddle(for="#{form_name}_enabled")
+
+            - if (!include_enable_toggle)
+                input(name="enabled", type="hidden", checked)
+
+            - string initial_visibility = enabled ? "" : "hide";
+            div(id="#{form_name}_panel", data-toggler=".hide", class="#{initial_visibility}")
+                - if (include_dice)
+                    - stepper_control_t!("dice",                 form_name)("Attack Dice",  0, 7);
+                    - stepper_control_t!("defense_dice_diff",    form_name)("+/- Defense Dice", -3, 3);
+                    - switch_control_t !("roll_all_hits",        form_name)("Roll All Hits");
+
+                .grid-x.small-up-1.medium-up-1.large-up-2
+                    .cell
+                        fieldset.fieldset
+                            legend Green Tokens
+                            - stepper_control_t!("focus_count",        form_name)("Focus", 0, 7);
+                            - stepper_control_t!("calculate_count",    form_name)("Calculate", 0, 7);
+                            - stepper_control_t!("evade_count",        form_name)("Evade", 0, 7);
+                            - stepper_control_t!("reinforce_count",    form_name)("Reinforce", 0, 1);
+                    .cell
+                        fieldset.fieldset
+                            legend Ship Tokens
+                            - stepper_control_t!("lock_count",         form_name)("Lock", 0, 1);
+                            - stepper_control_t!("force_count",        form_name)("Force", 0, 7);
+                        fieldset.fieldset
+                            legend Red Tokens
+                            - stepper_control_t!("stress_count",       form_name)("Stress", 0, 7);
+                            //-- stepper_control_t!("jam_count",          form_name)("Jam", 0, 7);
+                            //-- stepper_control_t!("tractor_count",      form_name)("Tractor", 0, 7);
+                            //-- stepper_control_t!("ion_count",          form_name)("Ion", 0, 7);
+                            //-- stepper_control_t!("disarm_count",       form_name)("Disarm", 0, 7);
+                                
+                fieldset.fieldset
+                    legend Pilot and Ship
+                    select(name="pilot")
+                        - select_control_option_t!("pilot", form_name)("No Pilot Ability",         AttackPilot2.None);
+                        - select_control_option_t!("pilot", form_name)("(Reroll 1 die)",           AttackPilot2.Reroll_1);
+                        - select_control_option_t!("pilot", form_name)("(Reroll up to 2 dice)",    AttackPilot2.Reroll_2);
+                        - select_control_option_t!("pilot", form_name)("(Reroll up to 3 dice)",    AttackPilot2.Reroll_3);
+                        - select_control_option_t!("pilot", form_name)("Gavin Darklighter",        AttackPilot2.GavinDarklighter);
+                        - select_control_option_t!("pilot", form_name)("Leebo",                    AttackPilot2.Leebo);
+                        - select_control_option_t!("pilot", form_name)("Shara Bey",                AttackPilot2.SharaBey);
+                    select(name="ship")
+                        - select_control_option_t!("ship", form_name)("No Ship Ability",                AttackShip2.None);
+                        - select_control_option_t!("ship", form_name)("Advanced Targeting Computer",    AttackShip2.AdvancedTargetingComputer);
+                        
+                fieldset.fieldset
+                    legend Friendly Ships
+                    - switch_control_t!("howlrunner",          form_name)("Howlrunner");
+                    - switch_control_t!("saw_gerrera_pilot",   form_name)("Saw Gerrera (Pilot)");
+
+                fieldset.fieldset
+                    legend Talents
+                    - switch_control_t!("fearless",            form_name)("Fear/Ruthless");
+                    - switch_control_t!("juke",                form_name)("Juke");
+                    - switch_control_t!("lone_wolf",           form_name)("Lone Wolf");
+                    - switch_control_t!("marksmanship",        form_name)("Marksmanship");
+                    - switch_control_t!("predator",            form_name)("Predator");
+                                                                          
+                //-fieldset.fieldset
+                    legend Crew
+
+                fieldset.fieldset
+                    legend Systems
+                    - switch_control_t!("fire_control_system", form_name)("Fire-Control System");
+                        
+                fieldset.fieldset
+                    legend Secondary Weapons
+                    .switch-mutex
+                        - switch_control_t!("heavy_laser_cannon",   form_name)("Heavy Laser Cannon");
+                        - switch_control_t!("ion_weapon",           form_name)("Ion Weapon");
+                        - switch_control_t!("proton_torpedoes",     form_name)("Proton Torpedoes");

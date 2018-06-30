@@ -1,0 +1,11 @@
+extends layout
+   
+block content
+    block form
+
+    div#simulate-results
+        block results
+
+append scripts
+    script(src="#{server_settings.url_root}js/form.js?v=#{file_version}")
+    script(src="#{server_settings.url_root}js/modify_tree.js?v=#{file_version}")

@@ -1,101 +1,10 @@
 import dice;
+import math;
+import simulation_results;
 
 import std.math;
 import core.stdc.string;
 import std.bitmanip;
-
-// TODO: Can generalize this but okay for now
-// Do it in floating point since for our purposes we always end up converting immediately anyways
-private static immutable double[] k_factorials_table = [
-    1,                  // 0!
-    1,                  // 1!
-    2,                  // 2!
-    6,                  // 3!
-    24,                 // 4!
-    120,                // 5!
-    720,                // 6!
-    5040,               // 7!
-    40320,              // 8!
-    362880,             // 9!
-    3628800,            // 10!
-    39916800,			// 11!
-    479001600,			// 12!
-    6227020800,			// 13!
-    87178291200,		// 14!
-];
-
-private pure double factorial(int n)
-{
-    assert(n < k_factorials_table.length);
-    return k_factorials_table[n];
-}
-
-private pure double[count] compute_power_table(ulong count)(ulong num, ulong denom)
-{
-    double[15] table;
-    table[0] = 1.0;
-
-    // Can't use pow() as this has to work at compile time, so keep it simple
-    ulong n = num;
-    ulong d = denom;
-    foreach (i; 1 .. table.length)
-    {
-        table[i] = cast(double)n / cast(double)d;
-        n *= num;
-        d *= denom;
-    }
-
-    return table;
-}
-
-private pure double fractional_power(ulong num, ulong denom)(int power)
-{
-    static immutable auto k_power_table = compute_power_table!15(num, denom);
-    assert(power < k_power_table.length);
-    return k_power_table[power];
-}
-
-// Multinomial distribution: https://en.wikipedia.org/wiki/Multinomial_distribution
-// roll_probability = n! / (x_1! * ... * x_k!) * p_1^x_1 * ... p_k^x_k
-// NOTE: Can optimize power functions into a table fairly easily as well but performance
-// improvement is negligable and readability is greater this way.
-
-private pure double compute_attack_roll_probability(int blank, int focus, int hit, int crit)
-{
-    // P(blank) = 2/8
-    // P(focus) = 2/8
-    // P(hit)   = 3/8
-    // P(crit)  = 1/8
-    double nf = factorial(blank + focus + hit + crit);
-    double xf = (factorial(blank) * factorial(focus) * factorial(hit) * factorial(crit));
-
-    //double p = pow(0.25, blank + focus) * pow(0.375, hit) * pow(0.125, crit);
-    double p = fractional_power!(1, 8)(crit) * fractional_power!(2, 8)(blank + focus) * fractional_power!(3, 8)(hit);
-
-    double roll_probability = (nf / xf) * p;
-
-    assert(roll_probability >= 0.0 && roll_probability <= 1.0);
-    return roll_probability;
-}
-
-private pure double compute_defense_roll_probability(int blank, int focus, int evade)
-{
-    // P(blank) = 3/8
-    // P(focus) = 2/8
-    // P(evade) = 3/8
-    double nf = factorial(blank + focus + evade);
-    double xf = (factorial(blank) * factorial(focus) * factorial(evade));
-
-    //double p = pow(0.375, blank + evade) * pow(0.25, focus);
-    double p = fractional_power!(2, 8)(focus) * fractional_power!(3, 8)(blank + evade);
-
-    double roll_probability = (nf / xf) * p;
-
-    assert(roll_probability >= 0.0 && roll_probability <= 1.0);
-    return roll_probability;
-}
-
-
 
 public struct TokenState
 {
@@ -128,52 +37,21 @@ public struct TokenState
     }
 }
 
-public struct TokenDelta
-{
-    private struct Field
-    {
-        string field;       // Compile-time field name in TokenState. i.e. "attack_tokens.field" should be valid D code
-        string name;        // UI name to use for the field
-    };
-
-    // Order here is the order they will be shown in the chart and table
-    private static immutable Field[] k_delta_fields = [
-        { "focus",                  "Focus"             },
-        { "evade",                  "Evade"             },
-        { "target_lock",            "Target Lock"       },
-        { "stress",                 "Stress"            },
-        { "amad_any_to_hit",        "Chips (hit)"       },
-        { "amad_any_to_crit",       "Chips (crit)"      },
-        { "crack_shot",             "Crack Shot"        },
-        { "harpooned",              "Harpooned!"        },
-        { "palpatine",              "Palpatine"         },
-        { "c3p0",                   "C-3P0"             },
-        { "stealth_device",         "Stealth Device"    },
-    ];
-
-    private double[k_delta_fields.length] m_deltas = 0.0;
-
-    public this(double probability, TokenState before, TokenState after)
-    {
-        static foreach(i, field; k_delta_fields)
-        {
-            mixin("m_deltas[i] = probability * (cast(double)after." ~ field.field ~ " - cast(double)before." ~ field.field ~ ");");
-        }
-    }
-
-    // Used for computing weighted probabilities of various results
-    ref TokenDelta opOpAssign(string op)(in TokenDelta rhs) if (op == "+") {
-        m_deltas[] += rhs.m_deltas[];
-        return this;
-    }
-
-    // Could do an iteration range or something but this is good enough for now
-    static public size_t field_count() { return m_deltas.length; }
-    static public string field_name(size_t i) { return k_delta_fields[i].name; }
-    public double delta(size_t i) const { return m_deltas[i]; }
-};
-
-
+// For TokenResults
+// Order here is the order they will be shown in the chart and table
+public static immutable TokenResults.Field[] k_token_results_fields = [
+    { "focus",                  "Focus"             },
+    { "evade",                  "Evade"             },
+    { "target_lock",            "Target Lock"       },
+    { "stress",                 "Stress"            },
+    { "amad_any_to_hit",        "Chips (hit)"       },
+    { "amad_any_to_crit",       "Chips (crit)"      },
+    { "crack_shot",             "Crack Shot"        },
+    { "harpooned",              "Harpooned!"        },
+    { "palpatine",              "Palpatine"         },
+    { "c3p0",                   "C-3P0"             },
+    { "stealth_device",         "Stealth Device"    },
+];
 
 
 public struct SimulationState

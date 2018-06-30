@@ -1,0 +1,64 @@
+- import form;
+
+- void defense_form_t(string form_name)(bool include_dice = true)
+    form(id="defense_form", action="javascript:void(0);", method="POST", autocomplete="off")
+        .callout.small.success
+            - if (include_dice)
+                - stepper_control_t!("dice",        form_name)("Defense Dice", 0, 7);
+
+            .grid-x.small-up-1.medium-up-1.large-up-2
+                .cell
+                    fieldset.fieldset
+                        legend Green Tokens
+                        - stepper_control_t!("focus_count",       form_name)("Focus", 0, 7);
+                        - stepper_control_t!("calculate_count",   form_name)("Calculate", 0, 7);
+                        - stepper_control_t!("evade_count",       form_name)("Evade", 0, 7);
+                        - stepper_control_t!("reinforce_count",   form_name)("Reinforce", 0, 1);
+                .cell
+                    fieldset.fieldset
+                        legend Ship Tokens
+                        - stepper_control_t!("lock_count",        form_name)("Lock", 0, 1);
+                        - stepper_control_t!("force_count",       form_name)("Force", 0, 7);
+                    fieldset.fieldset
+                        legend Red Tokens
+                        - stepper_control_t!("stress_count",     form_name)("Stress", 0, 7);
+                        //-- stepper_control_t!("jam_count",        form_name)("Jam", 0, 7);
+                        //-- stepper_control_t!("tractor_count",    form_name)("Tractor", 0, 7);
+                        //-- stepper_control_t!("ion_count",        form_name)("Ion", 0, 7);
+                        //-- stepper_control_t!("disarm_count",     form_name)("Disarm", 0, 7);
+
+            fieldset.fieldset
+                legend Pilot and Ship
+                select(name="pilot")
+                    - select_control_option_t!("pilot", form_name)("No Pilot Ability",          DefensePilot2.None);
+                    - select_control_option_t!("pilot", form_name)("(Reroll 1 die)",            DefensePilot2.Reroll_1);
+                    - select_control_option_t!("pilot", form_name)("(Reroll up to 2 dice)",     DefensePilot2.Reroll_2);
+                    - select_control_option_t!("pilot", form_name)("(Reroll up to 3 dice)",     DefensePilot2.Reroll_3);
+                    - select_control_option_t!("pilot", form_name)("Leebo",                     DefensePilot2.Leebo);
+                    - select_control_option_t!("pilot", form_name)("Luke Skywalker",            DefensePilot2.LukeSkywalker);
+                    - select_control_option_t!("pilot", form_name)("Norra Wexley",              DefensePilot2.NorraWexley);
+                    - select_control_option_t!("pilot", form_name)("Shara Bey",                 DefensePilot2.SharaBey);
+                    - select_control_option_t!("pilot", form_name)("Zeb Orrelios",              DefensePilot2.ZebOrrelios);
+                select(name="ship")
+                    - select_control_option_t!("ship",  form_name)("No Ship Ability",           DefenseShip2.None);
+                    - select_control_option_t!("ship",  form_name)("Concordia Faceoff",         DefenseShip2.ConcordiaFaceoff);
+
+            fieldset.fieldset
+                legend Friendly Ships
+                - switch_control_t!("biggs",             form_name)("Biggs");
+                - switch_control_t!("iden",              form_name)("Iden Versio");
+                - switch_control_t!("selfless",          form_name)("Selfless");
+                        
+            fieldset.fieldset
+                legend Talents
+                //- switch_control_t!("elusive",   form_name)("Elusive");
+                - switch_control_t!("lone_wolf", form_name)("Lone Wolf");
+
+            fieldset.fieldset
+                legend Crew
+                - switch_control_t!("c3p0",  form_name)("C-3P0 (guess 1)");
+                - switch_control_t!("l337",  form_name)("L3-37");
+
+            fieldset.fieldset
+                legend Modifications
+                - switch_control_t!("stealth_device", form_name)("Stealth Device");

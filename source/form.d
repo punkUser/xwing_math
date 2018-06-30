@@ -15,38 +15,6 @@ enum AttackPilot : ubyte
     Rey,
     SunnyBounder,
     PoeDameron,
-
-    // TODO
-    // NorraWexley
-    // JessPava... weird and probably better to just do via advanced
-    // BobaFettScum... weird like Jess
-    // TarnMison... but only matters in some very contrived circumstances w/ gunner
-    // HobbieKlivian
-    // WesJanson... again would only matter w/ multi-attack which he can't get currently
-    // LieutenantBlount... again very specific cases
-    // HanSolo
-    // EadenVrill... only because it depends on stress which could change for multi-attack
-    // LieutenantKestal... logic could be complex, but probably just keep it opportunistic
-    // ColonelVessery... easy enough to model for any reason scenarios by just giving him tokens
-    // Wampa
-    // WingedGundark    
-    // KirKanos
-    // SoontirFel
-    // OmegaAce
-    // OmegaLeader
-    // KrassisTrelix... only secondaries
-    // Imperial Kath Scarlet
-    // Inaldra?
-    // DreaRenthal
-    // Bossk
-    // KeyanFarlander
-    // TenNumb
-
-    // Aura abilities that probably don't belong in this enum
-    // Howlrunner... also another ship ability
-    // CarnorJax... also another ship
-    // CaptainJonus... also affects friendlies instead
-    // EtahnAbaht is weird since he affects other people's attacks...
 }
 enum DefensePilot : ubyte
 {
@@ -58,17 +26,44 @@ enum DefensePilot : ubyte
     SabineWrenLancer,
     SunnyBounder,
     PoeDameron,
-
-    // TODO
-    // DarkCurse
-    // Countdown
-    // Inaldra?
-    // LaetinAshera
-    // ZebOrrelios
-
-    // Aura abilities that don't belong in this enum
-    // Serissu
 }
+
+
+enum AttackPilot2 : ubyte
+{
+    None = 0,
+    Leebo,
+    SharaBey,
+    Reroll_1,         // Boba/Horton w/ 1 reroll
+    Reroll_2,         // Boba/Horton w/ 2 rerolls
+    Reroll_3,         // Boba/Horton w/ 3 rerolls
+    GavinDarklighter,
+}
+enum DefensePilot2 : ubyte
+{
+    None = 0,
+    Leebo,
+    NorraWexley,
+    LukeSkywalker,
+    SharaBey,
+    Reroll_1,         // Boba/Horton w/ 1 reroll
+    Reroll_2,         // Boba/Horton w/ 2 rerolls
+    Reroll_3,         // Boba/Horton w/ 3 rerolls
+    ZebOrrelios,
+}
+
+enum AttackShip2 : ubyte
+{
+    None = 0,
+    AdvancedTargetingComputer,
+}
+enum DefenseShip2 : ubyte
+{
+    None = 0,
+    ConcordiaFaceoff,
+}
+
+
 
 
 // Handy utility from vibe.d
@@ -87,7 +82,7 @@ private template isPublicMember(T, string M)
 }
 
 
-public void update_form_fields(T)(const(FormFields) fields, ref T form)
+public void update_form_fields(T)(const(Json) fields, ref T form)
 {
     foreach (member; __traits(allMembers, T))
     {
@@ -107,13 +102,13 @@ public void update_form_fields(T)(const(FormFields) fields, ref T form)
                 // Should only have ints and bools in these structures for now
                 static if (is(m_type == ubyte) || is(m_type == ushort) || is(m_type == uint) || is(m_type == byte) || is(m_type == int))
                 {
-                    mixin("form." ~ member ~ " = to!m_type(fields.get(\"" ~ member ~ "\", to!string(form." ~ member ~ ")));");
+                    mixin("form." ~ member ~ " = fields[\"" ~ member ~ "\"].to!m_type;");
                 }
                 else static if (is(m_type == bool))
                 {
                     // NOTE: Doesn't properly respect default true... need to figure out how to handle
                     // this since HTML forms don't submit anything for unchecked items
-                    mixin("form." ~ member ~ " = fields.get(\"" ~ member ~ "\", \"\") == \"on\";");
+                    mixin("form." ~ member ~ " = fields[\"" ~ member ~ "\"].to!string == \"on\";");
                 }
                 else
                 {
@@ -133,9 +128,9 @@ public string serialize_form_to_url(T)(const(T) form)
 }
 
 // NOTE: If url is empty, simply returns form defaults
-public T create_form_from_url(T)(string url)
+public T create_form_from_url(T, D...)(string url, D defaults_params)
 {
-    T form = T.defaults();
+    T form = T.defaults(defaults_params);
 
     if (!url.empty)
     {
@@ -163,9 +158,10 @@ public T create_form_from_url(T)(string url)
     return form;
 }
 
-public T create_form_from_fields(T)(const(FormFields) fields)
+public T create_form_from_fields(T, D...)(const(Json) fields, D defaults_params)
 {
-    T form = T.defaults();
-    update_form_fields(fields, form);
+    T form = T.defaults(defaults_params);
+    if (fields.type() != Json.Type.undefined)
+        update_form_fields(fields, form);
     return form;
 }

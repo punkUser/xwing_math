@@ -1,8 +1,8 @@
 thead
     tr
         th Token
-        th Attacker #{attacker_index >= 0 ? to!string(attacker_index + 1) : ""} Delta
-        th Defender #{defender_index >= 0 ? to!string(defender_index + 1) : ""} Delta
+        th Attacker #{attacker_index >= 0 ? to!string(attacker_index + 1) : ""}
+        th Defender #{defender_index >= 0 ? to!string(defender_index + 1) : ""}
 tbody
     - import std.format;
     - foreach(i, label; exp_token_labels)
