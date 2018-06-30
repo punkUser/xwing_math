@@ -1,24 +1,24 @@
-- void switch_control_t(string name)(string label)
-    - mixin("bool init = form_values." ~ name ~ ";");
+- void switch_control_t(string name, string form_name = "form")(string label)
+    - mixin("bool init = " ~ form_name ~ "." ~ name ~ ";");
 
     .grid-x
         .auto.cell
-            label(for="#{name}") #{label}
+            label(for="#{form_name}_#{name}") #{label}
         .shrink.cell
             .switch.small
                 - if (init)
-                    input.switch-input(id="#{name}", name="#{name}", type="checkbox", checked)
+                    input.switch-input(id="#{form_name}_#{name}", name="#{name}", type="checkbox", checked)
                 - else
-                    input.switch-input(id="#{name}", name="#{name}", type="checkbox")
-                label.switch-paddle(for="#{name}")
+                    input.switch-input(id="#{form_name}_#{name}", name="#{name}", type="checkbox")
+                label.switch-paddle(for="#{form_name}_#{name}")
 
-- void stepper_control_t(string name)(string label, int min, int max, bool set_buttons = false)
+- void stepper_control_t(string name, string form_name = "form")(string label, int min, int max, bool set_buttons = false)
     - import std.algorithm.comparison;
-    - mixin("int init = clamp(form_values." ~ name ~ ", min, max);");
+    - mixin("int init = clamp(" ~ form_name ~ "." ~ name ~ ", min, max);");
 
     .grid-x
         .auto.cell
-            label(for="#{name}") #{label}
+            label(for="#{form_name}_#{name}") #{label}
         .shrink.cell
             .input-group.stepper-group
                 - if (set_buttons)
@@ -26,30 +26,30 @@
                         button.button.stepper-button-set(type="button", data-set="#{min}") <
                 .input-group-button
                     button.button.stepper-button(type="button", data-delta="-1") -
-                input.input-group-field.stepper-number(id="#{name}", name="#{name}", type="number", value="#{init}", min="#{min}", max="#{max}", required)
+                input.input-group-field.stepper-number(id="#{form_name}_#{name}", name="#{name}", type="number", value="#{init}", min="#{min}", max="#{max}", required)
                 .input-group-button
                     button.button.stepper-button(type="button", data-delta="1") +
                 - if (set_buttons)
                     .input-group-button
                         button.button.stepper-button-set(type="button", data-set="#{max}") >
 
-- void radio_switch_control_t(string name)(string label, int value, int max)
-    - mixin("int init_value = form_values." ~ name ~ ";");
+- void radio_switch_control_t(string name, string form_name = "form")(string label, int value, int max)
+    - mixin("int init_value = " ~ form_name ~ "." ~ name ~ ";");
     - init_value = (init_value > max ? 0 : init_value);
 
     .grid-x
         .auto.cell
-            label(for="#{value}") #{label}
+            label(for="#{form_name}_#{value}") #{label}
         .shrink.cell
             .switch.small
                 - if (init_value == value)
-                    input.switch-input(id="#{value}", name="#{name}", value="#{value}", type="radio", required, checked)
+                    input.switch-input(id="#{form_name}_#{value}", name="#{name}", value="#{value}", type="radio", required, checked)
                 - else
-                    input.switch-input(id="#{value}", name="#{name}", value="#{value}", type="radio", required)
-                label.switch-paddle(for="#{value}")
+                    input.switch-input(id="#{form_name}_#{value}", name="#{name}", value="#{value}", type="radio", required)
+                label.switch-paddle(for="#{form_name}_#{value}")
 
-- void select_control_option_t(string select_name)(string label, int value)
-    - mixin("int init_value = form_values." ~ select_name ~ ";");
+- void select_control_option_t(string select_name, string form_name = "form")(string label, int value)
+    - mixin("int init_value = " ~ form_name ~ "." ~ select_name ~ ";");
     - if (init_value == value)
         option(value="#{value}", selected) #{label}
     - else

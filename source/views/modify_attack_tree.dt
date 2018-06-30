@@ -1,0 +1,70 @@
+- import modify_attack_tree;
+- import dice;
+- import simulation_state2;
+- import std.format;
+
+- string attack_dice(DiceState dice, int unknown_rerolls = 0)
+    - import std.range;
+
+    - string output = replicate("<i class=\"attack-die die-crit\"></i>",  dice.results[DieResult.Crit]);
+    - output       ~= replicate("<i class=\"attack-die die-hit\"></i>",   dice.results[DieResult.Hit]);
+    - output       ~= replicate("<i class=\"attack-die die-focus\"></i>", dice.results[DieResult.Focus]);
+    - output       ~= replicate("<i class=\"attack-die die-blank\"></i>", dice.results[DieResult.Blank]);
+
+    - output       ~= replicate("<i class=\"attack-die attack-die-rerolled die-unknown\"></i>", unknown_rerolls);
+
+    - output       ~= replicate("<i class=\"attack-die attack-die-rerolled die-crit\"></i>",  dice.rerolled_results[DieResult.Crit]  + dice.final_results[DieResult.Crit] );
+    - output       ~= replicate("<i class=\"attack-die attack-die-rerolled die-hit\"></i>",   dice.rerolled_results[DieResult.Hit]   + dice.final_results[DieResult.Hit]  );
+    - output       ~= replicate("<i class=\"attack-die attack-die-rerolled die-focus\"></i>", dice.rerolled_results[DieResult.Focus] + dice.final_results[DieResult.Focus]);
+    - output       ~= replicate("<i class=\"attack-die attack-die-rerolled die-blank\"></i>", dice.rerolled_results[DieResult.Blank] + dice.final_results[DieResult.Blank]);
+
+    - return output;
+    
+- void output_token_spending(TokenState2 before, TokenState2 after, AttackTempState2 before_temp, AttackTempState2 after_temp)
+    - int locks_consumed = before.lock - after.lock;
+
+    - if (locks_consumed > 0 && after_temp.used_shara_bey_pilot != before_temp.used_shara_bey_pilot)
+        | Spend lock to add 1 <i class="die die-focus"></i> result using Shara Bey<br/>
+        - --locks_consumed;
+
+    - if (after.focus < before.focus)
+        | Spend focus<br/>
+    - if (after.calculate < before.calculate)
+        | Spend #{before.calculate - after.calculate} calculate<br/>
+    - if (after.force < before.force)
+        | Spend #{before.force - after.force} force<br/>
+    - if (after_temp.used_advanced_targeting_computer != before_temp.used_advanced_targeting_computer)
+        | Use advanced targeting computer to change 1 <i class="die die-hit"></i> result to a <i class="die die-crit"></i> result<br/>
+
+    - if (after_temp.used_any_to_hit_count > before_temp.used_any_to_hit_count)
+        - int count = after_temp.used_any_to_hit_count - before_temp.used_any_to_hit_count;
+        | Change #{count} #{count > 1 ? "results to" : "result to a"} <i class="die die-hit"></i> #{count > 1 ? "results" : "result"}<br/>
+    - if (after_temp.used_hit_to_crit_count > before_temp.used_hit_to_crit_count)
+        - int count = after_temp.used_hit_to_crit_count - before_temp.used_hit_to_crit_count;
+        | Change #{count} <i class="die die-hit"></i> #{count > 1 ? "results to " : "result to a"} <i class="die die-crit"></i> #{count > 1 ? "results" : "result"}<br/>
+
+    - if (locks_consumed > 0)
+        | Spend lock<br/>
+        - --locks_consumed;
+    - if (after_temp.cannot_spend_lock != before_temp.cannot_spend_lock)
+        | Use fire control system<br/>
+    - if (after.lone_wolf != before.lone_wolf)
+        | Use lone wolf<br/>
+            
+.grid-x.grid-margin-x.small-up-1.medium-up-1.large-up-1
+    .cell
+        - foreach (index, ref const node; nodes)
+            div(class='callout modify-node#{index > 0 ? " hide" : ""}', data-node-index="#{index}", data-node-depth="#{node.depth}")
+                    
+                h3 Expected Damage #{format("%.3f", node.expected_damage)}
+                p !{attack_dice(node.before.attack_dice)} => !{attack_dice(node.after.attack_dice, node.reroll_count)}
+                    
+                p
+                    - output_token_spending(node.before.attack_tokens, node.after.attack_tokens, node.before.attack_temp, node.after.attack_temp);
+                    - if (node.reroll_count > 0)
+                        | Reroll #{node.reroll_count} #{node.reroll_count > 1 ? "dice" : "die"} into:<br/>
+                        p
+                            - foreach (child_index; node.first_child_index .. (node.first_child_index + node.child_count))
+                                button.button.secondary.modify-node-child-button(type="button", data-child-index="#{child_index}", data-child-depth="#{nodes[child_index].depth}")
+                                    | !{attack_dice(nodes[child_index].before.attack_dice)} (#{format("%.1f", nodes[child_index].child_probability * 100.0)}%)
+                        

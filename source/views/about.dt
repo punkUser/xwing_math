@@ -1,8 +1,6 @@
 extends layout
 
 block content
-    h1 Frequently Asked Questions
-
     p.
         This is a tool for calculating dice probabilities and outcomes for
         <a href="https://www.fantasyflightgames.com/en/products/x-wing/">X-Wing Miniatures</a> by
@@ -10,7 +8,7 @@ block content
         list building, target selection and token spending by helping to develop intuition about the probabilities of various outcomes.
     p.
         Computing simple dice probabilities by hand is straightforward, but more complex scenarios involving many
-        tokens and multiple attacks (twin laser turret, gunner, etc) become tedious and error-prone even when using a spreadsheet.
+        tokens and multiple attacks become tedious and error-prone even when using a spreadsheet.
     p.
         Rather than rely on random simulation, this tool calculates probabilities directly via an exhaustive search of
         all possible outcomes. This runs extremely fast (a couple milliseconds for most realistic cases) and produces
@@ -22,38 +20,7 @@ block content
     h1 Frequently Asked Questions
 
     ul#faq.faq.accordion(data-accordion, data-allow-all-closed="true", data-deep-link="true")
-
-        li.accordion-item(data-accordion-item)
-            a.accordion-title(href="#forms") What's the difference between "Basic" and "Advanced"?
-            #forms.accordion-content(data-tab-content)
-                p.
-                    Both the basic and advanced forms use the same underlying simulation. The only difference is in how the
-                    simulation parameters are presented in the user interface.
-                p.
-                    The basic form uses card and ability names directly from the game, so it should be intuitive for most people.
-                    The attackers and defenders tokens and upgrade cards are grouped in two separate sections.
-                    While it's possible to test out illegal card combinations (the form does nothing to prevent this), you are
-                    generally limited to the effects present on the available cards. A few concessions are made for clarity;
-                    for instance, the type of attack (single, multiple) is set directly rather than implicitly via upgrade cards
-                    (gunner, etc).
-                p.
-                    The advanced form is a more direct interface to the parameters of the simulation. It can express a superset of
-                    the basic form, including a wide variety of options that are not currently possible in the game. Simulation
-                    parameters are organized according to where they occur in the timing chart. A few "special effects" still
-                    reference card names when it is more concise to do so versus spelling out the underlying effect.
-
-        li.accordion-item(data-accordion-item)
-            a.accordion-title(href="#alpha") What's the "Alpha" form for?
-            #alpha.accordion-content(data-tab-content)
-                p.
-                    The "alpha strike" form also uses the same underlying simulation, but it is organized to model several different
-                    attackers all attacking the same defender in sequence. This is useful for determining the probability of
-                    a ship being destroyed by an alpha strike before getting to fire, among other things.
-                p.
-                    The options on the alpha form are somewhat more limited due to UI space/complexity considerations, but most
-                    of the common attacks can be modeled using a combination of the options in the dropdown menu together with the
-                    available tokens and effect toggles.
-
+    
         li.accordion-item(data-accordion-item)
             a.accordion-title(href="#links") How can I link or bookmark a specific result?
             #links.accordion-content(data-tab-content)
@@ -67,8 +34,8 @@ block content
                 p.
                     One a result is simulated, simply hover over (or tap) any bar in the charts to see the probabilities.
                 p.
-                    Alternatively, the "Advanced" and "Alpha" forms additionally output a data table which makes it easy to copy
-                    the results into an external spreadsheet or similar.
+                    Alternatively, some of the forms additionally output a data table which makes it easy to copy
+                    the results into an external spreadsheet.
 
         li.accordion-item(data-accordion-item)
             a.accordion-title(href="#triggers") Which effects and triggers are active?
@@ -77,14 +44,13 @@ block content
                     In general, any effect that you enable is considered to be "active". Any conditions outside of tokens (such
                     as being in arc or at a given range) are assumed to be satisfied if you enable the effect.
                 p.
-                    Since tokens can change over the coarse of an attack (particularly in multi-attack situations), effects do
-                    respect conditions related to tokens. For instance, Expertise will only be active if the owner does not have
-                    any stress tokens, while Wired will be active if the owner has one or more stress tokens.
+                    Since tokens can change over the course of an attack (particularly in multi-attack situations), effects do
+                    respect conditions related to tokens. For instance, Juke will only be active if the owner has an evade token.
                 p.
                     If a weapon or effect requires spending tokens to enable the attack (for instance, many munitions require
                     the attacker to discard a target lock to fire) do <em>not</em> include those tokens in the simulation. The
-                    simulation effectively begins at the attacker's initial dice roll, so that is the point in which you should
-                    set the token state.
+                    simulation effectively begins right before the attacker's initial dice roll, so that is the point in which
+                    you should set the token state.
 
         li.accordion-item(data-accordion-item)
             a.accordion-title(href="#strategies") What strategies do the attacker and defender employ?
@@ -101,8 +67,62 @@ block content
                     encountered in X-Wing.
 
         li.accordion-item(data-accordion-item)
-            a.accordion-title(href="#optimal") Do the attacker and defender play optimally?
-            #optimal.accordion-content(data-tab-content)
+            a.accordion-title(href="#features") Can you add [some upgrade] to the calculator?
+            #features.accordion-content(data-tab-content)
+                p.
+                    Anything can be added given the proper time and resources. Generally things that aren't yet implemented fall
+                    into a couple of categories.
+                ul
+                    li.
+                        Things with too many UI complexities or too much context (example: health/shields of the ships involved).
+                    li.
+                        Things with unclear rules interactions. This includes cases where card combinations aren't possible in X-Wing
+                        today (due to lacking specific upgrade slot combinations or faction limitations), or cases that are possible
+                        but rarely used and thus have never received needed clarification in the FAQ.
+                    li.
+                        Rarely used upgrades, particularly in combination with another one of the downsides.
+                p.
+                    If you want a specific upgrade prioritized, please feel free to
+                    <a href="https://github.com/punkUser/xwing_math/issues">upvote or file an issue on Github</a>
+
+    h1 1.0 Calculator FAQ
+
+    ul#faq.faq.accordion(data-accordion, data-allow-all-closed="true", data-deep-link="true")
+
+        li.accordion-item(data-accordion-item)
+            a.accordion-title(href="#forms1") What's the difference between "Basic" and "Advanced" calculators?
+            #forms1.accordion-content(data-tab-content)
+                p.
+                    Both the basic and advanced calculators use the same underlying simulation. The only difference is in how the
+                    simulation parameters are presented in the user interface.
+                p.
+                    The basic form uses card and ability names directly from the game, so it should be intuitive for most people.
+                    The attackers and defenders tokens and upgrade cards are grouped in two separate sections.
+                    While it's possible to test out illegal card combinations (the form does nothing to prevent this), you are
+                    generally limited to the effects present on the available cards. A few concessions are made for clarity;
+                    for instance, the type of attack (single, multiple) is set directly rather than implicitly via upgrade cards
+                    (gunner, etc).
+                p.
+                    The advanced form is a more direct interface to the parameters of the simulation. It can express a superset of
+                    the basic form, including a wide variety of options that are not currently possible in the game. Simulation
+                    parameters are organized according to where they occur in the timing chart. A few "special effects" still
+                    reference card names when it is more concise to do so versus spelling out the underlying effect.
+
+        li.accordion-item(data-accordion-item)
+            a.accordion-title(href="#alpha1") What's the "Multiple Attacks" calculator for?
+            #alpha1.accordion-content(data-tab-content)
+                p.
+                    The multiple attacks or "alpha strike" form also uses the same underlying simulation, but it is organized to
+                    model several different attackers all attacking the same defender in sequence. This is useful for determining
+                    the probability of a ship being destroyed by an alpha strike before getting to fire, among other things.
+                p.
+                    The options on the alpha form are somewhat more limited due to UI space/complexity considerations, but most
+                    of the common attacks can be modeled using a combination of the options in the dropdown menu together with the
+                    available tokens and effect toggles.
+                    
+        li.accordion-item(data-accordion-item)
+            a.accordion-title(href="#optimal1") Do the attacker and defender play optimally in the 1.0 calculators?
+            #optimal1.accordion-content(data-tab-content)
                 p.
                     The short answer: in most realistic cases, yes. The longer answer: it depends how you define "optimally".
                 p.
@@ -137,32 +157,7 @@ block content
                 //-p.
                     If you're curious about the nitty-gritty details of a specific interaction, you can always check out the source
                     code!
-
-        li.accordion-item(data-accordion-item)
-            a.accordion-title(href="#features") Can you add [some upgrade] to the simulator?
-            #features.accordion-content(data-tab-content)
-                p.
-                    Anything can be added given the proper time and resources. Generally things that aren't yet implemented fall
-                    into a couple of categories.
-                ul
-                    li.
-                        Things with too many UI complexities or too much context.
-                    li.
-                        Things with too many decisions, or where the optimal strategy would be highly non-obvious. Many of the "spend
-                        token to do something" cards fall into this category. Deciding between multiple ways to best spend a 
-                        token in multi-attack situations can be quite complicated, and results from the tool generally need to be
-                        understood in the context of the strategy employed.
-                    li.
-                        Things with unclear rules interactions. This includes cases where card combinations aren't possible in X-Wing
-                        today (due to lacking specific upgrade slot combinations or faction limitations), or cases that are possible
-                        but rarely used and thus have never received needed clarification in the FAQ.
-                    li.
-                        Rarely used upgrades, particularly in combination with another one of the downsides.
-                p.
-                    If you want a specific upgrade prioritized, please feel free to
-                    <a href="https://github.com/punkUser/xwing_math/issues">upvote or file an issue on Github</a>.
-
-
+                    
         li.accordion-item(data-accordion-item)
             a.accordion-title(href="#c3p0") How does C-3P0 work?
             #c3p0.accordion-content(data-tab-content)

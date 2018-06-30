@@ -1,4 +1,5 @@
 import simulation_state;
+import simulation_results;
 import dice;
 
 import std.algorithm;
@@ -150,36 +151,7 @@ struct SimulationSetup
 };
 
 
-struct SimulationResult
-{
-    double probability = 0.0f;
-    double hits = 0;
-    double crits = 0;
-    TokenDelta attack_token_delta;
-    TokenDelta defense_token_delta;
-};
-
-SimulationResult accumulate_result(SimulationResult a, SimulationResult b)
-{
-    a.probability += b.probability;
-    a.hits += b.hits;
-    a.crits += b.crits;
-    a.attack_token_delta  += b.attack_token_delta;
-    a.defense_token_delta += b.defense_token_delta;
-    return a;
-}
-
-// Accumulated results
-struct SimulationResults
-{
-    SimulationResult[] total_hits_pdf;
-    SimulationResult total_sum;
-    double at_least_one_crit_probability = 0.0;
-};
-
 //-----------------------------------------------------------------------------------
-
-
 
 
 class Simulation
@@ -1217,9 +1189,6 @@ class Simulation
 
     public this(TokenState attack_tokens, TokenState defense_tokens)
     {
-        m_initial_attack_tokens  = attack_tokens;
-        m_initial_defense_tokens = defense_tokens;
-
         // Set up the initial state
         SimulationState initial_state;
         initial_state.attack_tokens  = attack_tokens;
@@ -1229,11 +1198,8 @@ class Simulation
 
     // Replaces the attack tokens on *all* current states with the given ones
     // Generally this is done in preparation for simulating another attack *from a different attacker*
-    // Note that this also replaces the "initial" attack tokens so that the deltas are at least meaningful for any following attacks.
     public void replace_attack_tokens(TokenState attack_tokens)
     {
-        m_initial_attack_tokens = attack_tokens;
-
         SimulationStateMap new_states;
         foreach (state, probability; m_states)
         {
@@ -1339,13 +1305,11 @@ class Simulation
 
             // Compute final results of this simulation step
             SimulationResult result;
-            result.probability = probability;
-
-            result.hits  = probability * cast(double)state.final_hits;
-            result.crits = probability * cast(double)state.final_crits;
-
-            result.attack_token_delta  = TokenDelta(probability, m_initial_attack_tokens,  state.attack_tokens);
-            result.defense_token_delta = TokenDelta(probability, m_initial_defense_tokens, state.defense_tokens);
+            result.probability  = probability;
+            result.hits         = probability * cast(double)state.final_hits;
+            result.crits        = probability * cast(double)state.final_crits;
+            result.attack_tokens.initialize!k_token_results_fields(probability, state.attack_tokens);
+            result.defense_tokens.initialize!k_token_results_fields(probability, state.defense_tokens);
         
             // Accumulate into the total results structure
             results.total_sum = accumulate_result(results.total_sum, result);
@@ -1366,10 +1330,6 @@ class Simulation
 
     // These are the core states that are updated as attacks chain
     private SimulationStateMap m_states;
-
-    // Copies of the initial tokens; note: these are only particularly useful if they aren't replaced during an attack sequence
-    private TokenState m_initial_attack_tokens;
-    private TokenState m_initial_defense_tokens;
 
     // Store copies of the constant state for the current attack
     private SimulationSetup m_setup;

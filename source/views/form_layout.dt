@@ -1,7 +1,0 @@
-extends layout
-
-block content
-    block form
-    
-append scripts
-    script(src="#{server_settings.url_root}js/form.js?v=#{file_version}")

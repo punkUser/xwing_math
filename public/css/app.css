@@ -101,7 +101,7 @@ ul.faq ul {
     margin-top: 0;
     padding-top: 0;
 	font-size: 0.9rem;
-    font-weight: bold;
+    font-weight: normal;
 }
 
 .dropdown.menu a {
@@ -113,6 +113,7 @@ ul.faq ul {
     background-color: #333333;
 	color: white;
 	line-height: inherit;
+	white-space: nowrap;
 }
 
 .menu > .divider {
@@ -132,8 +133,8 @@ ul.faq ul {
 }
 
 .stepper-group .stepper-number {
-	width: 3.5rem;
-	min-width: 3.5rem;
+	width: 2.8rem;
+	min-width: 2.8rem;
 	height: 2.0rem;
 	text-align: center;
 	vertical-align: middle;
@@ -147,8 +148,8 @@ ul.faq ul {
 	font-size: 1.5rem;
 	padding-left: 0;
 	padding-right: 0;
-	width: 2.2rem;
-	min-width: 2.2rem;
+	width: 2.0rem;
+	min-width: 2.0rem;
 	height: 2.0rem;
 	border-radius: 0;
 }
@@ -158,4 +159,87 @@ ul.faq ul {
 	min-width: 1.4rem;
 	margin-left: 0.1rem;
 	margin-right: 0.1rem;
+}
+
+
+
+/**************** DICE DISPLAY *********************/
+
+@font-face {
+  font-family: XWing;
+  src: url("xwing-miniatures.ttf"); }
+
+i.die {
+	font-family: XWing;
+	font-style: normal;
+	font-size: 1.2rem;
+}
+  
+i.attack-die {
+	font-family: XWing;
+	font-style: normal;
+	font-size: 1.2rem;
+	display: inline-block;
+	border-radius: 50%;
+	width: 1.2rem;
+	height: 1.2rem;
+	line-height: 1.2rem;
+	box-sizing: content-box;
+	white-space: nowrap;
+    text-align: center;
+	padding: 0.15rem;
+	margin-left: 0.1rem;
+	margin-right: 0.1rem;
+	background: #cc4b37;
+	color: #fefefe;
+}
+i.attack-die-rerolled {
+	background: #963728;
+}
+
+i.defense-die {
+	font-family: XWing;
+	font-style: normal;
+	font-size: 1.2rem;
+	display: inline-block;
+	border-radius: 50%;
+	width: 1.2rem;
+	height: 1.2rem;
+	line-height: 1.2rem;
+	box-sizing: content-box;
+	white-space: nowrap;
+    text-align: center;
+	padding: 0.15rem;
+	margin-left: 0.1rem;
+	margin-right: 0.1rem;
+	background: #81bf3f;
+	color: #fefefe;
+}
+i.defense-die-rerolled {
+	background: #649431;
+}
+
+i.die-crit:before {
+	content: "c";
+}
+i.die-hit:before {
+	content: "d";
+}
+i.die-evade:before {
+	content: "e";
+}
+i.die-focus:before {
+	content: "f";
+}
+i.die-blank:before {
+	content: "\00a0";
+}
+i.die-unknown:before {
+	font-family: "Arial", sans-serif;
+	content: "?";
+}
+
+.modify-node-child-button {
+	margin-left: 0.2rem;
+	margin-right: 0.2rem;
 }

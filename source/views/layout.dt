@@ -20,13 +20,24 @@ html(class="no-js", lang="en")
             .top-bar-left
                 ul.dropdown.menu(data-dropdown-menu)
                     li
-                        a(href="#{server_settings.url_root}") Basic
+                        a(href="#{server_settings.url_root}2/multi/") Second Edition
+                        ul.menu.vertical
+                            li
+                                a(href="#{server_settings.url_root}2/multi/") Calculator
+                            li
+                                a(href="#{server_settings.url_root}2/modify_attack/") How to Modify Attack Dice
+                            li
+                                a(href="#{server_settings.url_root}2/modify_defense/") How to Modify Defense Dice
                     li.divider
                     li
-                        a(href="#{server_settings.url_root}advanced/") Advanced
-                    li.divider
-                    li
-                        a(href="#{server_settings.url_root}alpha/") Alpha
+                        a(href="#{server_settings.url_root}1/basic/") First Edition
+                        ul.menu.vertical
+                            li
+                                a(href="#{server_settings.url_root}1/basic/") Basic Calculator
+                            li
+                                a(href="#{server_settings.url_root}1/advanced/") Advanced Calculator
+                            li
+                                a(href="#{server_settings.url_root}1/alpha/") Multiple Attacks
                     li.divider
                     li
                         a(href="#{server_settings.url_root}faq/") FAQ
