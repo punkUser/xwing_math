@@ -3,7 +3,7 @@ extends layout
 block content
     p.
         This is a tool for calculating dice probabilities and outcomes for
-        <a href="https://www.fantasyflightgames.com/en/products/x-wing/">X-Wing Miniatures</a> by
+        <a href="https://www.fantasyflightgames.com/en/products/x-wing-second-edition/">X-Wing Second Edition</a> by
         <a href="https://www.fantasyflightgames.com/">Fantasy Flight Games</a>. The goal of the tool is to aid players in
         list building, target selection and token spending by helping to develop intuition about the probabilities of various outcomes.
     p.
@@ -67,6 +67,43 @@ block content
                     encountered in X-Wing.
 
         li.accordion-item(data-accordion-item)
+            a.accordion-title(href="#ship-durability") What is the Ship Durability calculator for?
+            #ship-durability.accordion-content(data-tab-content)
+                p.
+                    The regular calculator answers the question "what is the expected hits after these specific
+                    attacks take place in a turn". In contrast, the ship durability calculator answers the question "how many
+                    shots can a ship take before being destroyed". These are actually slightly different questions with different
+                    answers.
+                p.
+                    While the ship durability calculator also uses the same underlying branching simulation, it differs in that
+                    it terminates states when the defender is destroyed (based on their hit points). This produces a more accurate
+                    solution in cases where once per game effects - such as Stealth Device, Iden Versio and so on - are present.
+                p.
+                    For context, the calculator also shows a comparison of the relative durability of your chosen ship compared to
+                    a variety of ships from the game. Note that these comparisons are based on the basic statline of the relevant
+                    ship, so they should not be over-generalized as in a real game many other factors are present (tokens, ranges,
+                    focus fire, etc).
+                p.
+                    Note that ship durability can vary a lot depending on the nature of the attack. Try comparing naked 2 dice
+                    attacks to 4 dice with focus and lock to see how various ships fare under a variety of attacker conditions.
+
+        li.accordion-item(data-accordion-item)
+            a.accordion-title(href="#ship-durability-tokens") Why can't I set defender tokens on the Ship Durability calculator?
+            #ship-durability-tokens.accordion-content(data-tab-content)
+                p.
+                    Most tokens are not allowed because they introduce questions of how many of these shots are happening in the
+                    same round, in what order and so on. i.e. is the defender going to always have a focus token every time it
+                    gets attacked (1v1) or is it going to suffer 6 attacks with only a single token to spend?
+                p.
+                    The Ship Durability calculator is designed to give a rough idea of the relative durability of various ships.
+                    For modeling specific cases with detailed tokens the regular calculator is more appropriate.
+                p.
+                    Note that reinforce is an exception to this rule since it is persistent between attacks and doesn't get spent.
+                    Similarly some pilot and ship abilities are present because they work on every attack. Finally, once per game
+                    effects like Stealth Device are also included as they do not refresh after being lost.
+
+
+        li.accordion-item(data-accordion-item)
             a.accordion-title(href="#features") Can you add [some upgrade] to the calculator?
             #features.accordion-content(data-tab-content)
                 p.
@@ -84,113 +121,3 @@ block content
                 p.
                     If you want a specific upgrade prioritized, please feel free to
                     <a href="https://github.com/punkUser/xwing_math/issues">upvote or file an issue on Github</a>
-
-    h1 1.0 Calculator FAQ
-
-    ul#faq.faq.accordion(data-accordion, data-allow-all-closed="true", data-deep-link="true")
-
-        li.accordion-item(data-accordion-item)
-            a.accordion-title(href="#forms1") What's the difference between "Basic" and "Advanced" calculators?
-            #forms1.accordion-content(data-tab-content)
-                p.
-                    Both the basic and advanced calculators use the same underlying simulation. The only difference is in how the
-                    simulation parameters are presented in the user interface.
-                p.
-                    The basic form uses card and ability names directly from the game, so it should be intuitive for most people.
-                    The attackers and defenders tokens and upgrade cards are grouped in two separate sections.
-                    While it's possible to test out illegal card combinations (the form does nothing to prevent this), you are
-                    generally limited to the effects present on the available cards. A few concessions are made for clarity;
-                    for instance, the type of attack (single, multiple) is set directly rather than implicitly via upgrade cards
-                    (gunner, etc).
-                p.
-                    The advanced form is a more direct interface to the parameters of the simulation. It can express a superset of
-                    the basic form, including a wide variety of options that are not currently possible in the game. Simulation
-                    parameters are organized according to where they occur in the timing chart. A few "special effects" still
-                    reference card names when it is more concise to do so versus spelling out the underlying effect.
-
-        li.accordion-item(data-accordion-item)
-            a.accordion-title(href="#alpha1") What's the "Multiple Attacks" calculator for?
-            #alpha1.accordion-content(data-tab-content)
-                p.
-                    The multiple attacks or "alpha strike" form also uses the same underlying simulation, but it is organized to
-                    model several different attackers all attacking the same defender in sequence. This is useful for determining
-                    the probability of a ship being destroyed by an alpha strike before getting to fire, among other things.
-                p.
-                    The options on the alpha form are somewhat more limited due to UI space/complexity considerations, but most
-                    of the common attacks can be modeled using a combination of the options in the dropdown menu together with the
-                    available tokens and effect toggles.
-                    
-        li.accordion-item(data-accordion-item)
-            a.accordion-title(href="#optimal1") Do the attacker and defender play optimally in the 1.0 calculators?
-            #optimal1.accordion-content(data-tab-content)
-                p.
-                    The short answer: in most realistic cases, yes. The longer answer: it depends how you define "optimally".
-                p.
-                    In most common situations it is possible for the attacker to simultaneously optimize for many different
-                    metrics: the maximum expected hits, the minimum probability of missing, and so on. Similarly
-                    the defender can avoid or minimize expected damage while spending as few tokens as possible.
-                ul
-                    li.
-                        <b>Complex Reasonsing</b>: It is possible to construct situations wherein theoretically "optimal"
-                        token spending is very complicated. Recall that the goal of the tool is primarily to give players
-                        intuition about various realistic outcomes. While a computer can easily compute all possible outcomes 
-                        before making decisions, it is not reasonable for a human to efficiently search a possibility
-                        space consisting of hundreds or thousands of outcomes before making each decision. Thus for the sake
-                        of predictability the tool employs heuristics that are reasonable for a human to emulate.
-                    li.
-                        <b>Risky Decisions</b>: For instance, if Sunny Boundary with a target lock rolls hit/crit, rerolling
-                        the crit in an attempt to get a second hit and trigger her ability increases
-                        the likelihood of three hits, but also increases the likelihood of falling back to a single hit.
-                        In general players only take additional risks in exceptional circumstances, so the tool also favors safe
-                        decisions.
-                    li.
-                        <b>Rerolling</b>: The tool treats the ability to reroll dice in aggregate; for instance, one upgrade
-                        that allows rerolling two dice is treated identically to two separate upgrades each granting a single
-                        reroll. This is done primarily for user interface simplicity, but it also increases the efficiency of
-                        the computation. In most cases this makes no difference but there are edge cases in which it is slightly
-                        better to reroll one set of dice first, then depending on the results decide whether to reroll others.
-                    li.
-                        <b>One Damage on Hit:</b> Currently the attacker's logic is not fully optimal when using "one damage on hit"
-                        weapons with multiple attacks, such as twin laser turrets. This occurs in cases where no token spending
-                        is necessary because it would be impossible for the defender to evade. This logic will be improved
-                        in the future.
-                //-p.
-                    If you're curious about the nitty-gritty details of a specific interaction, you can always check out the source
-                    code!
-                    
-        li.accordion-item(data-accordion-item)
-            a.accordion-title(href="#c3p0") How does C-3P0 work?
-            #c3p0.accordion-content(data-tab-content)
-                p.
-                    If there are any hits or crits, the defender will "guess" with C-3P0 the number of evades indicated. As this is a
-                    once per turn ability, this can only happen once in multi-attack sequences.
-                p.
-                    No attempt is made to deduce optimal values to guess as that normally requires additional context from the game
-                    state. It's generally more useful to just try different guesses in various situations and observe the results.
-
-        li.accordion-item(data-accordion-item)
-            a.accordion-title(href="#palpatine") How does Palpatine work?
-            #palpatine.accordion-content(data-tab-content)
-                p.
-                    If there are any dice rolled (on attack) or any hits or crits to cancel (on defense), Palpatine will be used.
-                    Palpatine happens right after dice are rolled, before the opponent modifies them. The die that is modified by
-                    Palpatine cannot be modified further as per the game rules.
-                p.
-                    Simple logic based on the passive mods available determines which die to change. No attempt is made to do complex
-                    reasoning about potential outcomes of rerolling dice, etc.
-
-        li.accordion-item(data-accordion-item)
-            a.accordion-title(href="#crackshot") How does Crack Shot work?
-            #crackshot.accordion-content(data-tab-content)
-                p.
-                    The logic for the attacker is simple: if crack shot can be used to push extra damage through, it will always
-                    be used. If it's not necessary due to the defender having extra evades or effects like "One Damage on Hit",
-                    it will not. If Crack Shot is ever used, it will show up in the Expected Token Delta chart.
-                p.
-                    The presence of Crack Shot also changes defender token spending logic: the defender will attempt to have
-                    an extra evade result available, even if that means spending tokens to that end.
-                p.
-                    In the presence of "One Damage on Hit" the defender will usually not spend anything if it can't entirely avoid
-                    the attack. If Crack Shot is present, it will still spend tokens if it can match the uncancelled hits, since even
-                    if the attacker then uses Crack Shot to push the one damage through, that is a valuable outcome as
-                    it removes Crack Shot from any follow-up attacks.

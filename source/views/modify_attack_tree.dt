@@ -20,36 +20,39 @@
 
     - return output;
     
-- void output_token_spending(TokenState2 before, TokenState2 after, AttackTempState2 before_temp, AttackTempState2 after_temp)
+- void output_token_spending(TokenState before, TokenState after, AttackTempState before_temp, AttackTempState after_temp)
     - int locks_consumed = before.lock - after.lock;
-
+    
     - if (locks_consumed > 0 && after_temp.used_shara_bey_pilot != before_temp.used_shara_bey_pilot)
         | Spend lock to add 1 <i class="die die-focus"></i> result using Shara Bey<br/>
         - --locks_consumed;
 
     - if (after.focus < before.focus)
-        | Spend focus<br/>
+        | Spend #{before.focus - after.focus} focus<br/>
     - if (after.calculate < before.calculate)
         | Spend #{before.calculate - after.calculate} calculate<br/>
+    - if (after.evade < before.evade)
+        | Spend #{before.evade - after.evade} evade<br/>
+    - if (after.reinforce < before.reinforce)
+        | Spend #{before.reinforce - after.reinforce} reinforce<br/>
     - if (after.force < before.force)
         | Spend #{before.force - after.force} force<br/>
-    - if (after_temp.used_advanced_targeting_computer != before_temp.used_advanced_targeting_computer)
-        | Use advanced targeting computer to change 1 <i class="die die-hit"></i> result to a <i class="die die-crit"></i> result<br/>
 
-    - if (after_temp.used_any_to_hit_count > before_temp.used_any_to_hit_count)
-        - int count = after_temp.used_any_to_hit_count - before_temp.used_any_to_hit_count;
-        | Change #{count} #{count > 1 ? "results to" : "result to a"} <i class="die die-hit"></i> #{count > 1 ? "results" : "result"}<br/>
-    - if (after_temp.used_hit_to_crit_count > before_temp.used_hit_to_crit_count)
-        - int count = after_temp.used_hit_to_crit_count - before_temp.used_hit_to_crit_count;
-        | Change #{count} <i class="die die-hit"></i> #{count > 1 ? "results to " : "result to a"} <i class="die die-crit"></i> #{count > 1 ? "results" : "result"}<br/>
+    - if (after_temp.used_advanced_targeting_computer != before_temp.used_advanced_targeting_computer)
+        | Use Advanced Targeting Computer to change 1 <i class="die die-hit"></i> result to a <i class="die die-crit"></i> result<br/>
+            
+    - if (after_temp.used_scum_lando_crew > before_temp.used_scum_lando_crew)
+        | Use Lando Calrissian (Scum) crew<br/>
+    - if (after_temp.used_scum_lando_pilot > before_temp.used_scum_lando_pilot)
+        | Gain 1 stress to use Lando Calrissian (Scum) pilot<br/>
 
     - if (locks_consumed > 0)
         | Spend lock<br/>
         - --locks_consumed;
     - if (after_temp.cannot_spend_lock != before_temp.cannot_spend_lock)
-        | Use fire control system<br/>
+        | Use Fire Control System<br/>
     - if (after.lone_wolf != before.lone_wolf)
-        | Use lone wolf<br/>
+        | Use Lone Wolf<br/>
             
 .grid-x.grid-margin-x.small-up-1.medium-up-1.large-up-1
     .cell

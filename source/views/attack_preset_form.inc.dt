@@ -1,0 +1,35 @@
+- void attack_preset_form_t(string form_name)(string title = "", bool include_enable_toggle = false)
+    form(id="#{form_name}_form", action="javascript:void(0);", method="POST", autocomplete="off")
+        .callout.small.alert
+
+            - mixin("bool enabled = include_enable_toggle ? " ~ form_name ~ ".enabled : true;");
+            - if (title != "" || include_enable_toggle)
+                .grid-x
+                    .cell.auto
+                        label(for="#{form_name}_enabled")
+                            h3= title
+                    .cell.shrink
+                        - if (include_enable_toggle)
+                            .switch
+                                - if (enabled)
+                                    input.switch-input(id="#{form_name}_enabled", name="enabled", type="checkbox", data-toggle="#{form_name}_panel", checked)
+                                - else
+                                    input.switch-input(id="#{form_name}_enabled", name="enabled", type="checkbox", data-toggle="#{form_name}_panel")
+                                label.switch-paddle(for="#{form_name}_enabled")
+
+            - if (!include_enable_toggle)
+                input(name="enabled", type="hidden", checked)
+
+            - string initial_visibility = enabled ? "" : "hide";
+            div(id="#{form_name}_panel", data-toggler=".hide", class="#{initial_visibility}")
+                select(name="preset")
+                    - import attack_preset_form;
+                    - select_control_option_t!("preset", form_name)("2 Dice",                   AttackPreset._2d                );
+                    - select_control_option_t!("preset", form_name)("2 Dice, Howlrunner",       AttackPreset._2dHowlrunner      );
+                    - select_control_option_t!("preset", form_name)("3 Dice",                   AttackPreset._3d                );
+                    - select_control_option_t!("preset", form_name)("3 Dice, Howlrunner",       AttackPreset._3dHowlrunner      );
+                    - select_control_option_t!("preset", form_name)("4 Dice",                   AttackPreset._4d                );
+
+                - switch_control_t!("focus", form_name)("Focus");
+                - switch_control_t!("lock" , form_name)("Lock");
+                

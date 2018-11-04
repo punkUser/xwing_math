@@ -1,11 +1,11 @@
 doctype html
 html(class="no-js", lang="en")
-    head
-        //- Simple auto-versioning for CSS files - just hash the date/time @ compile time
-        //- Works well enough for our uses here
-        - import std.digest.md;
-        - string file_version = toHexString(md5Of(__TIMESTAMP__)).dup;
-        
+    //- Simple auto-versioning for CSS files - just hash the date/time @ compile time
+    //- Works well enough for our uses here
+    - import std.digest.md;
+    - string file_version = toHexString(md5Of(__TIMESTAMP__)).dup;
+
+    head        
         meta(charset="utf-8")
         meta(http-equiv="x-ua-compatible", content="ie=edge")
         meta(name="viewport", content="width=device-width, initial-scale=1.0")
@@ -20,24 +20,32 @@ html(class="no-js", lang="en")
             .top-bar-left
                 ul.dropdown.menu(data-dropdown-menu)
                     li
-                        a(href="#{server_settings.url_root}2/multi/") Second Edition
+                        a(href="#{server_settings.url_root}2/multi/") Calculator
+                    li.divider
+                    li
+                        a(href="#{server_settings.url_root}2/multi_preset/") Preset Calculator
                         ul.menu.vertical
                             li
-                                a(href="#{server_settings.url_root}2/multi/") Calculator
+                                a(href="#{server_settings.url_root}2/multi_preset/?a1=AgM&a2=AgM&a3=AgM&a4=AgM") 4x 3-Dice Focus
+                            li
+                                a(href="#{server_settings.url_root}2/multi_preset/?a1=AgM&a2=AgM&a3=AgM&a4=AgM&a5=AgM") 5x 3-Dice Focus
+                            li
+                                a(href="#{server_settings.url_root}2/multi_preset/?a1=AgM&a2=AgM&a3=AgM&a4=AgM&a5=AgM&a6=AgM") 6x 3-Dice Focus
+                            li
+                                a(href="#{server_settings.url_root}2/multi_preset/?a1=AQM&a2=AQM&a3=AQM&a4=AQM&a5=AQM&a6=AwM") 6x TIE Howl Wampa Swarm
+                            li
+                                a(href="#{server_settings.url_root}2/multi_preset/?a1=AQM&a2=AQM&a3=AQM&a4=AQM&a5=AAM&a6=AQM&a7=AQM") 7x TIE Howl Swarm
+                    li.divider
+                    li
+                        a(href="#{server_settings.url_root}2/modify_attack/") How To Modify
+                        ul.menu.vertical
                             li
                                 a(href="#{server_settings.url_root}2/modify_attack/") How to Modify Attack Dice
                             li
                                 a(href="#{server_settings.url_root}2/modify_defense/") How to Modify Defense Dice
                     li.divider
                     li
-                        a(href="#{server_settings.url_root}1/basic/") First Edition
-                        ul.menu.vertical
-                            li
-                                a(href="#{server_settings.url_root}1/basic/") Basic Calculator
-                            li
-                                a(href="#{server_settings.url_root}1/advanced/") Advanced Calculator
-                            li
-                                a(href="#{server_settings.url_root}1/alpha/") Multiple Attacks
+                        a(href="#{server_settings.url_root}2/ship_durability/") Durability
                     li.divider
                     li
                         a(href="#{server_settings.url_root}faq/") FAQ

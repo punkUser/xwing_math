@@ -5,7 +5,7 @@ import modify_tree;
 import dice;
 
 // Returns expected damage
-private void modify_defense_tree(const(SimulationSetup2) setup,
+private void modify_defense_tree(const(SimulationSetup) setup,
                                  ref ModifyTreeNode[] nodes,
                                  int current_node)
 {
@@ -55,9 +55,9 @@ private void modify_defense_tree(const(SimulationSetup2) setup,
 
 
 
-public ModifyTreeNode[] compute_modify_defense_tree(const(SimulationSetup2) setup,
+public ModifyTreeNode[] compute_modify_defense_tree(const(SimulationSetup) setup,
                                                     DiceState attack_dice,
-                                                    TokenState2 defense_tokens,
+                                                    TokenState defense_tokens,
                                                     DiceState defense_dice)
 {
     auto nodes = new ModifyTreeNode[1];

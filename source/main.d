@@ -7,7 +7,9 @@ void start_servers(string[] args)
 {
     try
     {
-        WWWServer www_server = new WWWServer();
+        WWWServerSettings settings;
+
+        WWWServer www_server = new WWWServer(settings);
         runEventLoop();
     }
     catch (Exception e)

@@ -16,6 +16,7 @@ block form
             - attack_form_t!"attack3"("Attack 4", true);
             - attack_form_t!"attack4"("Attack 5", true);
             - attack_form_t!"attack5"("Attack 6", true);
+            - attack_form_t!"attack6"("Attack 7", true);
 
         .cell
             - defense_form_t!"defense"();
@@ -24,7 +25,8 @@ block form
                 .callout.small.primary
                     .text-center
                         button#simulate.button.large.simulate-button Simulate
-
+                        
+block results
     .grid-x.grid-margin-x.small-up-1.medium-up-1.large-up-1
         - import simulation_results;
         - SimulationResult[] total_hits_pdf;
@@ -55,7 +57,6 @@ block form
             table#pdf-table
                 include pdf_table
 
-block results
     .grid-x.grid-margin-x.small-up-1.medium-up-2.large-up-2
         .cell
             .chart-title#token-title Expected Tokens

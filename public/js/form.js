@@ -1,3 +1,15 @@
+function serializeForm(formName)
+{
+	var formObject = $(formName).first();
+	var formArray = formObject.serializeArray();
+	
+	var returnArray = {};
+	for (var i = 0; i < formArray.length; i++){
+		returnArray[formArray[i]['name']] = formArray[i]['value'];
+	}
+	return returnArray;
+}
+
 $(document).ready(function()
 {
 	// Mutually exclusive checkboxes

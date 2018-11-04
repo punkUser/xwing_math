@@ -39,8 +39,13 @@ align(1) struct AttackForm
         ubyte, "ship",                           6, // AttackShip2 enum
 
         bool,  "saw_gerrera_pilot",              1,
+        bool,  "scum_lando_crew",                1,
+        bool,  "agent_kallus",                   1,
+        bool,  "finn_gunner",                    1,
+        bool,  "fanatical",                      1,
+        bool,  "heroic",                         1,
 
-        uint, "",                                7,
+        uint, "",                                2,
         ));
 
     static AttackForm defaults(int attack_index)
@@ -52,9 +57,9 @@ align(1) struct AttackForm
     }
 }
 
-public TokenState2 to_attack_tokens2(ref const(AttackForm) form)
+public TokenState to_attack_tokens2(ref const(AttackForm) form)
 {
-    TokenState2 attack_tokens;
+    TokenState attack_tokens;
 
     attack_tokens.lock                = form.lock_count;
     attack_tokens.force               = form.force_count;

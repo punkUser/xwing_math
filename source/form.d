@@ -4,31 +4,6 @@ import core.stdc.string : memcpy;
 
 import vibe.d;
 
-// Common enums
-enum AttackPilot : ubyte
-{
-    None = 0,
-    Backdraft,
-    HortonSalm,
-    Ibtisam,
-    RearAdmiralChiraneau,
-    Rey,
-    SunnyBounder,
-    PoeDameron,
-}
-enum DefensePilot : ubyte
-{
-    None = 0,
-    EzraBridger,
-    Ibtisam,
-    LukeSkywalker,
-    Rey,
-    SabineWrenLancer,
-    SunnyBounder,
-    PoeDameron,
-}
-
-
 enum AttackPilot2 : ubyte
 {
     None = 0,
@@ -38,6 +13,10 @@ enum AttackPilot2 : ubyte
     Reroll_2,         // Boba/Horton w/ 2 rerolls
     Reroll_3,         // Boba/Horton w/ 3 rerolls
     GavinDarklighter,
+    MajorVermeil,
+    RearAdmiralChiraneau,
+    EzraBridger,
+    LandoCalrissianScum,
 }
 enum DefensePilot2 : ubyte
 {
@@ -50,6 +29,11 @@ enum DefensePilot2 : ubyte
     Reroll_2,         // Boba/Horton w/ 2 rerolls
     Reroll_3,         // Boba/Horton w/ 3 rerolls
     ZebOrrelios,
+    CaptainFeroph,
+    SabineWrenLancer,
+    LaetinAshera,
+    EzraBridger,
+    LandoCalrissianScum,
 }
 
 enum AttackShip2 : ubyte
@@ -128,10 +112,8 @@ public string serialize_form_to_url(T)(const(T) form)
 }
 
 // NOTE: If url is empty, simply returns form defaults
-public T create_form_from_url(T, D...)(string url, D defaults_params)
+public T create_form_from_url(T, D...)(string url, T form)
 {
-    T form = T.defaults(defaults_params);
-
     if (!url.empty)
     {
         // NOTE: Must handle cases where data size is less than basic form size
@@ -156,6 +138,11 @@ public T create_form_from_url(T, D...)(string url, D defaults_params)
     }
 
     return form;
+}
+
+public T create_form_from_url(T, D...)(string url, D defaults_params)
+{
+    return create_form_from_url(url, T.defaults(defaults_params));
 }
 
 public T create_form_from_fields(T, D...)(const(Json) fields, D defaults_params)
