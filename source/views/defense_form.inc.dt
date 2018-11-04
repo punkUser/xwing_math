@@ -1,10 +1,13 @@
 - import form;
 
-- void defense_form_t(string form_name)(bool include_dice = true)
+- void defense_form_t(string form_name)(bool include_dice = true, bool include_hit_points = false)
     form(id="defense_form", action="javascript:void(0);", method="POST", autocomplete="off")
         .callout.small.success
             - if (include_dice)
-                - stepper_control_t!("dice",        form_name)("Defense Dice", 0, 7);
+                - stepper_control_t!("dice",         form_name)("Defense Dice", 0, 7);
+            - if (include_hit_points)
+                - stepper_control_t!("ship_hull",    form_name)("Hull",         1, 20);
+                - stepper_control_t!("ship_shields", form_name)("Shields",      0, 20);
 
             .grid-x.small-up-1.medium-up-1.large-up-2
                 .cell
@@ -34,9 +37,14 @@
                     - select_control_option_t!("pilot", form_name)("(Reroll 1 die)",            DefensePilot2.Reroll_1);
                     - select_control_option_t!("pilot", form_name)("(Reroll up to 2 dice)",     DefensePilot2.Reroll_2);
                     - select_control_option_t!("pilot", form_name)("(Reroll up to 3 dice)",     DefensePilot2.Reroll_3);
+                    - select_control_option_t!("pilot", form_name)("Captain Feroph",            DefensePilot2.CaptainFeroph);                    
+                    - select_control_option_t!("pilot", form_name)("Ezra Bridger",              DefensePilot2.EzraBridger);
+                    - select_control_option_t!("pilot", form_name)("Laetin A'shera",            DefensePilot2.LaetinAshera);
+                    - select_control_option_t!("pilot", form_name)("Lando Calrissian (Scum)",   DefensePilot2.LandoCalrissianScum);
                     - select_control_option_t!("pilot", form_name)("Leebo",                     DefensePilot2.Leebo);
                     - select_control_option_t!("pilot", form_name)("Luke Skywalker",            DefensePilot2.LukeSkywalker);
                     - select_control_option_t!("pilot", form_name)("Norra Wexley",              DefensePilot2.NorraWexley);
+                    - select_control_option_t!("pilot", form_name)("Sabin Wren (Lancer)",       DefensePilot2.SabineWrenLancer);
                     - select_control_option_t!("pilot", form_name)("Shara Bey",                 DefensePilot2.SharaBey);
                     - select_control_option_t!("pilot", form_name)("Zeb Orrelios",              DefensePilot2.ZebOrrelios);
                 select(name="ship")
@@ -48,17 +56,22 @@
                 - switch_control_t!("biggs",             form_name)("Biggs");
                 - switch_control_t!("iden",              form_name)("Iden Versio");
                 - switch_control_t!("selfless",          form_name)("Selfless");
+                - switch_control_t!("serissu",           form_name)("Serissu");
                         
             fieldset.fieldset
                 legend Talents
-                //- switch_control_t!("elusive",   form_name)("Elusive");
+                - switch_control_t!("elusive",   form_name)("Elusive");
+                - switch_control_t!("heroic",    form_name)("Heroic");
                 - switch_control_t!("lone_wolf", form_name)("Lone Wolf");
 
             fieldset.fieldset
-                legend Crew
-                - switch_control_t!("c3p0",  form_name)("C-3P0 (guess 1)");
-                - switch_control_t!("l337",  form_name)("L3-37");
+                legend Crew and Gunners
+                - switch_control_t!("c3p0",            form_name)("C-3P0 (guess 1)");
+                - switch_control_t!("finn_gunner",     form_name)("Finn");
+                - switch_control_t!("l337",            form_name)("L3-37");
+                - switch_control_t!("scum_lando_crew", form_name)("Lando Calrissian (Scum)");
 
             fieldset.fieldset
-                legend Modifications
-                - switch_control_t!("stealth_device", form_name)("Stealth Device");
+                legend Modifications and Titles
+                - switch_control_t!("rebel_millennium_falcon", form_name)("Millennium Falcon (Rebel)");
+                - switch_control_t!("stealth_device",         form_name)("Stealth Device");

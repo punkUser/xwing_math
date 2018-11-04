@@ -60,6 +60,11 @@ public struct DiceState
     {
         return results[type] + rerolled_results[type];
     }
+    // Check if all dice are blank
+    pure bool are_all_blank()
+    {
+        return count(DieResult.Hit) == 0 && count(DieResult.Crit) == 0 && count(DieResult.Focus) == 0;
+    }
 
     // Removes dice that we are able to reroll from results and returns the
     // number that were removed. Caller should add rerolled_results based on this.

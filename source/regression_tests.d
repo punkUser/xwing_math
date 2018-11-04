@@ -40,6 +40,10 @@ private static immutable Test[] k_regression_test_cases = [
                                                                                     1.740283006218120 },
     { "4 vs 0+L337",            "d=AAAAAEAAAAA&a1=QQAAAAAAAAA",                     1.625             },
     { "3l vs 0+L337",           "d=AAAAAEAAAAA&a1=MwAAAAAAAAA",                     1.5               }, // Always use L3-37 except on all blanks (better than attacker rerolling just blanks/focus)
+    { "3f vs 2o+ezra",          "d=EgAIAAwAAAA&a1=MQgAAAAAAAA",                     1.074462890625000 },
+    { "3fl vs 2e+rebel_falcon", "d=AiAAAAAACAA&a1=MwgAAAAAAAA",                     1.065373420715332 },
+    { "3l+finn vs 0",           "d=AAAAAAAAAAA&a1=MwAAAAAAAAg",                     2.75              },
+    { "3fl vs 2f+heroic",       "d=ggAAAAAAIAA&a1=MwgAAAAAAAA",                     1.391961872577667 },
 ];
 
 // State set is cleared - merely passed in to reuse memory
@@ -56,15 +60,15 @@ private SimulationResults run_test(string form_string)
     }
 
     auto defense_form = create_form_from_url!DefenseForm(params_map["d"]);
-    TokenState2 defense_tokens = defense_form.to_defense_tokens2();
+    TokenState defense_tokens = defense_form.to_defense_tokens2();
 
-    SimulationState2 initial_state = SimulationState2.init;
+    SimulationState initial_state = SimulationState.init;
     initial_state.defense_tokens   = defense_tokens;
     initial_state.probability      = 1.0;
 
     // TODO: Could avoid allocating new ones of these for each attack, but currently
     // "simulate_attack" allocates a new one internally, so not worth the effort right now.
-    auto states = new SimulationStateSet2();
+    auto states = new SimulationStateSet();
     states.push_back(initial_state);
 
     foreach (i; 0 .. 6)
@@ -75,10 +79,10 @@ private SimulationResults run_test(string form_string)
         auto attack_form = create_form_from_url!AttackForm(params_map[param], i);
         if (attack_form.enabled)
         {
-            TokenState2 attack_tokens = to_attack_tokens2(attack_form);
+            TokenState attack_tokens = to_attack_tokens2(attack_form);
             states.replace_attack_tokens(attack_tokens);
 
-            SimulationSetup2 setup = to_simulation_setup2(attack_form, defense_form);
+            SimulationSetup setup = to_simulation_setup2(attack_form, defense_form);
             states = simulate_attack(setup, states);
         }
     }
@@ -89,7 +93,7 @@ private SimulationResults run_test(string form_string)
 // NOTE: These aren't really unit tests, but we're piggy-backing off of the convenience of "dub test" for now.
 unittest
 {
-    SimulationState2 initial_state = SimulationState2.init;
+    SimulationState initial_state = SimulationState.init;
     initial_state.probability      = 1.0;
 
     foreach (ref test; k_regression_test_cases)

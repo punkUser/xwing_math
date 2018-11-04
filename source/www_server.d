@@ -1,22 +1,19 @@
-import simulation;
-import simulation_state;
 import simulation2;
 import simulation_setup2;
 import simulation_state2;
 import simulation_results;
 import modify_attack_tree;
 import modify_defense_tree;
+import shots_to_die;
 import dice;
 
 import form;
 import log;
 
-import basic_form;
-import advanced_form;
-import alpha_form;
 import attack_form;
 import defense_form;
 import roll_form;
+import attack_preset_form;
 
 import std.array;
 import std.stdio;
@@ -27,40 +24,50 @@ import std.algorithm;
 import vibe.d;
 import diet.html;
 
+public struct WWWServerSettings
+{
+    ushort port = 80;
+    string url_root = "/";
+    string http_auth_username = "";
+    string http_auth_password = "";
+};
+
 public class WWWServer
 {
-    public this()
+    public this(ref const(WWWServerSettings) server_settings)
     {
-        m_server_settings.url_root = "/";
+        m_shots_to_die_precomputed = new ShotsToDiePrecomputed();
+
+        m_server_settings = server_settings;
 
         auto settings = new HTTPServerSettings;
         settings.errorPageHandler = toDelegate(&error_page);
-        settings.port = 80;
+        settings.port = m_server_settings.port;
 
         //settings.accessLogFormat = "%h - %u %t \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\" %D";
         //settings.accessLogToConsole = true;
 
         auto router = new URLRouter;
-    
-        // 1.0
-        router.get (m_server_settings.url_root ~ "1/basic/", &basic);
-        router.post(m_server_settings.url_root ~ "1/basic/simulate.json", &simulate_basic);
 
-        router.get (m_server_settings.url_root ~ "1/advanced/", &advanced);
-        router.post(m_server_settings.url_root ~ "1/advanced/simulate.json", &simulate_advanced);
-
-        router.get (m_server_settings.url_root ~ "1/alpha/", &alpha);
-        router.post(m_server_settings.url_root ~ "1/alpha/simulate.json", &simulate_alpha);
+        // If they provided HTTP auth credentials, protect all routes
+        if (!m_server_settings.http_auth_username.empty())
+            router.any("*", performBasicAuth("XWingMath", &http_auth_check_password));
 
         // 2.0 stuff
         router.get (m_server_settings.url_root ~ "2/multi/", &multi2);
         router.post(m_server_settings.url_root ~ "2/multi/simulate.json", &simulate_multi2);
+
+        router.get (m_server_settings.url_root ~ "2/multi_preset/", &multi2_preset);
+        router.post(m_server_settings.url_root ~ "2/multi_preset/simulate.json", &simulate_multi2_preset);
 
         router.get (m_server_settings.url_root ~ "2/modify_attack/", &modify_attack_tree);
         router.post(m_server_settings.url_root ~ "2/modify_attack/simulate.json", &simulate_modify_attack_tree);
 
         router.get (m_server_settings.url_root ~ "2/modify_defense/", &modify_defense_tree);
         router.post(m_server_settings.url_root ~ "2/modify_defense/simulate.json", &simulate_modify_defense_tree);
+
+        router.get (m_server_settings.url_root ~ "2/ship_durability/", &ship_durability);
+        router.post(m_server_settings.url_root ~ "2/ship_durability/simulate.json", &simulate_ship_durability);
 
         // Index and misc
         router.get (m_server_settings.url_root, staticRedirect(m_server_settings.url_root ~ "2/multi/", HTTPStatus.movedPermanently));
@@ -108,6 +115,11 @@ public class WWWServer
         };
     }
 
+    private bool http_auth_check_password(string user, string password)
+    {
+        return (user == m_server_settings.http_auth_username && password == m_server_settings.http_auth_password);
+    }
+
     private struct SimulateJsonContent
     {
         struct Result
@@ -135,191 +147,6 @@ public class WWWServer
         string form_state_string;
     };
 
-    private void basic(HTTPServerRequest req, HTTPServerResponse res)
-    {
-        // Load values from URL if present
-        BasicForm form = create_form_from_url!BasicForm(req.query.get("q", ""));
-
-        auto server_settings = m_server_settings;
-        res.render!("basic.dt", server_settings, form);
-    }
-
-    private void simulate_basic(HTTPServerRequest req, HTTPServerResponse res)
-    {
-        //debug writeln(req.json.serializeToPrettyJson());
-
-        auto basic_form = create_form_from_fields!BasicForm(req.json["simulate"]);
-        string form_state_string = "q=" ~ serialize_form_to_url(basic_form);
-
-        SimulationSetup setup        = basic_form.to_simulation_setup();
-        TokenState attack_tokens     = basic_form.to_attack_tokens();
-        TokenState defense_tokens    = basic_form.to_defense_tokens();
-        
-        SimulationResults results;
-        {
-            auto sw = StopWatch(AutoStart.yes);
-
-            auto simulation = new Simulation(attack_tokens, defense_tokens);
-            simulation.simulate_attack(setup);
-            results = simulation.compute_results();
-
-            // NOTE: This is kinda similar to the access log, but convenient for now
-            log_message("%s %s Simulated in %s msec",
-                        req.clientAddress.toAddressString(),
-                        "/1/basic/?" ~ form_state_string,
-                        sw.peek().total!"msecs");
-        }
-
-        SimulateJsonContent content;
-        content.form_state_string = form_state_string;
-        content.results = new SimulateJsonContent.Result[1];
-        content.results[0] = assemble_json_result(results);
-        res.writeJsonBody(content);
-    }
-
-    private void advanced(HTTPServerRequest req, HTTPServerResponse res)
-    {
-        // Load values from URL if present
-        AdvancedForm form = create_form_from_url!AdvancedForm(req.query.get("q", ""));
-
-        auto server_settings = m_server_settings;
-        res.render!("advanced.dt", server_settings, form);
-    }
-
-    private void simulate_advanced(HTTPServerRequest req, HTTPServerResponse res)
-    {
-        //debug writeln(req.form.serializeToPrettyJson());
-
-        auto advanced_form = create_form_from_fields!AdvancedForm(req.json["simulate"]);
-        string form_state_string = "q=" ~ serialize_form_to_url(advanced_form);
-
-        SimulationSetup setup       = advanced_form.to_simulation_setup();
-        TokenState attack_tokens    = advanced_form.to_attack_tokens();
-        TokenState defense_tokens   = advanced_form.to_defense_tokens();
-
-        SimulationResults results;
-        {
-            auto sw = StopWatch(AutoStart.yes);
-
-            auto simulation = new Simulation(attack_tokens, defense_tokens);
-            simulation.simulate_attack(setup);
-            results = simulation.compute_results();
-
-            // NOTE: This is kinda similar to the access log, but convenient for now
-            log_message("%s %s Simulated in %s msec",
-                        req.clientAddress.toAddressString(),
-                        "/1/advanced/?" ~ form_state_string,
-                        sw.peek().total!"msecs");
-        }
-
-        SimulateJsonContent content;
-        content.form_state_string = form_state_string;
-        content.results = new SimulateJsonContent.Result[1];
-        content.results[0] = assemble_json_result(results);
-        res.writeJsonBody(content);
-    }
-
-    private void alpha(HTTPServerRequest req, HTTPServerResponse res)
-    {
-        // Load values from URL if present
-        AlphaForm form = create_form_from_url!AlphaForm(req.query.get("q", ""));
-
-        auto server_settings = m_server_settings;
-        res.render!("alpha.dt", server_settings, form);
-    }
-
-    private void simulate_alpha(HTTPServerRequest req, HTTPServerResponse res)
-    {
-        //debug writeln(req.form.serializeToPrettyJson());
-
-        auto alpha_form = create_form_from_fields!AlphaForm(req.json["simulate"]);
-        string form_state_string = "q=" ~ serialize_form_to_url(alpha_form);
-
-        // Save results for each attack as we accumulate
-        int max_enabled_attack = 1;
-        SimulationResults[5] results_after_attack;
-        {
-            auto sw = StopWatch(AutoStart.yes);
-
-            TokenState defense_tokens = alpha_form.to_defense_tokens();
-
-            auto simulation = new Simulation(TokenState.init, defense_tokens);
-
-            // NOTE: Every attack is the "final" one for the attacker, since these are modeled as
-            // separate attackers with separate token usage.
-            int defender_final_attack = 0;
-            if      (alpha_form.a5_enabled) defender_final_attack = 5;
-            else if (alpha_form.a4_enabled) defender_final_attack = 4;
-            else if (alpha_form.a3_enabled) defender_final_attack = 3;
-            else if (alpha_form.a2_enabled) defender_final_attack = 2;
-            else if (alpha_form.a1_enabled) defender_final_attack = 1;
-
-            // TODO: Refactor and add separate perf timings to each attack for logging purposes            
-            if (alpha_form.a1_enabled)
-            {
-                SimulationSetup setup_1 = alpha_form.to_simulation_setup!"a1"();
-                simulation.replace_attack_tokens(alpha_form.to_attack_tokens!"a1"());
-                simulation.simulate_attack(setup_1, true, (defender_final_attack == 1));
-                max_enabled_attack = 1;
-            }
-            results_after_attack[0] = simulation.compute_results();
-            if (alpha_form.a2_enabled)
-            {
-                SimulationSetup setup_2 = alpha_form.to_simulation_setup!"a2"();
-                simulation.replace_attack_tokens(alpha_form.to_attack_tokens!"a2"());
-                simulation.simulate_attack(setup_2, true, (defender_final_attack == 2));
-                max_enabled_attack = 2;
-            }
-            results_after_attack[1] = simulation.compute_results();
-            if (alpha_form.a3_enabled)
-            {
-                SimulationSetup setup_3 = alpha_form.to_simulation_setup!"a3"();
-                simulation.replace_attack_tokens(alpha_form.to_attack_tokens!"a3"());
-                simulation.simulate_attack(setup_3, true, (defender_final_attack == 3));
-                max_enabled_attack = 3;
-            }
-            results_after_attack[2] = simulation.compute_results();
-            if (alpha_form.a4_enabled)
-            {
-                SimulationSetup setup_4 = alpha_form.to_simulation_setup!"a4"();
-                simulation.replace_attack_tokens(alpha_form.to_attack_tokens!"a4"());
-                simulation.simulate_attack(setup_4, true, (defender_final_attack == 4));
-                max_enabled_attack = 4;
-            }
-            results_after_attack[3] = simulation.compute_results();
-            if (alpha_form.a5_enabled)
-            {
-                SimulationSetup setup_5 = alpha_form.to_simulation_setup!"a5"();
-                simulation.replace_attack_tokens(alpha_form.to_attack_tokens!"a5"());
-                simulation.simulate_attack(setup_5, true, (defender_final_attack == 5));
-                max_enabled_attack = 5;
-            }
-            results_after_attack[4] = simulation.compute_results();
-
-            // NOTE: This is kinda similar to the access log, but convenient for now
-            log_message("%s %s Simulated in %s msec",
-                        req.clientAddress.toAddressString(),
-                        "/1/alpha/?" ~ form_state_string,
-                        sw.peek().total!"msecs");
-        }
-
-        SimulateJsonContent content;
-        content.form_state_string = form_state_string;
-
-        // NOTE: max_enabled_attack is 1-based
-        content.results = new SimulateJsonContent.Result[max_enabled_attack];
-        
-        // Make sure all the graphs/tables have the same dimensions (worst case)
-        int min_hits = 7;
-        foreach(i; 0 .. max_enabled_attack)
-            min_hits = max(min_hits, cast(int)results_after_attack[i].total_hits_pdf.length);
-
-        foreach(i; 0 .. max_enabled_attack)
-            content.results[i] = assemble_json_result(results_after_attack[i], min_hits, i);
-
-        res.writeJsonBody(content);
-    }
-
     private void multi2(HTTPServerRequest req, HTTPServerResponse res)
     {
         DefenseForm defense = create_form_from_url!DefenseForm(req.query.get("d", ""));
@@ -331,9 +158,10 @@ public class WWWServer
         AttackForm attack3 = create_form_from_url!AttackForm(req.query.get("a4", ""), 3);
         AttackForm attack4 = create_form_from_url!AttackForm(req.query.get("a5", ""), 4);
         AttackForm attack5 = create_form_from_url!AttackForm(req.query.get("a6", ""), 5);
+        AttackForm attack6 = create_form_from_url!AttackForm(req.query.get("a7", ""), 6);
 
         auto server_settings = m_server_settings;
-        res.render!("multi2.dt", server_settings, defense, attack0, attack1, attack2, attack3, attack4, attack5);
+        res.render!("multi2_form.dt", server_settings, defense, attack0, attack1, attack2, attack3, attack4, attack5, attack6);
     }
 
     private void simulate_multi2(HTTPServerRequest req, HTTPServerResponse res)
@@ -342,7 +170,7 @@ public class WWWServer
 
         auto defense_form = create_form_from_fields!DefenseForm(req.json["defense"]);
 
-        AttackForm[6] attack_form;
+        AttackForm[7] attack_form;
         foreach (i; 0 .. cast(int)attack_form.length)
             attack_form[i] = create_form_from_fields!AttackForm(req.json["attack" ~ to!string(i)], i);
 
@@ -353,22 +181,22 @@ public class WWWServer
 
         // Save results for each attack as we accumulate
         int max_enabled_attack = 0;
-        SimulationResults[6] results_after_attack;
+        SimulationResults[7] results_after_attack;
         {
             auto sw = StopWatch(AutoStart.yes);
 
-            TokenState2 defense_tokens = defense_form.to_defense_tokens2();
+            TokenState defense_tokens = defense_form.to_defense_tokens2();
 
             // Set up the initial state
-            auto simulation_states = new SimulationStateSet2();
-            SimulationState2 initial_state = SimulationState2.init;
+            auto simulation_states = new SimulationStateSet();
+            SimulationState initial_state = SimulationState.init;
             initial_state.defense_tokens   = defense_tokens;
             initial_state.probability      = 1.0;
             simulation_states.push_back(initial_state);
 
             foreach (i; 0 .. cast(int)attack_form.length)
             {
-                TokenState2 attack_tokens = to_attack_tokens2(attack_form[i]);
+                TokenState attack_tokens = to_attack_tokens2(attack_form[i]);
                 simulation_states.replace_attack_tokens(attack_tokens);
 
                 if (attack_form[i].enabled)
@@ -377,7 +205,7 @@ public class WWWServer
                     form_state_string ~= format("&a%d=%s", (i+1), serialize_form_to_url(attack_form[i]));
                     max_enabled_attack = i;
                     
-                    SimulationSetup2 setup = to_simulation_setup2(attack_form[i], defense_form);
+                    SimulationSetup setup = to_simulation_setup2(attack_form[i], defense_form);
                     simulation_states = simulate_attack(setup, simulation_states);
                 }
 
@@ -408,6 +236,98 @@ public class WWWServer
 
         res.writeJsonBody(content);
     }
+
+
+    private void multi2_preset(HTTPServerRequest req, HTTPServerResponse res)
+    {
+        DefenseForm defense = create_form_from_url!DefenseForm(req.query.get("d", ""));
+
+        // NOTE: Query params are somewhat human-visible, so offset to make them 1-based
+        AttackPresetForm attack0 = create_form_from_url!AttackPresetForm(req.query.get("a1", ""), 0);
+        AttackPresetForm attack1 = create_form_from_url!AttackPresetForm(req.query.get("a2", ""), 1);
+        AttackPresetForm attack2 = create_form_from_url!AttackPresetForm(req.query.get("a3", ""), 2);
+        AttackPresetForm attack3 = create_form_from_url!AttackPresetForm(req.query.get("a4", ""), 3);
+        AttackPresetForm attack4 = create_form_from_url!AttackPresetForm(req.query.get("a5", ""), 4);
+        AttackPresetForm attack5 = create_form_from_url!AttackPresetForm(req.query.get("a6", ""), 5);
+        AttackPresetForm attack6 = create_form_from_url!AttackPresetForm(req.query.get("a7", ""), 6);
+
+        auto server_settings = m_server_settings;
+        res.render!("multi2_preset_form.dt", server_settings, defense, attack0, attack1, attack2, attack3, attack4, attack5, attack6);
+    }
+
+    private void simulate_multi2_preset(HTTPServerRequest req, HTTPServerResponse res)
+    {
+        //debug writeln(req.json.serializeToPrettyJson());
+
+        auto defense_form = create_form_from_fields!DefenseForm(req.json["defense"]);
+
+        AttackPresetForm[7] attack_form;
+        foreach (i; 0 .. cast(int)attack_form.length)
+            attack_form[i] = create_form_from_fields!AttackPresetForm(req.json["attack" ~ to!string(i)], i);
+
+        // Initialize form state query string
+        // Any enabled attacks will be appended (just to keep it shorter for now)
+        // Could possible be useful to still serialize attacks that are not enabled, but will do it this way for the time being
+        string form_state_string = "d=" ~ serialize_form_to_url(defense_form);
+
+        // Save results for each attack as we accumulate
+        int max_enabled_attack = 0;
+        SimulationResults[7] results_after_attack;
+        {
+            auto sw = StopWatch(AutoStart.yes);
+
+            TokenState defense_tokens = defense_form.to_defense_tokens2();
+
+            // Set up the initial state
+            auto simulation_states = new SimulationStateSet();
+            SimulationState initial_state = SimulationState.init;
+            initial_state.defense_tokens   = defense_tokens;
+            initial_state.probability      = 1.0;
+            simulation_states.push_back(initial_state);
+
+            foreach (i; 0 .. cast(int)attack_form.length)
+            {
+                TokenState attack_tokens = to_attack_tokens2(attack_form[i]);
+                simulation_states.replace_attack_tokens(attack_tokens);
+
+                if (attack_form[i].enabled)
+                {
+                    // NOTE: Query string parameter human visible so 1-based
+                    form_state_string ~= format("&a%d=%s", (i+1), serialize_form_to_url(attack_form[i]));
+                    max_enabled_attack = i;
+
+                    SimulationSetup setup = to_simulation_setup2(attack_form[i], defense_form);
+                    simulation_states = simulate_attack(setup, simulation_states);
+                }
+
+                results_after_attack[i] = simulation_states.compute_results();
+            }
+
+            // NOTE: This is kinda similar to the access log, but convenient for now
+            double expected_damage = results_after_attack[$-1].total_sum.hits + results_after_attack[$-1].total_sum.crits;
+            log_message("%s %s %.15f %sms",
+                        req.clientAddress.toAddressString(),
+                        "/2/multi/?" ~ form_state_string,
+                        expected_damage,
+                        sw.peek().total!"msecs",);
+        }
+
+        SimulateJsonContent content;
+        content.form_state_string = form_state_string;
+
+        content.results = new SimulateJsonContent.Result[max_enabled_attack + 1];
+
+        // Make sure all the graphs/tables have the same dimensions (worst case)
+        int min_hits = 7;
+        foreach(i; 0 .. cast(int)content.results.length)
+            min_hits = max(min_hits, cast(int)results_after_attack[i].total_hits_pdf.length);
+
+        foreach(i; 0 .. cast(int)content.results.length)
+            content.results[i] = assemble_json_result(results_after_attack[i], min_hits, i);
+
+        res.writeJsonBody(content);
+    }
+
 
     private SimulateJsonContent.Result assemble_json_result(
         ref const(SimulationResults) results,
@@ -502,6 +422,7 @@ public class WWWServer
 
 
 
+    // ***************************************************************************************
 
     private struct ModifyTreeJsonContent
     {
@@ -529,8 +450,8 @@ public class WWWServer
 
         auto sw = StopWatch(AutoStart.yes);
 
-        SimulationSetup2 setup = to_simulation_setup2(attack_form);
-        TokenState2 attack_tokens = to_attack_tokens2(attack_form);
+        SimulationSetup setup = to_simulation_setup2(attack_form);
+        TokenState attack_tokens = to_attack_tokens2(attack_form);
         DiceState attack_dice = to_attack_dice_state(roll_form);
 
         auto nodes = compute_modify_attack_tree(setup, attack_tokens, attack_dice);
@@ -578,10 +499,10 @@ public class WWWServer
 
         auto sw = StopWatch(AutoStart.yes);
 
-        SimulationSetup2 setup = to_simulation_setup2(defense_form);
+        SimulationSetup setup = to_simulation_setup2(defense_form);
         DiceState attack_dice  = to_attack_dice_state(roll_form);
         DiceState defense_dice = to_defense_dice_state(roll_form);
-        TokenState2 defense_tokens = to_defense_tokens2(defense_form);
+        TokenState defense_tokens = to_defense_tokens2(defense_form);
         
         auto nodes = compute_modify_defense_tree(setup, attack_dice, defense_tokens, defense_dice);
 
@@ -608,6 +529,77 @@ public class WWWServer
         res.writeJsonBody(content);
     }
 
+
+    // ***************************************************************************************
+
+    private struct ShotsToDieJsonContent
+    {
+        // Query string that can be used in the URL to get back to the form state that generated this
+        string form_state_string;
+
+        string[] shots_to_die_labels;
+        double[] shots_to_die;
+        double[] shots_cdf;
+        int your_ship_index;        // For coloring the bar
+
+        string expected_shots_string;
+    };
+
+    private void ship_durability(HTTPServerRequest req, HTTPServerResponse res)
+    {
+        // Custom defaults for these forms
+        DefenseForm defense_defaults;
+        defense_defaults.dice = 2;
+        defense_defaults.ship_hull = 5;
+
+        AttackPresetForm attack_defaults;
+        attack_defaults.preset = AttackPreset._3d;
+        attack_defaults.focus = true;
+
+        // Load values from URL if present
+        DefenseForm defense = create_form_from_url(req.query.get("d", ""), defense_defaults);
+        AttackPresetForm attack = create_form_from_url(req.query.get("a", ""), attack_defaults);
+
+        auto server_settings = m_server_settings;
+        res.render!("shots_to_die_form.dt", server_settings, attack, defense);
+    }
+
+    private void simulate_ship_durability(HTTPServerRequest req, HTTPServerResponse res)
+    {
+        //debug writeln(req.json.serializeToPrettyJson());
+
+        auto attack_form  = create_form_from_fields!AttackPresetForm(req.json["attack"]);
+        auto defense_form = create_form_from_fields!DefenseForm(req.json["defense"]);
+
+        auto sw = StopWatch(AutoStart.yes);
+        auto results = m_shots_to_die_precomputed.simulate(attack_form, defense_form);
+
+        ShotsToDieJsonContent content;
+        content.form_state_string = format("d=%s&a=%s",
+                                           serialize_form_to_url(defense_form),
+                                           serialize_form_to_url(attack_form));
+        
+        content.shots_to_die_labels = new string[results.length];
+        content.shots_to_die        = new double[results.length];
+        foreach (int i, r; results)
+        {
+            content.shots_to_die_labels[i] = r.label;
+            content.shots_to_die[i] = r.mean_shots_to_die;
+            if (!r.precomputed)
+            {
+                content.your_ship_index = i;
+                content.expected_shots_string = format("%s%.3f", r.converged ? "" : ">", r.mean_shots_to_die);
+                content.shots_cdf = r.shots_cdf.dup;
+            }
+        }
+
+        log_message("%s %s %sms",
+                    req.clientAddress.toAddressString(),
+                    "/2/ship_durability/?" ~ content.form_state_string,
+                    sw.peek().total!"msecs",);
+
+        res.writeJsonBody(content);
+    }
     
 
     // ***************************************************************************************
@@ -629,9 +621,7 @@ public class WWWServer
     // NOTE: Be a bit careful with state here. These functions can be parallel and re-entrant due to
     // triggering blocking calls and then having other requests submitted by separate fibers.
 
-    struct ServerSettings
-    {
-        string url_root = "/";
-    };
-    immutable ServerSettings m_server_settings;
+    immutable WWWServerSettings m_server_settings;
+
+    ShotsToDiePrecomputed m_shots_to_die_precomputed;
 }

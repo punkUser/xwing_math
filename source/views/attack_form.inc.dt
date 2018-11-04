@@ -57,8 +57,12 @@
                         - select_control_option_t!("pilot", form_name)("(Reroll 1 die)",           AttackPilot2.Reroll_1);
                         - select_control_option_t!("pilot", form_name)("(Reroll up to 2 dice)",    AttackPilot2.Reroll_2);
                         - select_control_option_t!("pilot", form_name)("(Reroll up to 3 dice)",    AttackPilot2.Reroll_3);
+                        - select_control_option_t!("pilot", form_name)("Ezra Bridger",             AttackPilot2.EzraBridger);
                         - select_control_option_t!("pilot", form_name)("Gavin Darklighter",        AttackPilot2.GavinDarklighter);
+                        - select_control_option_t!("pilot", form_name)("Lando Calrissian (Scum)",  AttackPilot2.LandoCalrissianScum);
                         - select_control_option_t!("pilot", form_name)("Leebo",                    AttackPilot2.Leebo);
+                        - select_control_option_t!("pilot", form_name)("Major Vermeil",            AttackPilot2.MajorVermeil);
+                        - select_control_option_t!("pilot", form_name)("Rear Admiral Chiraneau",   AttackPilot2.RearAdmiralChiraneau);
                         - select_control_option_t!("pilot", form_name)("Shara Bey",                AttackPilot2.SharaBey);
                     select(name="ship")
                         - select_control_option_t!("ship", form_name)("No Ship Ability",                AttackShip2.None);
@@ -71,14 +75,19 @@
 
                 fieldset.fieldset
                     legend Talents
+                    - switch_control_t!("fanatical",           form_name)("Fanatical");
                     - switch_control_t!("fearless",            form_name)("Fear/Ruthless");
+                    - switch_control_t!("heroic",              form_name)("Heroic");
                     - switch_control_t!("juke",                form_name)("Juke");
                     - switch_control_t!("lone_wolf",           form_name)("Lone Wolf");
                     - switch_control_t!("marksmanship",        form_name)("Marksmanship");
                     - switch_control_t!("predator",            form_name)("Predator");
-                                                                          
-                //-fieldset.fieldset
-                    legend Crew
+                    
+                fieldset.fieldset
+                    legend Crew and Gunners
+                    - switch_control_t!("agent_kallus",        form_name)("Agent Kallus");
+                    - switch_control_t!("finn_gunner",         form_name)("Finn");
+                    - switch_control_t!("scum_lando_crew",     form_name)("Lando Calrissian (Scum)");
 
                 fieldset.fieldset
                     legend Systems

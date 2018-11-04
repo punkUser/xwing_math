@@ -195,18 +195,6 @@ function attackResultsSliderChanged()
 	updateCharts();
 }
 
-function serializeForm(formName)
-{
-	var formObject = $(formName).first();
-	var formArray = formObject.serializeArray();
-	
-	var returnArray = {};
-	for (var i = 0; i < formArray.length; i++){
-		returnArray[formArray[i]['name']] = formArray[i]['value'];
-	}
-	return returnArray;
-}
-
 function simulateUpdate(updateHistory = false)
 {	
 	// Serialize any forms that exist on this page and send them off	
@@ -219,6 +207,7 @@ function simulateUpdate(updateHistory = false)
 		"attack3":  serializeForm("#attack3_form"),
 		"attack4":  serializeForm("#attack4_form"),
 		"attack5":  serializeForm("#attack5_form"),
+		"attack6":  serializeForm("#attack6_form"),
 	};	
 	//console.log(params);
 	

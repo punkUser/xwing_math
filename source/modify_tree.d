@@ -4,8 +4,8 @@ public struct ModifyTreeNode
 {
     // States before and after calling the modify function
     // NOTE: These states will often match other than dice being removed for reroll.
-    SimulationState2 before;
-    SimulationState2 after;
+    SimulationState before;
+    SimulationState after;
     int reroll_count = 0;
 
     // From this point forward (computed via backtracking)

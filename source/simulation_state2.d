@@ -10,26 +10,31 @@ import std.algorithm;
 import std.stdio;
 import std.conv;
 
+public enum GreenToken
+{
+    Focus = 0,
+    Calculate,
+    Evade,
+    Reinforce
+};
+
 // Real tokens/charges/etc. State that needs to be tracked between attacks.
-public struct TokenState2
+public struct TokenState
 {
     mixin(bitfields!(
-        uint, "lock",               3,
-        uint, "force",              3,
+        uint, "lock",               2,
+        uint, "force",              4,
 
         // Green tokens
-        uint, "focus",              3,        
-        uint, "calculate",          3,
-        uint, "evade",              3,
-        uint, "reinforce",          3,
+        uint, "focus",              4,        
+        uint, "calculate",          4,
+        uint, "evade",              4,
+        uint, "reinforce",          2,
 
         // Red tokens
-        uint, "stress",             3,
-        //uint, "jam",                3,
-        // Jam, tractor, disarm not currently used. Ion below
+        uint, "stress",             4,
 
-        bool, "lone_wolf",          1,
-        bool, "spent_calculate",    1,       // tracking for Leebo... TODO: want to move this to a temp state, but needs to stick around until end of attack
+        bool, "lone_wolf",          1,      // Recurrent
         bool, "stealth_device",     1,
 
         // NOTE: Instead of tracking a single field ion token count, we basically track whether
@@ -44,11 +49,16 @@ public struct TokenState2
         bool, "ion_3",              1,
 
         bool, "iden",               1,
-        uint, "iden_total_damage",  2,       // tracking for Iden
+        uint, "iden_total_damage",  2,      // tracking for Iden (persistent)
 
         bool, "l337",               1,
+        bool, "elusive",            1,
 
-        uint, "",                   1,
+        // TODO: want to move this to a temp state, but needs to stick around until end of attack
+        bool, "spent_calculate",    1,      // tracking for Leebo
+        bool, "iden_used",          1,      // tracking so we can treat the attack as "hitting"
+
+        uint, "",                  28,
         )
     );
 
@@ -63,26 +73,43 @@ public struct TokenState2
             --count;
         }
     }
+
+    uint count(GreenToken token) const
+    {
+        switch (token) {
+            case GreenToken.Focus:      return focus;
+            case GreenToken.Calculate:  return calculate;
+            case GreenToken.Evade:      return evade;
+            case GreenToken.Reinforce:  return reinforce;
+            default: assert(false);
+        }
+    }
+
+    uint green_token_count() const
+    {
+        return focus + calculate + evade + reinforce;
+    }
 }
-//pragma(msg, "sizeof(TokenState2) = " ~ to!string(TokenState2.sizeof));
+//pragma(msg, "sizeof(TokenState) = " ~ to!string(TokenState.sizeof));
 
 // For TokenResults
 // Order here is the order they will be shown in the chart and table
 public static immutable TokenResults.Field[] k_token_results2_fields = [
-    { "lock",                               "Lock"              },
-    { "force",                              "Force"             },
-    { "focus",                              "Focus"             },
-    { "calculate",                          "Calculate"         },
-    { "evade",                              "Evade"             },
-    { "reinforce",                          "Reinforce"         },
-    { "stress",                             "Stress"            },
-    { "lone_wolf",                          "Lone Wolf"         },
-    { "stealth_device",                     "Stealth Device"    },
-    { "iden",                               "Iden"              },
-    { "l337",                               "L3-37"             },
-    { "ion_1",                              "Ionized (1)"       },
-    { "ion_2",                              "Ionized (2)"       },
-    { "ion_3",                              "Ionized (3)"       },
+    { "lock",                "Lock"              },
+    { "force",               "Force"             },
+    { "focus",               "Focus"             },
+    { "calculate",           "Calculate"         },
+    { "evade",               "Evade"             },
+    { "reinforce",           "Reinforce"         },
+    { "stress",              "Stress"            },
+    { "elusive",             "Elusive"           },
+    { "iden",                "Iden"              },
+    { "l337",                "L3-37"             },
+    { "lone_wolf",           "Lone Wolf"         },    
+    { "stealth_device",      "Stealth Device"    },
+    { "ion_1",               "Ionized (1)"       },
+    { "ion_2",               "Ionized (2)"       },
+    { "ion_3",               "Ionized (3)"       },
 ];
 
 // These fields are for tracking "once per opportunity" or other stuff that gets
@@ -92,7 +119,7 @@ public static immutable TokenResults.Field[] k_token_results2_fields = [
 // they only ever happen at a fixed point in the modify step, once), but we sometimes still track them for the
 // purpose of outputting more useful modify_tree states.
 
-struct AttackTempState2
+struct AttackTempState
 {
     mixin(bitfields!(
         bool, "finished_after_rolling",                 1,      // finished opportunity to do "after rolling" abilities
@@ -100,57 +127,60 @@ struct AttackTempState2
         bool, "finished_amad",                          1,      // finished attacker modding attack dice
         bool, "cannot_spend_lock",                      1,      // ex. after using fire-control system
         bool, "used_advanced_targeting_computer",       1,
+        bool, "used_add_results",                       1,
         uint, "used_reroll_1_count",                    3,
         uint, "used_reroll_2_count",                    3,      // Up to 2 dice
         uint, "used_reroll_3_count",                    3,      // Up to 3 dice
-        uint, "used_any_to_hit_count",                  3,
-        uint, "used_hit_to_crit_count",                 3,
         bool, "used_shara_bey_pilot",                   1,
-        uint,  "",                                     11,
+        bool, "used_scum_lando_crew",                   1,
+        bool, "used_scum_lando_pilot",                  1,
+        uint,  "",                                     14,
     ));
 
     void reset()
     {
-        this = AttackTempState2.init;
+        this = AttackTempState.init;
     }
 }
 
-struct DefenseTempState2
+struct DefenseTempState
 {
     mixin(bitfields!(
         bool, "finished_after_rolling",                 1,      // finished opportunity to do "after rolling" abilities
         bool, "finished_amdd",                          1,      // finished attacker modding defense dice
         bool, "finished_dmdd",                          1,      // finished defender modding defense dice
         bool, "used_c3p0",                              1,
+        bool, "used_add_results",                       1,
         uint, "used_reroll_1_count",                    3,
         uint, "used_reroll_2_count",                    3,      // Up to 2 dice
         uint, "used_reroll_3_count",                    3,      // Up to 3 dice
-        uint, "used_any_to_evade_count",                3,
-        uint, "used_add_evade_count",                   3,
         bool, "used_shara_bey_pilot",                   1,
-        uint, "",                                      12,
+        bool, "used_scum_lando_crew",                   1,
+        bool, "used_rebel_millennium_falcon",           1,
+        bool, "used_scum_lando_pilot",                  1,
+        uint, "",                                      14,
         ));
 
     void reset()
     {
-        this = DefenseTempState2.init;
+        this = DefenseTempState.init;
     }
 }
 
 
 
-public struct SimulationState2
+public struct SimulationState
 {
     struct Key
     {
         // TODO: Can move the "_temp" stuff out the key to make comparison/sorting slightly faster,
         // but need to ensure that they are reset at exactly the right places.
         DiceState         attack_dice;
-        TokenState2       attack_tokens;
-        AttackTempState2  attack_temp;
+        TokenState       attack_tokens;
+        AttackTempState  attack_temp;
         DiceState         defense_dice;
-        TokenState2       defense_tokens;
-        DefenseTempState2 defense_temp;
+        TokenState       defense_tokens;
+        DefenseTempState defense_temp;
 
         // Final results
         ubyte final_hits = 0;
@@ -164,20 +194,20 @@ public struct SimulationState2
     alias key this;
 
     // Compare only the key portion of the state
-    int opCmp(ref const SimulationState2 s) const
+    int opCmp(ref const SimulationState s) const
     {
         // TODO: Optimize this more for common early outs?
         return memcmp(&this.key, &s.key, Key.sizeof);
     }
-    bool opEquals(ref const SimulationState2 s) const
+    bool opEquals(ref const SimulationState s) const
     { 
         // TODO: Optimize this more for common early outs?
         return (this.key == s.key);
     }
 }
-//pragma(msg, "sizeof(SimulationState2) = " ~ to!string(SimulationState2.sizeof));
+//pragma(msg, "sizeof(SimulationState) = " ~ to!string(SimulationState.sizeof));
 
-public class SimulationStateSet2
+public class SimulationStateSet
 {
     public this()
     {
@@ -187,7 +217,7 @@ public class SimulationStateSet2
 
     // Replaces the attack tokens on *all* current states with the given ones
     // Generally this is done in preparation for simulating another attack *from a different attacker*
-    public void replace_attack_tokens(TokenState2 attack_tokens)
+    public void replace_attack_tokens(TokenState attack_tokens)
     {
         foreach (ref state; m_states)
             state.attack_tokens = attack_tokens;
@@ -198,8 +228,8 @@ public class SimulationStateSet2
     public void sort_by_tokens()
     {
         multiSort!(
-            (a, b) => memcmp(&a.attack_tokens,  &b.attack_tokens,  TokenState2.sizeof) < 0,
-            (a, b) => memcmp(&a.defense_tokens, &b.defense_tokens, TokenState2.sizeof) < 0,
+            (a, b) => memcmp(&a.attack_tokens,  &b.attack_tokens,  TokenState.sizeof) < 0,
+            (a, b) => memcmp(&a.defense_tokens, &b.defense_tokens, TokenState.sizeof) < 0,
             SwapStrategy.unstable)(m_states[]);
     }
 
@@ -217,7 +247,7 @@ public class SimulationStateSet2
         sort!((a, b) => memcmp(&a.key, &b.key, a.key.sizeof) < 0)(m_states[]);
 
         // Then walk through the array and combine elements that match their predecessors
-        SimulationState2 write_state = m_states.front();
+        SimulationState write_state = m_states.front();
         size_t write_count = 0;
         foreach (i; 1..m_states.length)
         {
@@ -234,16 +264,32 @@ public class SimulationStateSet2
                 write_state = m_states[i];
             }
         }
-        // Write last element and readjust length
+        // Write last element and read just length
         m_states[write_count++] = write_state;
         m_states.length = write_count;
     }
 
+    // Removes any states that have total hits >= the given value and returns their combined probability
+    // NOTE: We could generalize this to take an arbitrary predicate, but this is all we need for now.
+    double remove_if_total_hits_ge(int target_hits)
+    {
+        // Partition into states to keep on the left and states to drop on the right        
+        bool total_hits_less(ref const(SimulationState) s) { return s.final_hits + s.final_crits < target_hits; }
+        auto remove_elements = partition!(total_hits_less)(m_states[]);
+
+        double removed_p = 0.0;
+        foreach (ref s; remove_elements)
+            removed_p += s.probability;
+
+        m_states.length = m_states.length - remove_elements.length;
+        return removed_p;
+    }
+
     // If "reroll" is set the dice will be put into the "rerolled_results" pool, otherwise into the regular "results" pool.
-    public void roll_attack_dice(bool reroll)(SimulationState2 prev_state, int dice_count)
+    public void roll_attack_dice(bool reroll)(SimulationState prev_state, int dice_count)
     {
         dice.roll_attack_dice(dice_count, (int blank, int focus, int hit, int crit, double probability) {
-            SimulationState2 next_state = prev_state;
+            SimulationState next_state = prev_state;
             static if (reroll)
             {
                 next_state.attack_dice.rerolled_results[DieResult.Crit]  += crit;
@@ -264,10 +310,10 @@ public class SimulationStateSet2
     }
 
     // If "reroll" is set the dice will be put into the "rerolled_results" pool, otherwise into the regular "results" pool.
-    public void roll_defense_dice(bool reroll)(SimulationState2 prev_state, int dice_count)
+    public void roll_defense_dice(bool reroll)(SimulationState prev_state, int dice_count)
     {
         dice.roll_defense_dice(dice_count, (int blank, int focus, int evade, double probability) {
-            SimulationState2 next_state = prev_state;
+            SimulationState next_state = prev_state;
             static if (reroll)
             {
                 next_state.defense_dice.rerolled_results[DieResult.Evade] += evade;
@@ -296,7 +342,7 @@ public class SimulationStateSet2
 
         foreach (i; 0 .. m_states.length)
         {
-            SimulationState2 state = m_states[i];
+            SimulationState state = m_states[i];
 
             // Compute final results of this simulation step
             SimulationResult result;
@@ -327,22 +373,22 @@ public class SimulationStateSet2
     public bool empty() const { return m_states.empty(); }
     public void clear_for_reuse() { m_states.length = 0; }
 
-    public SimulationState2 pop_back()
+    public SimulationState pop_back()
     {
-        SimulationState2 back = m_states.back();
+        SimulationState back = m_states.back();
         m_states.removeBack();
         return back;
     }
-    public void push_back(SimulationState2 v)
+    public void push_back(SimulationState v)
     {
         m_states.insertBack(v);
     }
 
     // Support foreach over m_states, but read only
-    int opApply(int delegate(ref const(SimulationState2)) operations) const
+    int opApply(int delegate(ref const(SimulationState)) operations) const
     {
         int result = 0;
-        foreach (ref const(SimulationState2) state; m_states) {
+        foreach (ref const(SimulationState) state; m_states) {
             result = operations(state);
             if (result) {
                 break;
@@ -351,6 +397,6 @@ public class SimulationStateSet2
         return result;
     }
 
-    private Array!SimulationState2 m_states;
+    private Array!SimulationState m_states;
 };
 

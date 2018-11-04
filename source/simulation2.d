@@ -15,7 +15,7 @@ import vibe.core.core;
 
 //-----------------------------------------------------------------------------------
 
-public SimulationState2 neutralize_results(const(SimulationSetup2) setup, SimulationState2 state)
+public SimulationState neutralize_results(const(SimulationSetup) setup, SimulationState state)
 {
     // TODO: Do this earlier as well for state compression reasons
     state.attack_dice.finalize();
@@ -68,8 +68,10 @@ public SimulationState2 neutralize_results(const(SimulationSetup2) setup, Simula
 
     int total_damage = attack_results[DieResult.Hit] + attack_results[DieResult.Crit];
 
-    // TODO: Ion, tractor, etc.
-    if (setup.attack.ion_weapon && (attack_results[DieResult.Hit] + attack_results[DieResult.Crit]) > 0)
+    // If Iden was used, the attack is considered to have hit
+    bool attack_hit = total_damage > 0 || state.defense_tokens.iden_used;
+
+    if (setup.attack.ion_weapon && total_damage > 0)
     {
         // Ions deal the first hit as a regular damage and any excess hits as ion tokens
         state.defense_tokens.add_ion_tokens(total_damage - 1);
@@ -91,22 +93,41 @@ public SimulationState2 neutralize_results(const(SimulationSetup2) setup, Simula
     if (state.defense_tokens.iden)
         state.defense_tokens.iden_total_damage = min(3, state.defense_tokens.iden_total_damage + total_damage);
 
+    // After attack stuff
+    if (setup.attack.leebo_pilot && state.attack_tokens.spent_calculate)
+        state.attack_tokens.calculate = state.attack_tokens.calculate + 1;
+    if (setup.defense.leebo_pilot && state.defense_tokens.spent_calculate)
+        state.defense_tokens.calculate = state.defense_tokens.calculate + 1;
+
+    if (setup.defense.laetin_pilot && !attack_hit)
+        state.defense_tokens.evade = state.defense_tokens.evade + 1;
+
     // Simplify/clear out irrelevant states
     // Keep tokens and final results, discard the rest
-    state.attack_dice.cancel_all();
-    state.defense_dice.cancel_all();
+    {
+        state.attack_dice.cancel_all();
+        state.defense_dice.cancel_all();
+
+        state.attack_temp.reset();
+        state.attack_tokens.spent_calculate = false;
+        assert(state.attack_tokens.iden_used == false);
+
+        state.defense_temp.reset();
+        state.defense_tokens.spent_calculate = false;
+        state.defense_tokens.iden_used = false;
+    }
 
     return state;
 }
 
 // Returns full set of states after result comparison (results put into state.final_hits, etc)
-private SimulationStateSet2 simulate_single_attack(
-    const(SimulationSetup2) setup,
-    TokenState2 attack_tokens,
-    TokenState2 defense_tokens)
+private SimulationStateSet simulate_single_attack(
+    const(SimulationSetup) setup,
+    TokenState attack_tokens,
+    TokenState defense_tokens)
 {
-    auto states = new SimulationStateSet2();
-    auto finished_states = new SimulationStateSet2();
+    auto states = new SimulationStateSet();
+    auto finished_states = new SimulationStateSet();
 
     // Before attack stuff
     if (setup.defense.luke_pilot && defense_tokens.force < 2)
@@ -114,7 +135,7 @@ private SimulationStateSet2 simulate_single_attack(
 
     // Roll attack dice
     {
-        SimulationState2 initial_state;
+        SimulationState initial_state;
         initial_state.attack_tokens  = attack_tokens;
         initial_state.defense_tokens = defense_tokens;
         initial_state.probability    = 1.0;
@@ -136,7 +157,7 @@ private SimulationStateSet2 simulate_single_attack(
     {
         while (!states.empty())
         {
-            SimulationState2 state = states.pop_back();
+            SimulationState state = states.pop_back();
             int reroll_count = modify_attack_dice(setup, state);
             if (reroll_count > 0)
                 states.roll_attack_dice!true(state, reroll_count);
@@ -169,7 +190,7 @@ private SimulationStateSet2 simulate_single_attack(
     {
         while (!states.empty())
         {
-            SimulationState2 state = states.pop_back();
+            SimulationState state = states.pop_back();
 
             int defense_dice = setup.defense.dice;
             if (state.defense_tokens.stealth_device)
@@ -190,7 +211,7 @@ private SimulationStateSet2 simulate_single_attack(
     {
         while (!states.empty())
         {
-            SimulationState2 state = states.pop_back();
+            SimulationState state = states.pop_back();
             int reroll_count = modify_defense_dice_root(setup, state);
             if (reroll_count > 0)
                 states.roll_defense_dice!true(state, reroll_count);
@@ -218,20 +239,7 @@ private SimulationStateSet2 simulate_single_attack(
     {
         while (!states.empty())
         {
-            SimulationState2 state = neutralize_results(setup, states.pop_back());
-
-            // After attack stuff
-            if (setup.attack.leebo_pilot && state.attack_tokens.spent_calculate)
-                state.attack_tokens.calculate = state.attack_tokens.calculate + 1;
-            if (setup.defense.leebo_pilot && state.defense_tokens.spent_calculate)
-                state.defense_tokens.calculate = state.defense_tokens.calculate + 1;
-                
-            // Clear out any token state we no longer need
-            state.attack_temp.reset();
-            state.attack_tokens.spent_calculate = false;
-            state.defense_temp.reset();
-            state.defense_tokens.spent_calculate = false;
-
+            SimulationState state = neutralize_results(setup, states.pop_back());
             finished_states.push_back(state);
         }
 
@@ -252,7 +260,7 @@ private SimulationStateSet2 simulate_single_attack(
 //
 // NOTE: Takes the initial state set as non-constant since it needs to sort it, but does not otherwise
 // modify the contents. Returns a new state set after this additional attack.
-public SimulationStateSet2 simulate_attack(const(SimulationSetup2) setup, SimulationStateSet2 states)
+public SimulationStateSet simulate_attack(const(SimulationSetup) setup, SimulationStateSet states)
 {
     // NOTE: It would be "correct" here to just immediately fork all of our states set into another attack,
     // but that is relatively inefficient. Since the core thing that affects how the next attack plays out is
@@ -273,10 +281,10 @@ public SimulationStateSet2 simulate_attack(const(SimulationSetup2) setup, Simula
 
     // There's ways to do this in place but it's simpler for now to just do it to a new state set
     // This function is only called once per attack, so it's not the end of the world
-    SimulationStateSet2 new_states = new SimulationStateSet2();
+    SimulationStateSet new_states = new SimulationStateSet();
 
-    SimulationStateSet2 second_attack_states;
-    SimulationState2 second_attack_initial_state;
+    SimulationStateSet second_attack_states;
+    SimulationState second_attack_initial_state;
 
     foreach (initial_state; states)
     {
@@ -293,8 +301,8 @@ public SimulationStateSet2 simulate_attack(const(SimulationSetup2) setup, Simula
             // New token state set, so run a new simulation
             second_attack_initial_state = initial_state;
             second_attack_states = simulate_single_attack(setup,
-                                                            second_attack_initial_state.attack_tokens, 
-                                                            second_attack_initial_state.defense_tokens);
+                                                          second_attack_initial_state.attack_tokens, 
+                                                          second_attack_initial_state.defense_tokens);
 
             //writefln("Second attack in %s msec", sw.peek().msecs());
         }
@@ -303,7 +311,7 @@ public SimulationStateSet2 simulate_attack(const(SimulationSetup2) setup, Simula
         foreach (const second_state; second_attack_states)
         {
             // NOTE: Important to keep the token state and such from after the second attack, not initial one
-            SimulationState2 new_state = second_state;
+            SimulationState new_state = second_state;
             new_state.final_hits  += initial_state.final_hits;
             new_state.final_crits += initial_state.final_crits;
             new_state.probability *= initial_state.probability;

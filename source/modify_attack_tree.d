@@ -4,7 +4,7 @@ import modify_attack_dice : modify_attack_dice;
 import modify_tree;
 import dice;
 
-private void modify_attack_tree(const(SimulationSetup2) setup,
+private void modify_attack_tree(const(SimulationSetup) setup,
                                 ref ModifyTreeNode[] nodes,
                                 int current_node)
 {
@@ -53,8 +53,8 @@ private void modify_attack_tree(const(SimulationSetup2) setup,
 
 
 
-public ModifyTreeNode[] compute_modify_attack_tree(const(SimulationSetup2) setup,
-                                                   TokenState2 attack_tokens,
+public ModifyTreeNode[] compute_modify_attack_tree(const(SimulationSetup) setup,
+                                                   TokenState attack_tokens,
                                                    DiceState attack_dice)
 {
     auto nodes = new ModifyTreeNode[1];
