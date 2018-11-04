@@ -6,7 +6,7 @@ block form
     include defense_form.inc
     - import form;
     
-    h1 2.0 Calculator
+    h1 Advanced Calculator
         
     .grid-x.grid-margin-x.small-up-1.medium-up-2.large-up-2
         .cell

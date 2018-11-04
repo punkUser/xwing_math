@@ -24,12 +24,14 @@
             div(id="#{form_name}_panel", data-toggler=".hide", class="#{initial_visibility}")
                 select(name="preset")
                     - import attack_preset_form;
-                    - select_control_option_t!("preset", form_name)("2 Dice",                   AttackPreset._2d                );
-                    - select_control_option_t!("preset", form_name)("2 Dice, Howlrunner",       AttackPreset._2dHowlrunner      );
-                    - select_control_option_t!("preset", form_name)("3 Dice",                   AttackPreset._3d                );
-                    - select_control_option_t!("preset", form_name)("3 Dice, Howlrunner",       AttackPreset._3dHowlrunner      );
-                    - select_control_option_t!("preset", form_name)("4 Dice",                   AttackPreset._4d                );
-
+                    - select_control_option_t!("preset", form_name)("2 Dice",                           AttackPreset._2d                     );
+                    - select_control_option_t!("preset", form_name)("2 Dice, Howlrunner",               AttackPreset._2dHowlrunner           );
+                    - select_control_option_t!("preset", form_name)("3 Dice",                           AttackPreset._3d                     );
+                    - select_control_option_t!("preset", form_name)("3 Dice, Howlrunner",               AttackPreset._3dHowlrunner           );
+                    - select_control_option_t!("preset", form_name)("4 Dice",                           AttackPreset._4d                     );
+                    - select_control_option_t!("preset", form_name)("4 Dice, Proton Torpedoes",         AttackPreset._4dProtonTorpedoes      );
+                    - select_control_option_t!("preset", form_name)("4 Dice, Proton Torpedoes, Wedge",  AttackPreset._4dProtonTorpedoesWedge );
+                    
                 - switch_control_t!("focus", form_name)("Focus");
                 - switch_control_t!("lock" , form_name)("Lock");
                 

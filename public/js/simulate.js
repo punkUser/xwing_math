@@ -271,7 +271,11 @@ $(document).ready(function()
 	});	
 	// If we have a query string, trigger a simulation automatically (but don't update history)
 	if (window.location.search.length > 0) {
-		simulateUpdate(false);
+		// If there's an "nas" (no autosubmit) param, respect that		
+		var urlParams = new URLSearchParams(window.location.search);
+		console.log(urlParams.has('nas'));
+		if (!urlParams.has('nas'))
+			simulateUpdate(false);
 	}
 	
 	// AJAX form submission
