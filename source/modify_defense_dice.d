@@ -270,8 +270,10 @@ private SimulationState spend_focus_calculate_force(
     if (focus_results_to_change > 0)
     {
         bool ezra_available = setup.defense.ezra_pilot && state.defense_tokens.stress > 0 && state.defense_tokens.force > 0;
+        bool brilliant_evasion_available = setup.defense.brilliant_evasion && state.defense_tokens.force > 0;
+
         bool force_calculate_available = (state.defense_tokens.calculate + state.defense_tokens.force) > 0;
-        int change_with_one_token_count = ezra_available ? 2 : (force_calculate_available > 0 ? 1 : 0);
+        int change_with_one_token_count = (ezra_available || brilliant_evasion_available) ? 2 : (force_calculate_available > 0 ? 1 : 0);
 
         if (state.defense_tokens.focus > 0 && (focus_results_to_change > change_with_one_token_count))
         {
@@ -281,13 +283,21 @@ private SimulationState spend_focus_calculate_force(
         }
         else
         {
-            if (ezra_available && focus_results_to_change > 1)
+            // NOTE: Have to re-check token counts and dice here for each effect we apply
+            if (ezra_available && focus_results_to_change > 1 && state.defense_tokens.force > 0)
             {
-                state.defense_dice.change_dice(DieResult.Focus, DieResult.Hit, 2);
+                state.defense_dice.change_dice(DieResult.Focus, DieResult.Evade, 2);
+                state.defense_tokens.force = state.defense_tokens.force - 1;
+                focus_results_to_change -= 2;
+            }
+            if (brilliant_evasion_available && focus_results_to_change > 1 && state.defense_tokens.force > 0)
+            {
+                state.defense_dice.change_dice(DieResult.Focus, DieResult.Evade, 2);
                 state.defense_tokens.force = state.defense_tokens.force - 1;
                 focus_results_to_change -= 2;
             }
 
+            // Regular force/calculate effect
             if (prefer_spend_calculate)
             {
                 state.defense_tokens.calculate = state.defense_tokens.calculate - state.defense_dice.change_dice(DieResult.Focus, DieResult.Hit, state.defense_tokens.calculate);

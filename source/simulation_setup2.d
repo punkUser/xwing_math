@@ -67,6 +67,7 @@ public class SimulationSetup
         bool scum_lando_crew = false;
         bool rebel_millennium_falcon = false;    // 1 reroll if evading
         bool heroic = false;
+        bool brilliant_evasion = false;
 
         bool zeb_pilot = false;
         bool leebo_pilot = false;
@@ -151,6 +152,7 @@ public SimulationSetup to_simulation_setup2(ref const(AttackForm) attack, ref co
     setup.defense.scum_lando_crew              = defense.scum_lando_crew;
     setup.defense.rebel_millennium_falcon      = defense.rebel_millennium_falcon;
     setup.defense.heroic                       = defense.heroic;
+    setup.defense.brilliant_evasion            = defense.brilliant_evasion;
 
     return setup;
 }

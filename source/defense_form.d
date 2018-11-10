@@ -43,7 +43,13 @@ align(1) struct DefenseForm
 
         // Used by the shots to die form, but convenient to use the same defense form, albeit a subset
         uint,  "ship_hull",                     5, // 0..31
-        uint,  "ship_shields",                  5, // 0..31, currently unused
+        uint,  "ship_shields",                  5, // 0..31
+        ));
+
+    mixin(bitfields!(
+        bool,  "brilliant_evasion",             1,
+
+        uint,  "",                              7,
         ));
 
     static DefenseForm defaults()

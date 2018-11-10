@@ -57,19 +57,20 @@
                 - switch_control_t!("iden",              form_name)("Iden Versio");
                 - switch_control_t!("selfless",          form_name)("Selfless");
                 - switch_control_t!("serissu",           form_name)("Serissu");
-                        
+            
             fieldset.fieldset
-                legend Talents
-                - switch_control_t!("elusive",   form_name)("Elusive");
-                - switch_control_t!("heroic",    form_name)("Heroic");
-                - switch_control_t!("lone_wolf", form_name)("Lone Wolf");
+                legend Talents and Powers
+                - switch_control_t!("brilliant_evasion", form_name)("Brilliant Evasion");
+                - switch_control_t!("elusive",           form_name)("Elusive");
+                - switch_control_t!("heroic",            form_name)("Heroic");
+                - switch_control_t!("lone_wolf",         form_name)("Lone Wolf");
 
             fieldset.fieldset
                 legend Crew and Gunners
-                - switch_control_t!("c3p0",            form_name)("C-3P0 (guess 1)");
-                - switch_control_t!("finn_gunner",     form_name)("Finn");
-                - switch_control_t!("l337",            form_name)("L3-37");
-                - switch_control_t!("scum_lando_crew", form_name)("Lando Calrissian (Scum)");
+                - switch_control_t!("c3p0",              form_name)("C-3P0 (guess 1)");
+                - switch_control_t!("finn_gunner",       form_name)("Finn");
+                - switch_control_t!("l337",              form_name)("L3-37");
+                - switch_control_t!("scum_lando_crew",   form_name)("Lando Calrissian (Scum)");
 
             fieldset.fieldset
                 legend Modifications and Titles
