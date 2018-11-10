@@ -41,8 +41,9 @@ block content
                         - switch_control_t!("serissu",          "defense")("Serissu");
                         
                     fieldset.fieldset
-                        legend Talents
-                        - switch_control_t!("heroic",           "defense")("Heroic");
+                        legend Talents and Powers
+                        - switch_control_t!("brilliant_evasion", "defense")("Brilliant Evasion");
+                        - switch_control_t!("heroic",            "defense")("Heroic");
 
                     fieldset.fieldset
                         legend Crew and Gunners
