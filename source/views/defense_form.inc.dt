@@ -62,6 +62,9 @@
                 legend Talents and Powers
                 - switch_control_t!("brilliant_evasion", form_name)("Brilliant Evasion");
                 - switch_control_t!("elusive",           form_name)("Elusive");
+                - switch_control_t!("hate_1_force",      form_name)("Hate (1 force max)");
+                - switch_control_t!("hate_2_force",      form_name)("Hate (2 force max)");
+                - switch_control_t!("hate_3_force",      form_name)("Hate (3 force max)");
                 - switch_control_t!("heroic",            form_name)("Heroic");
                 - switch_control_t!("lone_wolf",         form_name)("Lone Wolf");
 

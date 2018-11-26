@@ -88,6 +88,12 @@ public SimulationState neutralize_results(const(SimulationSetup) setup, Simulati
     state.final_hits  += attack_results[DieResult.Hit];
     state.final_crits += attack_results[DieResult.Crit];
     
+    // Trigger Hate if present and regen capped by maximum force
+    if (setup.defense.hate_max_force > 0)
+    {
+        state.defense_tokens.force = min(state.defense_tokens.force + total_damage, setup.defense.hate_max_force);
+    }
+
     // Calculate Damage taken for Iden
     // NOTE: Only do this when Iden is present as it diverges the entire simulation per attack!
     if (state.defense_tokens.iden)

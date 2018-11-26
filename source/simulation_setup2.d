@@ -77,6 +77,8 @@ public class SimulationSetup
         bool laetin_pilot = false;
         bool ezra_pilot = false;
         bool scum_lando_pilot = false;
+
+        int hate_max_force = 0;         // If >0, hate will regenerate force on damage up to this cap
     };
     public Defense defense;
 };
@@ -153,6 +155,9 @@ public SimulationSetup to_simulation_setup2(ref const(AttackForm) attack, ref co
     setup.defense.rebel_millennium_falcon      = defense.rebel_millennium_falcon;
     setup.defense.heroic                       = defense.heroic;
     setup.defense.brilliant_evasion            = defense.brilliant_evasion;
+    setup.defense.hate_max_force               = defense.hate_1_force ? 1 : 0;
+    setup.defense.hate_max_force               = defense.hate_2_force ? 2 : setup.defense.hate_max_force;
+    setup.defense.hate_max_force               = defense.hate_3_force ? 3 : setup.defense.hate_max_force;
 
     return setup;
 }

@@ -33,7 +33,7 @@ html(class="no-js", lang="en")
                             li
                                 a(href="#{server_settings.url_root}2/multi_preset/?nas&a1=AQM&a2=AQM&a3=AQM&a4=AQM&a5=AQM&a6=AwM") 6x TIE Howl Wampa Swarm
                             li
-                                a(href="#{server_settings.url_root}2/multi_preset/?nas&a1=AQM&a2=AQM&a3=AQM&a4=AQM&a5=AAM&a6=AQM&a7=AQM") 7x TIE Howl Swarm
+                                a(href="#{server_settings.url_root}2/multi_preset/?nas&a1=AQM&a2=AQM&a3=AQM&a4=AQM&a5=AQM&a6=AQM&a7=AQM") 7x TIE Howl Swarm
                     li.divider
                     li
                         a(href="#{server_settings.url_root}2/multi/") Advanced Calculator

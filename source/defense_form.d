@@ -48,8 +48,11 @@ align(1) struct DefenseForm
 
     mixin(bitfields!(
         bool,  "brilliant_evasion",             1,
+        bool,  "hate_1_force",                  1,
+        bool,  "hate_2_force",                  1,
+        bool,  "hate_3_force",                  1,
 
-        uint,  "",                              7,
+        uint,  "",                              4,
         ));
 
     static DefenseForm defaults()
