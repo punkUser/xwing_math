@@ -73,7 +73,7 @@
                     - switch_control_t!("saw_gerrera_pilot",   form_name)("Saw Gerrera (Pilot)");
 
                 fieldset.fieldset
-                    legend Talents
+                    legend Talents and Powers
                     - switch_control_t!("fanatical",           form_name)("Fanatical");
                     - switch_control_t!("fearless",            form_name)("Fear/Ruthless");
                     - switch_control_t!("heroic",              form_name)("Heroic");
@@ -81,6 +81,7 @@
                     - switch_control_t!("lone_wolf",           form_name)("Lone Wolf");
                     - switch_control_t!("marksmanship",        form_name)("Marksmanship");
                     - switch_control_t!("predator",            form_name)("Predator");
+                    - switch_control_t!("predictive_shot",     form_name)("Predictive Shot");
                     
                 fieldset.fieldset
                     legend Crew and Gunners

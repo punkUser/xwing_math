@@ -45,8 +45,7 @@ align(1) struct AttackForm
         bool,  "fanatical",                      1,
         bool,  "heroic",                         1,
         bool,  "advanced_optics",                1,
-
-        uint, "",                                1,
+        bool,  "predictive_shot",                1,
         ));
 
     static AttackForm defaults(int attack_index)

@@ -136,6 +136,14 @@ private SimulationStateSet simulate_single_attack(
     auto finished_states = new SimulationStateSet();
 
     // Before attack stuff
+    // TODO: We might need a better way for these paths to get hit even during stuff like "How to Modify" forms
+    // Currently the effects that happen here are mostly inapplicable to those cases though.
+    if (setup.attack.predictive_shot && attack_tokens.force > 0)
+    {
+        attack_tokens.predictive_shot_used = true;
+        attack_tokens.force = attack_tokens.force - 1;
+    }
+
     // NOTE: Respect the max force they selected even if it is inconsistent with Luke's current capabilities (2)
     if (setup.defense.luke_pilot && defense_tokens.force < setup.defense.max_force_count)
         defense_tokens.force = defense_tokens.force + 1;
@@ -203,6 +211,13 @@ private SimulationStateSet simulate_single_attack(
             if (state.defense_tokens.stealth_device)
                 ++defense_dice;
             defense_dice = max(defense_dice + setup.attack.defense_dice_diff, 0);
+
+            // If predictive shot was used, clamp defense dice appropriately
+            if (state.attack_tokens.predictive_shot_used)
+            {
+                int hits_crits_count = state.attack_dice.final_results[DieResult.Hit] + state.attack_dice.final_results[DieResult.Crit];
+                defense_dice = min(defense_dice, hits_crits_count);
+            }
 
             finished_states.roll_defense_dice!false(state, defense_dice);
         }

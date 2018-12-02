@@ -22,20 +22,20 @@ public enum GreenToken
 public struct TokenState
 {
     mixin(bitfields!(
-        uint, "lock",               2,
-        uint, "force",              4,
-
-        // Green tokens
-        uint, "focus",              4,        
-        uint, "calculate",          4,
-        uint, "evade",              4,
-        uint, "reinforce",          2,
-
-        // Red tokens
-        uint, "stress",             4,
-
-        bool, "lone_wolf",          1,      // Recurrent
-        bool, "stealth_device",     1,
+        uint, "lock",                 2,
+        uint, "force",                4,
+                                      
+        // Green tokens               
+        uint, "focus",                4,        
+        uint, "calculate",            4,
+        uint, "evade",                4,
+        uint, "reinforce",            2,
+                                      
+        // Red tokens                 
+        uint, "stress",               4,
+                                      
+        bool, "lone_wolf",            1,      // Recurrent
+        bool, "stealth_device",       1,
 
         // NOTE: Instead of tracking a single field ion token count, we basically track whether
         // the ship has 1, 2, or 3 ion tokens via 3 bits. The advantage of this is that the token results
@@ -44,21 +44,22 @@ public struct TokenState
         // required tokens to ionize a small/medium/large base ship respectively.
         // NOTE: if ion_2 is set, ion_1 must be set. Similarly if ion_3 is set ion_2 and ion_1 must both be set.
         // Generally use "add_ion_tokens" helper to manipulate these.
-        bool, "ion_1",              1,
-        bool, "ion_2",              1,
-        bool, "ion_3",              1,
-
-        bool, "iden",               1,
-        uint, "iden_total_damage",  2,      // tracking for Iden (persistent)
-
-        bool, "l337",               1,
-        bool, "elusive",            1,
+        bool, "ion_1",                1,
+        bool, "ion_2",                1,
+        bool, "ion_3",                1,
+                                      
+        bool, "iden",                 1,
+        uint, "iden_total_damage",    2,      // tracking for Iden (persistent)
+                                      
+        bool, "l337",                 1,
+        bool, "elusive",              1,
 
         // TODO: want to move this to a temp state, but needs to stick around until end of attack
-        bool, "spent_calculate",    1,      // tracking for Leebo
-        bool, "iden_used",          1,      // tracking so we can treat the attack as "hitting"
+        bool, "spent_calculate",      1,      // tracking for Leebo
+        bool, "iden_used",            1,      // tracking so we can treat the attack as "hitting"
+        bool, "predictive_shot_used", 1,      // tracking for Predictive Shot use at start of attack
 
-        uint, "",                  28,
+        uint, "",                    27,
         )
     );
 
@@ -175,10 +176,10 @@ public struct SimulationState
     {
         // TODO: Can move the "_temp" stuff out the key to make comparison/sorting slightly faster,
         // but need to ensure that they are reset at exactly the right places.
-        DiceState         attack_dice;
+        DiceState        attack_dice;
         TokenState       attack_tokens;
         AttackTempState  attack_temp;
-        DiceState         defense_dice;
+        DiceState        defense_dice;
         TokenState       defense_tokens;
         DefenseTempState defense_temp;
 

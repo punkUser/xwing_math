@@ -43,6 +43,7 @@ public class SimulationSetup
         bool scum_lando_pilot = false;
 
         bool advanced_optics = false;
+        bool predictive_shot = false;
     };
     public Attack attack;
 
@@ -128,6 +129,7 @@ public SimulationSetup to_simulation_setup2(ref const(AttackForm) attack, ref co
     setup.attack.advanced_targeting_computer  = attack.ship == AttackShip2.AdvancedTargetingComputer;
     setup.attack.scum_lando_crew              = attack.scum_lando_crew;
     setup.attack.advanced_optics              = attack.advanced_optics;
+    setup.attack.predictive_shot              = attack.predictive_shot;
 
     // ****************************************************************************************************************
 

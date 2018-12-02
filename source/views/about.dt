@@ -121,3 +121,18 @@ block content
                 p.
                     If you want a specific upgrade prioritized, please feel free to
                     <a href="https://github.com/punkUser/xwing_math/issues">upvote or file an issue on Github</a>
+
+    h1 Upgrade Questions
+
+    ul#upgrades.upgrades.accordion(data-accordion, data-allow-all-closed="true", data-deep-link="true")
+    
+        li.accordion-item(data-accordion-item)
+            a.accordion-title(href="#predictive-shot") When is Predictive Shot used?
+            #predictive-shot.accordion-content(data-tab-content)
+                p.
+                    Predictive Shot will always be used by the attacker when enabled and if a force is available to spend.
+                p.
+                    This may differ slightly from the "optimal" use of the ability in every situation but the edge cases are too
+                    subtle and involve too much context to reason about dynamically. Thus we chose the predictable behavior that
+                    allows you to compare by toggling the upgrade on/off to help determine in what cases it is likely to be a
+                    good use of the force point.
