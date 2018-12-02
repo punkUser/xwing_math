@@ -19,11 +19,7 @@ block content
                         legend Ship
                         - stepper_control_t!("ship_hull",           form_name)("Hull",         1, 20);
                         - stepper_control_t!("ship_shields",        form_name)("Shields",      0, 20);
-                        .stepper-group-clamp
-                            .stepper-group-clamp-le
-                                - stepper_control_t!("force_count",       form_name)("Force", 0, 7);
-                            .stepper-group-clamp-ge
-                                - stepper_control_t!("max_force_count",   form_name)("Max Force", 0, 7);
+                        - stepper_control_t!("max_force_count",     form_name)("Max Force",    0,  7);
 
                     fieldset.fieldset
                         legend Persistent Tokens
@@ -53,6 +49,7 @@ block content
                     fieldset.fieldset
                         legend Talents and Powers
                         //- switch_control_t!("brilliant_evasion", form_name)("Brilliant Evasion");
+                        - switch_control_t!("hate",              form_name)("Hate");
                         - switch_control_t!("heroic",            form_name)("Heroic");
 
                     fieldset.fieldset
