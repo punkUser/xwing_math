@@ -39,15 +39,15 @@ html(class="no-js", lang="en")
                         a(href="#{server_settings.url_root}2/multi/") Advanced Calculator
                     li.divider
                     li
+                        a(href="#{server_settings.url_root}2/ship_durability/") Durability
+                    li.divider
+                    li
                         a(href="#{server_settings.url_root}2/modify_attack/") How To Modify
                         ul.menu.vertical
                             li
                                 a(href="#{server_settings.url_root}2/modify_attack/") How to Modify Attack Dice
                             li
                                 a(href="#{server_settings.url_root}2/modify_defense/") How to Modify Defense Dice
-                    li.divider
-                    li
-                        a(href="#{server_settings.url_root}2/ship_durability/") Durability
                     li.divider
                     li
                         a(href="#{server_settings.url_root}faq/") FAQ

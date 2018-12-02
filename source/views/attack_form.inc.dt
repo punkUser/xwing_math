@@ -50,7 +50,7 @@
                             
                                 
                 fieldset.fieldset
-                    legend Pilot and Ship
+                    legend Pilot and Ship Ability
                     select(name="pilot")
                         - select_control_option_t!("pilot", form_name)("No Pilot Ability",         AttackPilot2.None);
                         - select_control_option_t!("pilot", form_name)("(Reroll 1 die)",           AttackPilot2.Reroll_1);

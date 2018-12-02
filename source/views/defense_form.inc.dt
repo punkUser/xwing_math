@@ -33,7 +33,7 @@
                                 - stepper_control_t!("max_force_count",   form_name)("Max Force", 0, 7);
 
             fieldset.fieldset
-                legend Pilot and Ship
+                legend Pilot and Ship Ability
                 select(name="pilot")
                     - select_control_option_t!("pilot", form_name)("No Pilot Ability",          DefensePilot2.None);
                     - select_control_option_t!("pilot", form_name)("(Reroll 1 die)",            DefensePilot2.Reroll_1);

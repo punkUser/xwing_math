@@ -10,49 +10,59 @@ block content
     .grid-x.grid-margin-x.small-up-1.medium-up-2.large-up-2
         .cell
             form(id="defense_form", action="javascript:void(0);", method="POST", autocomplete="off")
+                - enum form_name = "defense";
+
                 .callout.small.success
-                    - stepper_control_t!("dice",                "defense")("Defense Dice", 0,  7);
-                    - stepper_control_t!("ship_hull",           "defense")("Hull",         1, 20);
-                    - stepper_control_t!("ship_shields",        "defense")("Shields",      0, 20);
+                    - stepper_control_t!("dice",                form_name)("Defense Dice", 0,  7);
+
+                    fieldset.fieldset
+                        legend Ship
+                        - stepper_control_t!("ship_hull",           form_name)("Hull",         1, 20);
+                        - stepper_control_t!("ship_shields",        form_name)("Shields",      0, 20);
+                        .stepper-group-clamp
+                            .stepper-group-clamp-le
+                                - stepper_control_t!("force_count",       form_name)("Force", 0, 7);
+                            .stepper-group-clamp-ge
+                                - stepper_control_t!("max_force_count",   form_name)("Max Force", 0, 7);
 
                     fieldset.fieldset
                         legend Persistent Tokens
-                        - stepper_control_t!("reinforce_count", "defense")("Reinforce", 0, 1);
+                        - stepper_control_t!("reinforce_count", form_name)("Reinforce", 0, 1);
 
                     fieldset.fieldset
                         legend Pilot and Ship
                         select(name="pilot")
-                            - select_control_option_t!("pilot", "defense")("No Pilot Ability",          DefensePilot2.None);
-                            - select_control_option_t!("pilot", "defense")("(Reroll 1 die)",            DefensePilot2.Reroll_1);
-                            - select_control_option_t!("pilot", "defense")("(Reroll up to 2 dice)",     DefensePilot2.Reroll_2);
-                            - select_control_option_t!("pilot", "defense")("(Reroll up to 3 dice)",     DefensePilot2.Reroll_3);
-                            - select_control_option_t!("pilot", "defense")("Captain Feroph",            DefensePilot2.CaptainFeroph);
-                            - select_control_option_t!("pilot", "defense")("Luke Skywalker",            DefensePilot2.LukeSkywalker);
-                            - select_control_option_t!("pilot", "defense")("Norra Wexley",              DefensePilot2.NorraWexley);
+                            - select_control_option_t!("pilot", form_name)("No Pilot Ability",          DefensePilot2.None);
+                            - select_control_option_t!("pilot", form_name)("(Reroll 1 die)",            DefensePilot2.Reroll_1);
+                            - select_control_option_t!("pilot", form_name)("(Reroll up to 2 dice)",     DefensePilot2.Reroll_2);
+                            - select_control_option_t!("pilot", form_name)("(Reroll up to 3 dice)",     DefensePilot2.Reroll_3);
+                            - select_control_option_t!("pilot", form_name)("Captain Feroph",            DefensePilot2.CaptainFeroph);
+                            - select_control_option_t!("pilot", form_name)("Luke Skywalker",            DefensePilot2.LukeSkywalker);
+                            - select_control_option_t!("pilot", form_name)("Norra Wexley",              DefensePilot2.NorraWexley);
                         select(name="ship")
-                            - select_control_option_t!("ship",  "defense")("No Ship Ability",           DefenseShip2.None);
-                            - select_control_option_t!("ship",  "defense")("Concordia Faceoff",         DefenseShip2.ConcordiaFaceoff);
+                            - select_control_option_t!("ship",  form_name)("No Ship Ability",           DefenseShip2.None);
+                            - select_control_option_t!("ship",  form_name)("Concordia Faceoff",         DefenseShip2.ConcordiaFaceoff);
 
                     fieldset.fieldset
                         legend Friendly Ships
-                        //- switch_control_t!("biggs",            "defense")("Biggs");
-                        - switch_control_t!("iden",             "defense")("Iden Versio");
-                        //- switch_control_t!("selfless",         "defense")("Selfless");
-                        - switch_control_t!("serissu",          "defense")("Serissu");
+                        //- switch_control_t!("biggs",            form_name)("Biggs");
+                        - switch_control_t!("iden",             form_name)("Iden Versio");
+                        //- switch_control_t!("selfless",         form_name)("Selfless");
+                        - switch_control_t!("serissu",          form_name)("Serissu");
                         
                     fieldset.fieldset
                         legend Talents and Powers
-                        - switch_control_t!("brilliant_evasion", "defense")("Brilliant Evasion");
-                        - switch_control_t!("heroic",            "defense")("Heroic");
+                        //- switch_control_t!("brilliant_evasion", form_name)("Brilliant Evasion");
+                        - switch_control_t!("heroic",            form_name)("Heroic");
 
                     fieldset.fieldset
                         legend Crew and Gunners
-                        - switch_control_t!("finn_gunner",      "defense")("Finn");
-                        - switch_control_t!("l337",             "defense")("L3-37");
+                        - switch_control_t!("finn_gunner",      form_name)("Finn");
+                        - switch_control_t!("l337",             form_name)("L3-37");
 
                     fieldset.fieldset
                         legend Modifications and Titles
-                        - switch_control_t!("stealth_device",   "defense")("Stealth Device");
+                        - switch_control_t!("stealth_device",   form_name)("Stealth Device");
 
         .cell
             - attack_preset_form_t!"attack"("Attacker Preset", false);
