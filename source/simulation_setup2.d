@@ -23,7 +23,7 @@ public class SimulationSetup
         int focus_to_hit_count = 0;
         int focus_to_crit_count = 0;
         int any_to_hit_count = 0;
-        int hit_to_crit_count = 0;        
+        int hit_to_crit_count = 0;
 
         int defense_dice_diff = 0;
 
@@ -41,6 +41,8 @@ public class SimulationSetup
         bool major_vermeil_pilot = false;
         bool ezra_pilot = false;
         bool scum_lando_pilot = false;
+
+        bool advanced_optics = false;
     };
     public Attack attack;
 
@@ -125,6 +127,7 @@ public SimulationSetup to_simulation_setup2(ref const(AttackForm) attack, ref co
     setup.attack.ion_weapon                   = attack.ion_weapon;
     setup.attack.advanced_targeting_computer  = attack.ship == AttackShip2.AdvancedTargetingComputer;
     setup.attack.scum_lando_crew              = attack.scum_lando_crew;
+    setup.attack.advanced_optics              = attack.advanced_optics;
 
     // ****************************************************************************************************************
 

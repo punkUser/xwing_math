@@ -89,7 +89,8 @@
                     - switch_control_t!("scum_lando_crew",     form_name)("Lando Calrissian (Scum)");
 
                 fieldset.fieldset
-                    legend Systems
+                    legend Systems and Tech
+                    - switch_control_t!("advanced_optics",     form_name)("Advanced Optics");
                     - switch_control_t!("fire_control_system", form_name)("Fire-Control System");
                         
                 fieldset.fieldset

@@ -337,6 +337,12 @@ private SearchDelegate do_attack_finish_amad()
 
         state = spend_focus_calculate_force(setup, state);
 
+        if (setup.attack.advanced_optics && state.attack_tokens.focus > 0)
+        {
+            if (state.attack_dice.change_dice(DieResult.Blank, DieResult.Hit, 1) > 0)
+                state.attack_tokens.focus = state.attack_tokens.focus - 1;
+        }
+
         state.attack_dice.change_dice(DieResult.Hit, DieResult.Crit, setup.attack.hit_to_crit_count);
 
         state.attack_temp.finished_amad = true;
