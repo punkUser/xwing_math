@@ -166,7 +166,7 @@ function updateCharts()
 	if (window.token_chart != null)
 	{
 		// Resize horizontalBar based on number of rows
-		$("#token-canvas").height(50 + result.exp_token_labels.length * 30);
+		$("#token-canvas").height(90 + result.exp_token_labels.length * 30);
 		window.token_chart.resize();
 				
 		token_chart_data.labels = result.exp_token_labels;

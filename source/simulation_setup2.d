@@ -48,6 +48,9 @@ public class SimulationSetup
     {
         int dice = 0;
 
+        // Ship
+        int max_force_count = 0;
+
         // Add
         int add_blank_count = 0;
         int add_focus_count = 0;
@@ -77,8 +80,7 @@ public class SimulationSetup
         bool laetin_pilot = false;
         bool ezra_pilot = false;
         bool scum_lando_pilot = false;
-
-        int hate_max_force = 0;         // If >0, hate will regenerate force on damage up to this cap
+        bool hate = false;
     };
     public Defense defense;
 };
@@ -126,38 +128,37 @@ public SimulationSetup to_simulation_setup2(ref const(AttackForm) attack, ref co
 
     // ****************************************************************************************************************
 
-    setup.defense.dice                         = defense.dice;
+    setup.defense.dice                        = defense.dice;
+    setup.defense.max_force_count             = defense.max_force_count;
 
-    setup.defense.add_blank_count             += defense.finn_gunner ? 1 : 0;
-    setup.defense.add_focus_count             += defense.pilot == DefensePilot2.SabineWrenLancer ? 1 : 0;
-    setup.defense.add_evade_count             += defense.pilot == DefensePilot2.NorraWexley ? 1 : 0;    
+    setup.defense.add_blank_count            += defense.finn_gunner ? 1 : 0;
+    setup.defense.add_focus_count            += defense.pilot == DefensePilot2.SabineWrenLancer ? 1 : 0;
+    setup.defense.add_evade_count            += defense.pilot == DefensePilot2.NorraWexley ? 1 : 0;    
 
-    setup.defense.reroll_1_count              += defense.pilot == DefensePilot2.Reroll_1 ? 1 : 0;
-    setup.defense.reroll_1_count              += defense.serissu;
-    setup.defense.reroll_2_count              += defense.pilot == DefensePilot2.Reroll_2 ? 1 : 0;
-    setup.defense.reroll_3_count              += defense.pilot == DefensePilot2.Reroll_3 ? 1 : 0;
+    setup.defense.reroll_1_count             += defense.pilot == DefensePilot2.Reroll_1 ? 1 : 0;
+    setup.defense.reroll_1_count             += defense.serissu;
+    setup.defense.reroll_2_count             += defense.pilot == DefensePilot2.Reroll_2 ? 1 : 0;
+    setup.defense.reroll_3_count             += defense.pilot == DefensePilot2.Reroll_3 ? 1 : 0;
 
-    setup.defense.any_to_evade_count          += defense.ship  == DefenseShip2.ConcordiaFaceoff ? 1 : 0;
+    setup.defense.any_to_evade_count         += defense.ship  == DefenseShip2.ConcordiaFaceoff ? 1 : 0;
 
-    setup.defense.leebo_pilot                  = defense.pilot == DefensePilot2.Leebo;    
-    setup.defense.luke_pilot                   = defense.pilot == DefensePilot2.LukeSkywalker;
-    setup.defense.shara_bey_pilot              = defense.pilot == DefensePilot2.SharaBey;
-    setup.defense.zeb_pilot                    = defense.pilot == DefensePilot2.ZebOrrelios;
-    setup.defense.captain_feroph_pilot         = defense.pilot == DefensePilot2.CaptainFeroph;
-    setup.defense.laetin_pilot                 = defense.pilot == DefensePilot2.LaetinAshera;
-    setup.defense.ezra_pilot                   = defense.pilot == DefensePilot2.EzraBridger;
-    setup.defense.scum_lando_pilot             = defense.pilot == DefensePilot2.LandoCalrissianScum;
+    setup.defense.leebo_pilot                 = defense.pilot == DefensePilot2.Leebo;    
+    setup.defense.luke_pilot                  = defense.pilot == DefensePilot2.LukeSkywalker;
+    setup.defense.shara_bey_pilot             = defense.pilot == DefensePilot2.SharaBey;
+    setup.defense.zeb_pilot                   = defense.pilot == DefensePilot2.ZebOrrelios;
+    setup.defense.captain_feroph_pilot        = defense.pilot == DefensePilot2.CaptainFeroph;
+    setup.defense.laetin_pilot                = defense.pilot == DefensePilot2.LaetinAshera;
+    setup.defense.ezra_pilot                  = defense.pilot == DefensePilot2.EzraBridger;
+    setup.defense.scum_lando_pilot            = defense.pilot == DefensePilot2.LandoCalrissianScum;
 
-    setup.defense.c3p0                         = defense.c3p0;
-    setup.defense.biggs                        = defense.biggs;
-    setup.defense.selfless                     = defense.selfless;
-    setup.defense.scum_lando_crew              = defense.scum_lando_crew;
-    setup.defense.rebel_millennium_falcon      = defense.rebel_millennium_falcon;
-    setup.defense.heroic                       = defense.heroic;
-    setup.defense.brilliant_evasion            = defense.brilliant_evasion;
-    setup.defense.hate_max_force               = defense.hate_1_force ? 1 : 0;
-    setup.defense.hate_max_force               = defense.hate_2_force ? 2 : setup.defense.hate_max_force;
-    setup.defense.hate_max_force               = defense.hate_3_force ? 3 : setup.defense.hate_max_force;
+    setup.defense.c3p0                        = defense.c3p0;
+    setup.defense.biggs                       = defense.biggs;
+    setup.defense.selfless                    = defense.selfless;
+    setup.defense.scum_lando_crew             = defense.scum_lando_crew;
+    setup.defense.rebel_millennium_falcon     = defense.rebel_millennium_falcon;
+    setup.defense.heroic                      = defense.heroic;
+    setup.defense.brilliant_evasion           = defense.brilliant_evasion;
+    setup.defense.hate                        = defense.hate;
 
     return setup;
 }

@@ -89,9 +89,9 @@ public SimulationState neutralize_results(const(SimulationSetup) setup, Simulati
     state.final_crits += attack_results[DieResult.Crit];
     
     // Trigger Hate if present and regen capped by maximum force
-    if (setup.defense.hate_max_force > 0)
+    if (setup.defense.hate && state.defense_tokens.force < setup.defense.max_force_count)
     {
-        state.defense_tokens.force = min(state.defense_tokens.force + total_damage, setup.defense.hate_max_force);
+        state.defense_tokens.force = min(state.defense_tokens.force + total_damage, setup.defense.max_force_count);
     }
 
     // Calculate Damage taken for Iden
@@ -136,7 +136,8 @@ private SimulationStateSet simulate_single_attack(
     auto finished_states = new SimulationStateSet();
 
     // Before attack stuff
-    if (setup.defense.luke_pilot && defense_tokens.force < 2)
+    // NOTE: Respect the max force they selected even if it is inconsistent with Luke's current capabilities (2)
+    if (setup.defense.luke_pilot && defense_tokens.force < setup.defense.max_force_count)
         defense_tokens.force = defense_tokens.force + 1;
 
     // Roll attack dice

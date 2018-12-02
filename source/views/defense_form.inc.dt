@@ -12,23 +12,25 @@
             .grid-x.small-up-1.medium-up-1.large-up-2
                 .cell
                     fieldset.fieldset
-                        legend Green Tokens
+                        legend Tokens
                         - stepper_control_t!("focus_count",       form_name)("Focus", 0, 7);
                         - stepper_control_t!("calculate_count",   form_name)("Calculate", 0, 7);
                         - stepper_control_t!("evade_count",       form_name)("Evade", 0, 7);
                         - stepper_control_t!("reinforce_count",   form_name)("Reinforce", 0, 1);
-                .cell
-                    fieldset.fieldset
-                        legend Ship Tokens
-                        - stepper_control_t!("lock_count",        form_name)("Lock", 0, 1);
-                        - stepper_control_t!("force_count",       form_name)("Force", 0, 7);
-                    fieldset.fieldset
-                        legend Red Tokens
                         - stepper_control_t!("stress_count",     form_name)("Stress", 0, 7);
                         //-- stepper_control_t!("jam_count",        form_name)("Jam", 0, 7);
                         //-- stepper_control_t!("tractor_count",    form_name)("Tractor", 0, 7);
                         //-- stepper_control_t!("ion_count",        form_name)("Ion", 0, 7);
                         //-- stepper_control_t!("disarm_count",     form_name)("Disarm", 0, 7);
+                .cell
+                    fieldset.fieldset
+                        legend Ship
+                        - stepper_control_t!("lock_count",        form_name)("Lock", 0, 1);
+                        .stepper-group-clamp
+                            .stepper-group-clamp-le
+                                - stepper_control_t!("force_count",       form_name)("Force", 0, 7);
+                            .stepper-group-clamp-ge
+                                - stepper_control_t!("max_force_count",   form_name)("Max Force", 0, 7);
 
             fieldset.fieldset
                 legend Pilot and Ship
@@ -62,9 +64,7 @@
                 legend Talents and Powers
                 - switch_control_t!("brilliant_evasion", form_name)("Brilliant Evasion");
                 - switch_control_t!("elusive",           form_name)("Elusive");
-                - switch_control_t!("hate_1_force",      form_name)("Hate (1 force max)");
-                - switch_control_t!("hate_2_force",      form_name)("Hate (2 force max)");
-                - switch_control_t!("hate_3_force",      form_name)("Hate (3 force max)");
+                - switch_control_t!("hate",              form_name)("Hate");
                 - switch_control_t!("heroic",            form_name)("Heroic");
                 - switch_control_t!("lone_wolf",         form_name)("Lone Wolf");
 

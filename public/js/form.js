@@ -19,7 +19,7 @@ $(document).ready(function()
 		root.find("input").prop("checked", false);
 		$(this).prop("checked", state);
 	});
-
+	
 	// Switches that reveal other controls
 	$(".switch-toggle-hidden").find("input").change(function () {
 		var others = $(this).parents(".switch-toggle-hidden").parent().find(".switch-hidden");
@@ -53,5 +53,31 @@ $(document).ready(function()
 		var set   = +($(this).data("set"));
 		input.val(set);
 		input.trigger("change");
+	});
+	
+	// Clamped stepper values
+	$(".stepper-group-clamp").find("input").change(function () {
+		var root = $(this).parents(".stepper-group-clamp");
+		var changedThis = $(this);
+		var changedVal = +(changedThis.val());
+				
+		// >=
+		root.find(".stepper-group-clamp-ge").find("input").each(function () {
+			if (!$(this).is(changedThis)) {
+				if (+($(this).val()) < changedVal) {
+					$(this).val(changedVal);
+					$(this).trigger("change");
+				}
+			}
+		});
+		// <=
+		root.find(".stepper-group-clamp-le").find("input").each(function () {
+			if (!$(this).is(changedThis)) {
+				if (+($(this).val()) > changedVal) {
+					$(this).val(changedVal);
+					$(this).trigger("change");
+				}
+			}
+		});
 	});
 });
