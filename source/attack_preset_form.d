@@ -16,6 +16,9 @@ public enum AttackPreset : ubyte
     _4d,
     _4dProtonTorpedoes,
     _4dProtonTorpedoesWedge,
+    _2dJukeEvade,
+    _3dJukeEvade,
+    _4dJukeEvade,
     Count
 };
 
@@ -50,6 +53,9 @@ public string attack_preset_url(ubyte attacker)
         case AttackPreset._4d:                      return "QQAAAAAAAAA";
         case AttackPreset._4dProtonTorpedoes:       return "QQAAgAAAAAA";
         case AttackPreset._4dProtonTorpedoesWedge:  return "QQAAgADgAQA";
+        case AttackPreset._2dJukeEvade:             return "IQACAAABAAA";
+        case AttackPreset._3dJukeEvade:             return "MQACAAABAAA";
+        case AttackPreset._4dJukeEvade:             return "QQACAAABAAA";
         default:                                    return "IQAAAAAAAAA";       // Failsafe!
     }
 }

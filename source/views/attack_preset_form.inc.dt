@@ -26,9 +26,12 @@
                     - import attack_preset_form;
                     - select_control_option_t!("preset", form_name)("2 Dice",                           AttackPreset._2d                     );
                     - select_control_option_t!("preset", form_name)("2 Dice, Howlrunner",               AttackPreset._2dHowlrunner           );
+                    - select_control_option_t!("preset", form_name)("2 Dice, Juke (w/ Evade)",          AttackPreset._2dJukeEvade            );
                     - select_control_option_t!("preset", form_name)("3 Dice",                           AttackPreset._3d                     );
                     - select_control_option_t!("preset", form_name)("3 Dice, Howlrunner",               AttackPreset._3dHowlrunner           );
+                    - select_control_option_t!("preset", form_name)("3 Dice, Juke (w/ Evade)",          AttackPreset._3dJukeEvade            );
                     - select_control_option_t!("preset", form_name)("4 Dice",                           AttackPreset._4d                     );
+                    - select_control_option_t!("preset", form_name)("4 Dice, Juke (w/ Evade)",          AttackPreset._4dJukeEvade            );
                     - select_control_option_t!("preset", form_name)("4 Dice, Proton Torpedoes",         AttackPreset._4dProtonTorpedoes      );
                     - select_control_option_t!("preset", form_name)("4 Dice, Proton Torpedoes, Wedge",  AttackPreset._4dProtonTorpedoesWedge );
                     
