@@ -28,11 +28,11 @@ public int compute_uncanceled_damage(const(SimulationSetup) setup, SimulationSta
 }
 
 
-private int after_rolling(const(SimulationSetup) setup, ref SimulationState state)
+private StateFork after_rolling(const(SimulationSetup) setup, ref SimulationState state)
 {
     // Base case
     if (state.defense_temp.finished_after_rolling)
-        return 0;
+        return StateForkNone();
 
     // C-3P0 has to happen right after rolling, so do it immediately and mark it "used" unconditionally
     // TODO: sometimes we don't want to c3p0 if we are reinforced
@@ -82,9 +82,9 @@ private int after_rolling(const(SimulationSetup) setup, ref SimulationState stat
         }
     }
 
-    int dice_to_reroll = search_defense(setup, state, search_options[0..search_options_count]);
-    if (dice_to_reroll > 0)
-        return dice_to_reroll;
+    StateFork fork = search_defense(setup, state, search_options[0..search_options_count]);
+    if (fork.required())
+        return fork;
     else
         return after_rolling(setup, state);      // Continue after rolling
 }
@@ -98,15 +98,15 @@ private int after_rolling(const(SimulationSetup) setup, ref SimulationState stat
 // Since this function sits at the root of the recursive call tree it can decide to unwind or otherwise
 // elide any choices made by the children, other than rerolls (which are handled by the caller, and it
 // would be cheating to change!)
-public int modify_defense_dice_root(
+public StateFork modify_defense_dice_root(
     const(SimulationSetup) setup,
     ref SimulationState state)
 {
     const(SimulationState) initial_state = state;
 
-    int dice_to_reroll = modify_defense_dice(setup, state);
-    if (dice_to_reroll > 0)
-        return dice_to_reroll;
+    StateFork fork = modify_defense_dice(setup, state);
+    if (fork.required())
+        return fork;
     else
     {
         // If we get here this is the root of the final modify chain after any rerolls
@@ -124,11 +124,11 @@ public int modify_defense_dice_root(
                 state.defense_tokens.iden_used = true;
                 state.attack_dice.cancel_all();
                 state.defense_dice.cancel_all();
-                return 0;
+                return StateForkNone();
             }
         }
 
-        return 0;
+        return StateForkNone();
     }
 }
 
@@ -136,16 +136,16 @@ public int modify_defense_dice_root(
 // Returns number of dice to reroll, or 0 when done modding
 // Modifies state in place
 // NOTE: see public function above
-private int modify_defense_dice(
+private StateFork modify_defense_dice(
     const(SimulationSetup) setup,
     ref SimulationState state)
 {
     // First have to do any "after rolling" abilities
     if (!state.defense_temp.finished_after_rolling)
     {
-        int reroll_count = after_rolling(setup, state);
-        if (reroll_count > 0)
-            return reroll_count;
+        StateFork fork = after_rolling(setup, state);
+        if (fork.required())
+            return fork;
         assert(state.defense_temp.finished_after_rolling);
     }
 
@@ -173,7 +173,7 @@ private int modify_defense_dice(
     // TODO: compute_uncanceled_damage() == 0 instead? Since our search logic relies on that it's probably "safe"
     int evades_target = state.attack_dice.final_results[DieResult.Hit] + state.attack_dice.final_results[DieResult.Crit];
     if (state.defense_dice.count(DieResult.Evade) >= evades_target || state.defense_temp.finished_dmdd)
-        return 0;
+        return StateForkNone();
 
     // Search from all our potential token spending and rerolling options to find the optimal one
     SearchDelegate[16] search_options;
@@ -246,9 +246,9 @@ private int modify_defense_dice(
 
     // Search modifies the state to execute the best of the provided options
     SimulationState before_search_state = state;
-    int dice_to_reroll = search_defense(setup, state, search_options[0..search_options_count]);
-    if (dice_to_reroll > 0)
-        return dice_to_reroll;
+    StateFork fork = search_defense(setup, state, search_options[0..search_options_count]);
+    if (fork.required())
+        return fork;
     else
     {
         // Continue modifying
@@ -322,7 +322,7 @@ private SimulationState spend_focus_calculate_force(
 
 
 
-alias int delegate(const(SimulationSetup) setup, ref SimulationState) SearchDelegate;
+alias StateFork delegate(const(SimulationSetup) setup, ref SimulationState) SearchDelegate;
 
 // After rolling (before attacker modifies)
 private SearchDelegate do_defense_finish_after_rolling()
@@ -332,7 +332,7 @@ private SearchDelegate do_defense_finish_after_rolling()
         assert(!state.defense_temp.finished_after_rolling);
         // Nothing to do here currently...
         state.defense_temp.finished_after_rolling = true;
-        return 0;
+        return StateForkNone();
     };
 }
 
@@ -357,8 +357,7 @@ private SearchDelegate do_defense_scum_lando_crew(int count, GreenToken token)
             default: assert(false);
         }
 
-        state.defense_temp.used_scum_lando_crew = true;
-        return dice_to_reroll;
+        return StateForkReroll(dice_to_reroll);
     };
 }
 
@@ -373,7 +372,7 @@ private SearchDelegate do_defense_scum_lando_pilot()
         assert(dice_to_reroll > 0);
         state.defense_tokens.stress = state.defense_tokens.stress + 1;
         state.defense_temp.used_scum_lando_pilot = true;
-        return dice_to_reroll;
+        return StateForkReroll(dice_to_reroll);
     };
 }
 
@@ -410,7 +409,7 @@ private SearchDelegate do_defense_finish_dmdd(int evades_target)
         }
         
         state.defense_temp.finished_dmdd = true;
-        return 0;
+        return StateForkNone();
     };
 }
 
@@ -421,7 +420,7 @@ private SearchDelegate do_defense_heroic()
         assert(setup.defense.heroic);
         int dice_to_reroll = state.defense_dice.remove_dice_for_reroll(DieResult.Blank);
         assert(dice_to_reroll > 0);     // One or more of the 2+ blanks may not be rerollable in theory
-        return dice_to_reroll;
+        return StateForkReroll(dice_to_reroll);
     };
 }
 
@@ -434,7 +433,7 @@ private SearchDelegate do_defense_reroll_1()
         int dice_to_reroll = state.defense_dice.remove_dice_for_reroll_blank_focus(1);
         state.defense_temp.used_reroll_1_count = state.defense_temp.used_reroll_1_count + 1;
         assert(dice_to_reroll == 1);
-        return dice_to_reroll;
+        return StateForkReroll(dice_to_reroll);
     };
 }
 private SearchDelegate do_defense_reroll_2(int count = 2)
@@ -446,7 +445,7 @@ private SearchDelegate do_defense_reroll_2(int count = 2)
         int dice_to_reroll = state.defense_dice.remove_dice_for_reroll_blank_focus(count);
         state.defense_temp.used_reroll_2_count = state.defense_temp.used_reroll_2_count + 1;
         assert(dice_to_reroll == count);
-        return dice_to_reroll;
+        return StateForkReroll(dice_to_reroll);
     };
 }
 private SearchDelegate do_defense_reroll_3(int count = 3)
@@ -458,7 +457,7 @@ private SearchDelegate do_defense_reroll_3(int count = 3)
         int dice_to_reroll = state.defense_dice.remove_dice_for_reroll_blank_focus(count);
         state.defense_temp.used_reroll_3_count = state.defense_temp.used_reroll_3_count + 1;
         assert(dice_to_reroll == count);
-        return dice_to_reroll;
+        return StateForkReroll(dice_to_reroll);
     };
 }
 
@@ -472,7 +471,7 @@ private SearchDelegate do_defense_elusive()
         int dice_to_reroll = state.defense_dice.remove_dice_for_reroll_blank_focus(1);
         assert(dice_to_reroll == 1);
         state.defense_tokens.elusive = false;
-        return dice_to_reroll;
+        return StateForkReroll(dice_to_reroll);
     };
 }
 
@@ -485,7 +484,7 @@ private SearchDelegate do_defense_lone_wolf()
         int dice_to_reroll = state.defense_dice.remove_dice_for_reroll_blank_focus(1);
         assert(dice_to_reroll == 1);
         state.defense_tokens.lone_wolf = false;
-        return dice_to_reroll;
+        return StateForkReroll(dice_to_reroll);
     };
 }
 
@@ -500,7 +499,7 @@ private SearchDelegate do_defense_rebel_millennium_falcon()
         int dice_to_reroll = state.defense_dice.remove_dice_for_reroll_blank_focus(1);
         assert(dice_to_reroll == 1);
         state.defense_temp.used_rebel_millennium_falcon = true;
-        return dice_to_reroll;
+        return StateForkReroll(dice_to_reroll);
     };
 }
 
@@ -517,18 +516,18 @@ private SearchDelegate do_defense_shara_bey()
 
         state.defense_temp.used_shara_bey_pilot = true;
         state.defense_tokens.lock = state.defense_tokens.lock - 1;
-        return 0;
+        return StateForkNone();
     };
 }
 
 
 
-private double search_expected_damage(const(SimulationSetup) setup, SimulationState state, int reroll_count)
+private double search_expected_damage(const(SimulationSetup) setup, SimulationState state, StateFork fork)
 {
-    if (reroll_count == 0)
+    if (!fork.required())
     {
-        reroll_count = modify_defense_dice(setup, state);
-        if (reroll_count == 0)
+        fork = modify_defense_dice(setup, state);
+        if (!fork.required())
         {
             // Base case; done modifying defense dice
             return cast(double)compute_uncanceled_damage(setup, state);
@@ -536,15 +535,14 @@ private double search_expected_damage(const(SimulationSetup) setup, SimulationSt
     }
 
     // Reroll and recurse
+
+    // TODO: Fix this and handle arbitrary rerolls
+    assert(fork.type == StateForkType.Reroll);
+
     double expected_damage = 0.0f;
-    assert(reroll_count > 0);
-    roll_defense_dice(reroll_count, (int blank, int focus, int evade, double probability) {
-        auto new_state = state;
-        new_state.defense_dice.rerolled_results[DieResult.Evade] += evade;
-        new_state.defense_dice.rerolled_results[DieResult.Focus] += focus;
-        new_state.defense_dice.rerolled_results[DieResult.Blank] += blank;
-        new_state.probability *= probability;
-        expected_damage += probability * search_expected_damage(setup, new_state, 0);
+    assert(fork.roll_count > 0);
+    roll_defense_dice!true(state, fork.roll_count, (SimulationState new_state, double probability) {
+        expected_damage += probability * search_expected_damage(setup, new_state, StateForkNone());
     });
 
     return expected_damage;
@@ -554,7 +552,7 @@ private double search_expected_damage(const(SimulationSetup) setup, SimulationSt
 // (See compute_uncanceled_damage for the details.)
 // NOTE: Will prefer options earlier in the list if equivalent, so put stuff that spends more
 // or more valuable tokens later in the options list.
-private int search_defense(
+private StateFork search_defense(
     const(SimulationSetup) setup,
     ref SimulationState output_state,
     SearchDelegate[] options)
@@ -569,23 +567,24 @@ private int search_defense(
     const(SimulationState) initial_state = output_state;
     SimulationState min_state = initial_state;
     double min_expected_damage = 100000.0f;
-    int min_state_rerolls = 0;
+    StateFork min_state_fork = StateForkNone();
 
     foreach (option; options)
     {
         SimulationState state = initial_state;
-        int reroll_count = option(setup, state);
-        assert(reroll_count > 0 || state != initial_state);
+        StateFork fork = option(setup, state);
 
-        double expected_damage = search_expected_damage(setup, state, reroll_count);
+        assert(fork.required() || state != initial_state);
+
+        double expected_damage = search_expected_damage(setup, state, fork);
         if (expected_damage < (min_expected_damage - 1e-9))
         {
             min_expected_damage = expected_damage;
             min_state = state;
-            min_state_rerolls = reroll_count;
+            min_state_fork = fork;
         }
     }
 
     output_state = min_state;
-    return min_state_rerolls;
+    return min_state_fork;
 }

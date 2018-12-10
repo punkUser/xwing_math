@@ -9,32 +9,30 @@ private void modify_attack_tree(const(SimulationSetup) setup,
                                 int current_node)
 {
     nodes[current_node].after = nodes[current_node].before;
-    nodes[current_node].reroll_count = modify_attack_dice(setup, nodes[current_node].after);
-    if (nodes[current_node].reroll_count == 0)
+
+    StateFork fork = modify_attack_dice(setup, nodes[current_node].after);
+    if (!fork.required())
     {
         // Base case; done modifying dice
+        nodes[current_node].reroll_count = 0;       // TODO: Probably switch to a fork in struct
         nodes[current_node].expected_damage =
             nodes[current_node].after.attack_dice.count(DieResult.Hit) +
             nodes[current_node].after.attack_dice.count(DieResult.Crit);
         return;
     }
 
-    // Make all the reroll nodes and append them contiguously to the list
+    // Make all the child nodes and append them contiguously to the list
     int first_child_index = cast(int)nodes.length;
 
-    roll_attack_dice(nodes[current_node].reroll_count, (int blank, int focus, int hit, int crit, double probability) {
-        ModifyTreeNode new_node;
+    // TODO: Handle other cases
+    assert(fork.type == StateForkType.Reroll);
 
+    nodes[current_node].reroll_count = fork.roll_count;
+    roll_attack_dice!true(nodes[current_node].after, nodes[current_node].reroll_count, (SimulationState next_state, double probability) {
+        ModifyTreeNode new_node;
         new_node.child_probability = probability;
         new_node.depth = nodes[current_node].depth + 1;
-
-        new_node.before = nodes[current_node].after;
-        new_node.before.attack_dice.rerolled_results[DieResult.Crit]  += crit;
-        new_node.before.attack_dice.rerolled_results[DieResult.Hit]   += hit;
-        new_node.before.attack_dice.rerolled_results[DieResult.Focus] += focus;
-        new_node.before.attack_dice.rerolled_results[DieResult.Blank] += blank;
-        new_node.before.probability *= probability;
-
+        new_node.before = next_state;
         nodes ~= new_node;
     });
     int last_child_index = cast(int)nodes.length;     // Exclusive

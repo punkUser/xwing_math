@@ -173,9 +173,20 @@ private SimulationStateSet simulate_single_attack(
         while (!states.empty())
         {
             SimulationState state = states.pop_back();
-            int reroll_count = modify_attack_dice(setup, state);
-            if (reroll_count > 0)
-                states.roll_attack_dice!true(state, reroll_count);
+            StateFork fork = modify_attack_dice(setup, state);
+            if (fork.required())
+            {
+                switch (fork.type)
+                {
+                    case StateForkType.Reroll:
+                        states.roll_attack_dice!true(state, fork.roll_count);
+                        break;
+                    case StateForkType.Roll:
+                        states.roll_attack_dice!false(state, fork.roll_count);
+                        break;
+                    default: assert(false);
+                }
+            }
             else
             {
                 // After modify dice effects
@@ -234,9 +245,20 @@ private SimulationStateSet simulate_single_attack(
         while (!states.empty())
         {
             SimulationState state = states.pop_back();
-            int reroll_count = modify_defense_dice_root(setup, state);
-            if (reroll_count > 0)
-                states.roll_defense_dice!true(state, reroll_count);
+            StateFork fork = modify_defense_dice_root(setup, state);
+            if (fork.required())
+            {
+                switch (fork.type)
+                {
+                    case StateForkType.Reroll:
+                        states.roll_defense_dice!true(state, fork.roll_count);
+                        break;
+                    case StateForkType.Roll:
+                        states.roll_defense_dice!false(state, fork.roll_count);
+                        break;
+                    default: assert(false);
+                }
+            }
             else
             {
                 // NOTE: No lightweight frame or equivalent in 2.0 so safe to cancel all non-result dice

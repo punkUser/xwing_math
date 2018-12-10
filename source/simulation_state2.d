@@ -169,6 +169,45 @@ struct DefenseTempState
 }
 
 
+// Useful structure for indicating how to fork state to a caller
+public enum StateForkType : int
+{
+    None = 0,       // No fork needed
+    Reroll,         // Reroll dice into _rerolled pool (most common!)
+    Roll,           // Roll dice into regular dice pool that can be rerolled (stuff like rebel Han pilot)
+};
+
+public struct StateFork
+{
+    bool required() const { return type != StateForkType.None; }
+
+    // TODO: Could be a more complicated Variant enum or similar in the long run but this is fine for now
+    StateForkType type = StateForkType.None;
+    int roll_count = 0;         // for Reroll and Roll
+};
+
+// Associated factor methods for convenience
+public StateFork StateForkNone()
+{   
+    return StateFork();
+}
+public StateFork StateForkReroll(int count)
+{   
+    assert(count > 0);
+    StateFork fork;
+    fork.type = StateForkType.Reroll;
+    fork.roll_count = count;
+    return fork;
+}
+public StateFork StateForkRoll(int count)
+{
+    assert(count > 0);
+    StateFork fork;
+    fork.type = StateForkType.Roll;
+    fork.roll_count = count;
+    return fork;
+}
+
 
 public struct SimulationState
 {
@@ -207,6 +246,64 @@ public struct SimulationState
     }
 }
 //pragma(msg, "sizeof(SimulationState) = " ~ to!string(SimulationState.sizeof));
+
+
+
+// State forking utilities
+
+// delegate params are next_state, probability (also already baked into next_state probability)
+public void roll_attack_dice(bool reroll)(SimulationState prev_state, int dice_count, void delegate(SimulationState, double) dg)
+{
+    dice.roll_attack_dice(dice_count, (int blank, int focus, int hit, int crit, double probability) {
+        SimulationState next_state = prev_state;
+        static if (reroll)
+        {
+            next_state.attack_dice.rerolled_results[DieResult.Crit]  += crit;
+            next_state.attack_dice.rerolled_results[DieResult.Hit]   += hit;
+            next_state.attack_dice.rerolled_results[DieResult.Focus] += focus;
+            next_state.attack_dice.rerolled_results[DieResult.Blank] += blank;
+        }
+        else
+        {
+            next_state.attack_dice.results[DieResult.Crit]  += crit;
+            next_state.attack_dice.results[DieResult.Hit]   += hit;
+            next_state.attack_dice.results[DieResult.Focus] += focus;
+            next_state.attack_dice.results[DieResult.Blank] += blank;
+        }
+        next_state.probability *= probability;
+        dg(next_state, probability);
+    });
+}
+
+// delegate params are next_state, probability (also already baked into next_state probability)
+public void roll_defense_dice(bool reroll)(SimulationState prev_state, int dice_count, void delegate(SimulationState, double) dg)
+{
+    dice.roll_defense_dice(dice_count, (int blank, int focus, int evade, double probability) {
+        SimulationState next_state = prev_state;
+        static if (reroll)
+        {
+            next_state.defense_dice.rerolled_results[DieResult.Evade] += evade;
+            next_state.defense_dice.rerolled_results[DieResult.Focus] += focus;
+            next_state.defense_dice.rerolled_results[DieResult.Blank] += blank;
+        }
+        else
+        {
+            next_state.defense_dice.results[DieResult.Evade] += evade;
+            next_state.defense_dice.results[DieResult.Focus] += focus;
+            next_state.defense_dice.results[DieResult.Blank] += blank;
+        }
+        next_state.probability *= probability;
+        dg(next_state, probability);
+    });
+}
+
+
+
+
+
+
+
+
 
 public class SimulationStateSet
 {
@@ -289,23 +386,7 @@ public class SimulationStateSet
     // If "reroll" is set the dice will be put into the "rerolled_results" pool, otherwise into the regular "results" pool.
     public void roll_attack_dice(bool reroll)(SimulationState prev_state, int dice_count)
     {
-        dice.roll_attack_dice(dice_count, (int blank, int focus, int hit, int crit, double probability) {
-            SimulationState next_state = prev_state;
-            static if (reroll)
-            {
-                next_state.attack_dice.rerolled_results[DieResult.Crit]  += crit;
-                next_state.attack_dice.rerolled_results[DieResult.Hit]   += hit;
-                next_state.attack_dice.rerolled_results[DieResult.Focus] += focus;
-                next_state.attack_dice.rerolled_results[DieResult.Blank] += blank;
-            }
-            else
-            {
-                next_state.attack_dice.results[DieResult.Crit]  += crit;
-                next_state.attack_dice.results[DieResult.Hit]   += hit;
-                next_state.attack_dice.results[DieResult.Focus] += focus;
-                next_state.attack_dice.results[DieResult.Blank] += blank;
-            }
-            next_state.probability *= probability;
+        .roll_attack_dice!reroll(prev_state, dice_count, (SimulationState next_state, double probability) {
             push_back(next_state);
         });
     }
@@ -313,21 +394,7 @@ public class SimulationStateSet
     // If "reroll" is set the dice will be put into the "rerolled_results" pool, otherwise into the regular "results" pool.
     public void roll_defense_dice(bool reroll)(SimulationState prev_state, int dice_count)
     {
-        dice.roll_defense_dice(dice_count, (int blank, int focus, int evade, double probability) {
-            SimulationState next_state = prev_state;
-            static if (reroll)
-            {
-                next_state.defense_dice.rerolled_results[DieResult.Evade] += evade;
-                next_state.defense_dice.rerolled_results[DieResult.Focus] += focus;
-                next_state.defense_dice.rerolled_results[DieResult.Blank] += blank;
-            }
-            else
-            {
-                next_state.defense_dice.results[DieResult.Evade] += evade;
-                next_state.defense_dice.results[DieResult.Focus] += focus;
-                next_state.defense_dice.results[DieResult.Blank] += blank;
-            }
-            next_state.probability *= probability;
+        .roll_defense_dice!reroll(prev_state, dice_count, (SimulationState next_state, double probability) {
             push_back(next_state);
         });
     }
