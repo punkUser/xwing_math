@@ -135,7 +135,8 @@ struct AttackTempState
         bool, "used_shara_bey_pilot",                   1,
         bool, "used_scum_lando_crew",                   1,
         bool, "used_scum_lando_pilot",                  1,
-        uint,  "",                                     14,
+        bool, "used_rebel_han_pilot",                   1,
+        uint,  "",                                     13,
     ));
 
     void reset()
@@ -252,54 +253,94 @@ public struct SimulationState
 // State forking utilities
 
 // delegate params are next_state, probability (also already baked into next_state probability)
-public void roll_attack_dice(bool reroll)(SimulationState prev_state, int dice_count, void delegate(SimulationState, double) dg)
+public void roll_attack_dice(bool reroll, SimulationState prev_state, int dice_count, void delegate(SimulationState, double) dg)
 {
-    dice.roll_attack_dice(dice_count, (int blank, int focus, int hit, int crit, double probability) {
-        SimulationState next_state = prev_state;
-        static if (reroll)
-        {
+    if (reroll)
+    {
+        dice.roll_attack_dice(dice_count, (int blank, int focus, int hit, int crit, double probability) {
+            SimulationState next_state = prev_state;
             next_state.attack_dice.rerolled_results[DieResult.Crit]  += crit;
             next_state.attack_dice.rerolled_results[DieResult.Hit]   += hit;
             next_state.attack_dice.rerolled_results[DieResult.Focus] += focus;
             next_state.attack_dice.rerolled_results[DieResult.Blank] += blank;
-        }
-        else
-        {
+            next_state.probability *= probability;
+            dg(next_state, probability);
+        });
+    }
+    else
+    {
+        dice.roll_attack_dice(dice_count, (int blank, int focus, int hit, int crit, double probability) {
+            SimulationState next_state = prev_state;
             next_state.attack_dice.results[DieResult.Crit]  += crit;
             next_state.attack_dice.results[DieResult.Hit]   += hit;
             next_state.attack_dice.results[DieResult.Focus] += focus;
             next_state.attack_dice.results[DieResult.Blank] += blank;
-        }
-        next_state.probability *= probability;
-        dg(next_state, probability);
-    });
+            next_state.probability *= probability;
+            dg(next_state, probability);
+        });
+    }
 }
 
+
 // delegate params are next_state, probability (also already baked into next_state probability)
-public void roll_defense_dice(bool reroll)(SimulationState prev_state, int dice_count, void delegate(SimulationState, double) dg)
+public void roll_defense_dice(bool reroll, SimulationState prev_state, int dice_count, void delegate(SimulationState, double) dg)
 {
-    dice.roll_defense_dice(dice_count, (int blank, int focus, int evade, double probability) {
-        SimulationState next_state = prev_state;
-        static if (reroll)
-        {
+    if (reroll)
+    {
+        dice.roll_defense_dice(dice_count, (int blank, int focus, int evade, double probability) {
+            SimulationState next_state = prev_state;
             next_state.defense_dice.rerolled_results[DieResult.Evade] += evade;
             next_state.defense_dice.rerolled_results[DieResult.Focus] += focus;
             next_state.defense_dice.rerolled_results[DieResult.Blank] += blank;
-        }
-        else
-        {
+            next_state.probability *= probability;
+            dg(next_state, probability);
+        });
+    }
+    else
+    {
+        dice.roll_defense_dice(dice_count, (int blank, int focus, int evade, double probability) {
+            SimulationState next_state = prev_state;
             next_state.defense_dice.results[DieResult.Evade] += evade;
             next_state.defense_dice.results[DieResult.Focus] += focus;
             next_state.defense_dice.results[DieResult.Blank] += blank;
-        }
-        next_state.probability *= probability;
-        dg(next_state, probability);
-    });
+            next_state.probability *= probability;
+            dg(next_state, probability);
+        });
+    }
 }
 
-
-
-
+// general state fork based on StateFork struct
+// Currently will assert if fork.required() is false; could change to a noop if it makes sense at any call sites
+// delegate params are next_state, probability (also already baked into next_state probability)
+public void fork_attack_state(SimulationState prev_state, const StateFork fork, void delegate(SimulationState, double) dg)
+{
+    assert(fork.required());
+    switch (fork.type)
+    {
+        case StateForkType.Reroll:
+            roll_attack_dice(true, prev_state, fork.roll_count, dg);
+            break;
+        case StateForkType.Roll:
+            roll_attack_dice(false, prev_state, fork.roll_count, dg);
+            break;
+        default: assert(false);
+    }
+}
+// NOTE: Could include attack vs. defense as part of the fork enum directly but this is clearer for the moment
+public void fork_defense_state(SimulationState prev_state, const StateFork fork, void delegate(SimulationState, double) dg)
+{
+    assert(fork.required());
+    switch (fork.type)
+    {
+        case StateForkType.Reroll:
+            roll_defense_dice(true, prev_state, fork.roll_count, dg);
+            break;
+        case StateForkType.Roll:
+            roll_defense_dice(false, prev_state, fork.roll_count, dg);
+            break;
+        default: assert(false);
+    }
+}
 
 
 
@@ -384,17 +425,31 @@ public class SimulationStateSet
     }
 
     // If "reroll" is set the dice will be put into the "rerolled_results" pool, otherwise into the regular "results" pool.
-    public void roll_attack_dice(bool reroll)(SimulationState prev_state, int dice_count)
+    public void roll_attack_dice(bool reroll, SimulationState prev_state, int dice_count)
     {
-        .roll_attack_dice!reroll(prev_state, dice_count, (SimulationState next_state, double probability) {
+        .roll_attack_dice(reroll, prev_state, dice_count, (SimulationState next_state, double probability) {
             push_back(next_state);
         });
     }
 
     // If "reroll" is set the dice will be put into the "rerolled_results" pool, otherwise into the regular "results" pool.
-    public void roll_defense_dice(bool reroll)(SimulationState prev_state, int dice_count)
+    public void roll_defense_dice(bool reroll, SimulationState prev_state, int dice_count)
     {
-        .roll_defense_dice!reroll(prev_state, dice_count, (SimulationState next_state, double probability) {
+        .roll_defense_dice(reroll, prev_state, dice_count, (SimulationState next_state, double probability) {
+            push_back(next_state);
+        });
+    }
+
+    public void fork_attack_state(SimulationState prev_state, const StateFork fork)
+    {
+        .fork_attack_state(prev_state, fork, (SimulationState next_state, double probability) {
+            push_back(next_state);
+        });
+    }
+
+    public void fork_defense_state(SimulationState prev_state, const StateFork fork)
+    {
+        .fork_defense_state(prev_state, fork, (SimulationState next_state, double probability) {
             push_back(next_state);
         });
     }

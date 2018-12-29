@@ -28,14 +28,14 @@ align(1) struct DefenseForm
         bool,  "selfless",                      1, 
         
         // 32
-        ubyte, "pilot",                         6, // DefensePilot2 enum
+        ubyte, "pilot",                         6, // DefensePilot enum
         bool,  "l337",                          1,
         bool,  "elusive",                       1,
         
         // 40
         ubyte, "lock_count",                    3,
         bool,  "scum_lando_crew",               1,
-        ubyte, "ship",                          6, // DefenseShip2 enum
+        ubyte, "ship",                          6, // DefenseShip enum
         bool,  "serissu",                       1,
         bool,  "rebel_millennium_falcon",       1,
         bool,  "finn_gunner",                   1,

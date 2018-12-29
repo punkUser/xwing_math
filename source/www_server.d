@@ -205,7 +205,7 @@ public class WWWServer
                     form_state_string ~= format("&a%d=%s", (i+1), serialize_form_to_url(attack_form[i]));
                     max_enabled_attack = i;
                     
-                    SimulationSetup setup = to_simulation_setup2(attack_form[i], defense_form);
+                    SimulationSetup setup = to_simulation_setup(attack_form[i], defense_form);
                     simulation_states = simulate_attack(setup, simulation_states);
                 }
 
@@ -296,7 +296,7 @@ public class WWWServer
                     form_state_string ~= format("&a%d=%s", (i+1), serialize_form_to_url(attack_form[i]));
                     max_enabled_attack = i;
 
-                    SimulationSetup setup = to_simulation_setup2(attack_form[i], defense_form);
+                    SimulationSetup setup = to_simulation_setup(attack_form[i], defense_form);
                     simulation_states = simulate_attack(setup, simulation_states);
                 }
 
@@ -450,7 +450,7 @@ public class WWWServer
 
         auto sw = StopWatch(AutoStart.yes);
 
-        SimulationSetup setup = to_simulation_setup2(attack_form);
+        SimulationSetup setup = to_simulation_setup(attack_form);
         TokenState attack_tokens = to_attack_tokens2(attack_form);
         DiceState attack_dice = to_attack_dice_state(roll_form);
 
@@ -499,7 +499,7 @@ public class WWWServer
 
         auto sw = StopWatch(AutoStart.yes);
 
-        SimulationSetup setup = to_simulation_setup2(defense_form);
+        SimulationSetup setup = to_simulation_setup(defense_form);
         DiceState attack_dice  = to_attack_dice_state(roll_form);
         DiceState defense_dice = to_defense_dice_state(roll_form);
         TokenState defense_tokens = to_defense_tokens2(defense_form);

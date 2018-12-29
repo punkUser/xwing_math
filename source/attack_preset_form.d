@@ -75,10 +75,10 @@ public TokenState to_attack_tokens2(ref const(AttackPresetForm) preset_form)
     return tokens;
 }
 
-public SimulationSetup to_simulation_setup2(ref const(AttackPresetForm) attack, ref const(DefenseForm) defense_form)
+public SimulationSetup to_simulation_setup(ref const(AttackPresetForm) attack, ref const(DefenseForm) defense_form)
 {
     // Avoid ambiguity between the two modules...
-    import simulation_setup2 : attack_form_setup = to_simulation_setup2;
+    import simulation_setup2 : attack_form_setup = to_simulation_setup;
 
     auto attack_form = create_form_from_url!AttackForm(attack_preset_url(attack.preset), 0);
     return attack_form_setup(attack_form, defense_form);

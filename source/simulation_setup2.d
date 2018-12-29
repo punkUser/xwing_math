@@ -41,6 +41,7 @@ public class SimulationSetup
         bool major_vermeil_pilot = false;
         bool ezra_pilot = false;
         bool scum_lando_pilot = false;
+        bool rebel_han_pilot = false;
 
         bool advanced_optics = false;
         bool predictive_shot = false;
@@ -90,7 +91,7 @@ public class SimulationSetup
 
 
 // TODO: This should maybe move somewhere else at this point
-public SimulationSetup to_simulation_setup2(ref const(AttackForm) attack, ref const(DefenseForm) defense)
+public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref const(DefenseForm) defense)
 {
     SimulationSetup setup = new SimulationSetup;
 
@@ -103,30 +104,31 @@ public SimulationSetup to_simulation_setup2(ref const(AttackForm) attack, ref co
     setup.attack.reroll_1_count              += attack.howlrunner ? 1 : 0;
     setup.attack.reroll_1_count              += attack.predator ? 1 : 0;
     setup.attack.reroll_1_count              += attack.saw_gerrera_pilot ? 1 : 0;
-    setup.attack.reroll_1_count              += attack.pilot == AttackPilot2.Reroll_1 ? 1 : 0;
-    setup.attack.reroll_2_count              += attack.pilot == AttackPilot2.Reroll_2 ? 1 : 0;
-    setup.attack.reroll_3_count              += attack.pilot == AttackPilot2.Reroll_3 ? 1 : 0;
+    setup.attack.reroll_1_count              += attack.pilot == AttackPilot.Reroll_1 ? 1 : 0;
+    setup.attack.reroll_2_count              += attack.pilot == AttackPilot.Reroll_2 ? 1 : 0;
+    setup.attack.reroll_3_count              += attack.pilot == AttackPilot.Reroll_3 ? 1 : 0;
 
     setup.attack.focus_to_hit_count          += attack.agent_kallus ? 1 : 0;
-    setup.attack.focus_to_crit_count         += attack.pilot == AttackPilot2.RearAdmiralChiraneau ? 1 : 0;
+    setup.attack.focus_to_crit_count         += attack.pilot == AttackPilot.RearAdmiralChiraneau ? 1 : 0;
     setup.attack.hit_to_crit_count           += attack.proton_torpedoes;
     setup.attack.hit_to_crit_count           += attack.marksmanship;
-    setup.attack.hit_to_crit_count           += attack.pilot == AttackPilot2.GavinDarklighter ? 1 : 0;
+    setup.attack.hit_to_crit_count           += attack.pilot == AttackPilot.GavinDarklighter ? 1 : 0;
     setup.attack.focus_to_hit_count          += attack.fanatical ? 1 : 0;
     setup.attack.any_to_hit_count            += attack.fearless ? 1 : 0;
 
-    setup.attack.leebo_pilot                  = attack.pilot == AttackPilot2.Leebo;
-    setup.attack.shara_bey_pilot              = attack.pilot == AttackPilot2.SharaBey;
-    setup.attack.major_vermeil_pilot          = attack.pilot == AttackPilot2.MajorVermeil;
-    setup.attack.ezra_pilot                   = attack.pilot == AttackPilot2.EzraBridger;
-    setup.attack.scum_lando_pilot             = attack.pilot == AttackPilot2.LandoCalrissianScum;
+    setup.attack.leebo_pilot                  = attack.pilot == AttackPilot.Leebo;
+    setup.attack.shara_bey_pilot              = attack.pilot == AttackPilot.SharaBey;
+    setup.attack.major_vermeil_pilot          = attack.pilot == AttackPilot.MajorVermeil;
+    setup.attack.ezra_pilot                   = attack.pilot == AttackPilot.EzraBridger;
+    setup.attack.scum_lando_pilot             = attack.pilot == AttackPilot.LandoCalrissianScum;
+    setup.attack.rebel_han_pilot              = attack.pilot == AttackPilot.HanSoloRebel;
 
     setup.attack.fire_control_system          = attack.fire_control_system;
     setup.attack.heroic                       = attack.heroic;
     setup.attack.juke                         = attack.juke;
     setup.attack.heavy_laser_cannon           = attack.heavy_laser_cannon;
     setup.attack.ion_weapon                   = attack.ion_weapon;
-    setup.attack.advanced_targeting_computer  = attack.ship == AttackShip2.AdvancedTargetingComputer;
+    setup.attack.advanced_targeting_computer  = attack.ship == AttackShip.AdvancedTargetingComputer;
     setup.attack.scum_lando_crew              = attack.scum_lando_crew;
     setup.attack.advanced_optics              = attack.advanced_optics;
     setup.attack.predictive_shot              = attack.predictive_shot;
@@ -137,24 +139,24 @@ public SimulationSetup to_simulation_setup2(ref const(AttackForm) attack, ref co
     setup.defense.max_force_count             = defense.max_force_count;
 
     setup.defense.add_blank_count            += defense.finn_gunner ? 1 : 0;
-    setup.defense.add_focus_count            += defense.pilot == DefensePilot2.SabineWrenLancer ? 1 : 0;
-    setup.defense.add_evade_count            += defense.pilot == DefensePilot2.NorraWexley ? 1 : 0;    
+    setup.defense.add_focus_count            += defense.pilot == DefensePilot.SabineWrenLancer ? 1 : 0;
+    setup.defense.add_evade_count            += defense.pilot == DefensePilot.NorraWexley ? 1 : 0;    
 
-    setup.defense.reroll_1_count             += defense.pilot == DefensePilot2.Reroll_1 ? 1 : 0;
+    setup.defense.reroll_1_count             += defense.pilot == DefensePilot.Reroll_1 ? 1 : 0;
     setup.defense.reroll_1_count             += defense.serissu;
-    setup.defense.reroll_2_count             += defense.pilot == DefensePilot2.Reroll_2 ? 1 : 0;
-    setup.defense.reroll_3_count             += defense.pilot == DefensePilot2.Reroll_3 ? 1 : 0;
+    setup.defense.reroll_2_count             += defense.pilot == DefensePilot.Reroll_2 ? 1 : 0;
+    setup.defense.reroll_3_count             += defense.pilot == DefensePilot.Reroll_3 ? 1 : 0;
 
-    setup.defense.any_to_evade_count         += defense.ship  == DefenseShip2.ConcordiaFaceoff ? 1 : 0;
+    setup.defense.any_to_evade_count         += defense.ship  == DefenseShip.ConcordiaFaceoff ? 1 : 0;
 
-    setup.defense.leebo_pilot                 = defense.pilot == DefensePilot2.Leebo;    
-    setup.defense.luke_pilot                  = defense.pilot == DefensePilot2.LukeSkywalker;
-    setup.defense.shara_bey_pilot             = defense.pilot == DefensePilot2.SharaBey;
-    setup.defense.zeb_pilot                   = defense.pilot == DefensePilot2.ZebOrrelios;
-    setup.defense.captain_feroph_pilot        = defense.pilot == DefensePilot2.CaptainFeroph;
-    setup.defense.laetin_pilot                = defense.pilot == DefensePilot2.LaetinAshera;
-    setup.defense.ezra_pilot                  = defense.pilot == DefensePilot2.EzraBridger;
-    setup.defense.scum_lando_pilot            = defense.pilot == DefensePilot2.LandoCalrissianScum;
+    setup.defense.leebo_pilot                 = defense.pilot == DefensePilot.Leebo;    
+    setup.defense.luke_pilot                  = defense.pilot == DefensePilot.LukeSkywalker;
+    setup.defense.shara_bey_pilot             = defense.pilot == DefensePilot.SharaBey;
+    setup.defense.zeb_pilot                   = defense.pilot == DefensePilot.ZebOrrelios;
+    setup.defense.captain_feroph_pilot        = defense.pilot == DefensePilot.CaptainFeroph;
+    setup.defense.laetin_pilot                = defense.pilot == DefensePilot.LaetinAshera;
+    setup.defense.ezra_pilot                  = defense.pilot == DefensePilot.EzraBridger;
+    setup.defense.scum_lando_pilot            = defense.pilot == DefensePilot.LandoCalrissianScum;
 
     setup.defense.c3p0                        = defense.c3p0;
     setup.defense.biggs                       = defense.biggs;
@@ -172,16 +174,16 @@ public SimulationSetup to_simulation_setup2(ref const(AttackForm) attack, ref co
 // NOTE: For now we simply create a default/empty defense portion and assume there are no
 // defender modifies attack parts, otherwise they would really need to specify both forms in
 // the first place.
-public SimulationSetup to_simulation_setup2(ref const(AttackForm) attack)
+public SimulationSetup to_simulation_setup(ref const(AttackForm) attack)
 {
     // NOTE: Intentionally *not* DefenseForm.defaults(). See above notes.
     DefenseForm defense = DefenseForm.init;
-    return to_simulation_setup2(attack, defense);
+    return to_simulation_setup(attack, defense);
 }
 
-public SimulationSetup to_simulation_setup2(ref const(DefenseForm) defense)
+public SimulationSetup to_simulation_setup(ref const(DefenseForm) defense)
 {
     // NOTE: Intentionally *not* AttackForm.defaults(). See above notes.
     AttackForm attack = AttackForm.init;
-    return to_simulation_setup2(attack, defense);
+    return to_simulation_setup(attack, defense);
 }

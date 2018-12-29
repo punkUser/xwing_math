@@ -164,7 +164,7 @@ private SimulationStateSet simulate_single_attack(
         else
         {
             // Regular roll
-            states.roll_attack_dice!false(initial_state, setup.attack.dice);
+            states.roll_attack_dice(false, initial_state, setup.attack.dice);
         }
     }
 
@@ -176,16 +176,7 @@ private SimulationStateSet simulate_single_attack(
             StateFork fork = modify_attack_dice(setup, state);
             if (fork.required())
             {
-                switch (fork.type)
-                {
-                    case StateForkType.Reroll:
-                        states.roll_attack_dice!true(state, fork.roll_count);
-                        break;
-                    case StateForkType.Roll:
-                        states.roll_attack_dice!false(state, fork.roll_count);
-                        break;
-                    default: assert(false);
-                }
+                states.fork_attack_state(state, fork);
             }
             else
             {
@@ -230,7 +221,7 @@ private SimulationStateSet simulate_single_attack(
                 defense_dice = min(defense_dice, hits_crits_count);
             }
 
-            finished_states.roll_defense_dice!false(state, defense_dice);
+            finished_states.roll_defense_dice(false, state, defense_dice);
         }
 
         swap(states, finished_states);
@@ -248,16 +239,7 @@ private SimulationStateSet simulate_single_attack(
             StateFork fork = modify_defense_dice_root(setup, state);
             if (fork.required())
             {
-                switch (fork.type)
-                {
-                    case StateForkType.Reroll:
-                        states.roll_defense_dice!true(state, fork.roll_count);
-                        break;
-                    case StateForkType.Roll:
-                        states.roll_defense_dice!false(state, fork.roll_count);
-                        break;
-                    default: assert(false);
-                }
+                states.fork_defense_state(state, fork);
             }
             else
             {

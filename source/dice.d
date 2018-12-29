@@ -38,6 +38,13 @@ public struct DiceState
         final_results[] = 0;
     }
 
+    // Cancel all non-final dice
+    void cancel_mutable()
+    {
+        results[] = 0;
+        rerolled_results[] = 0;
+    }
+
     // "Finalize" dice state "final_results"
     // Also removes all focus and blank results to reduce unnecessary state divergence
     void finalize()

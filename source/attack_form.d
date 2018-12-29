@@ -22,7 +22,7 @@ align(1) struct AttackForm
         bool,  "proton_torpedoes",               1,
 
         // 32
-        ubyte, "pilot",                          6, // AttackPilot2 enum
+        ubyte, "pilot",                          6, // AttackPilot enum
         bool,  "predator",                       1,
         bool,  "ion_weapon",                     1,
         
@@ -33,11 +33,8 @@ align(1) struct AttackForm
         bool,  "lone_wolf",                      1,
         bool,  "marksmanship",                   1,
         byte,  "defense_dice_diff",              4,
-
-        // 32
         bool,  "fearless",                       1,
-        ubyte, "ship",                           6, // AttackShip2 enum
-
+        ubyte, "ship",                           6, // AttackShip enum
         bool,  "saw_gerrera_pilot",              1,
         bool,  "scum_lando_crew",                1,
         bool,  "agent_kallus",                   1,

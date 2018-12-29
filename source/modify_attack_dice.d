@@ -15,7 +15,15 @@ private StateFork after_rolling(const(SimulationSetup) setup, ref SimulationStat
 
     SearchDelegate[16] search_options;
     size_t search_options_count = 0;
+    
     search_options[search_options_count++] = do_attack_finish_after_rolling();
+
+    if (setup.attack.rebel_han_pilot && !state.attack_temp.used_rebel_han_pilot)
+    {
+        // Only consider if we have blanks or focus to reroll
+        if ((state.attack_dice.count_mutable(DieResult.Blank) + state.attack_dice.count_mutable(DieResult.Focus)) > 0)
+            search_options[search_options_count++] = do_attack_rebel_han_pilot();
+    }
 
     int rerollable_results = state.attack_dice.results[DieResult.Blank] + state.attack_dice.results[DieResult.Focus];
     if (rerollable_results > 0)
@@ -318,6 +326,32 @@ private SearchDelegate do_attack_scum_lando_pilot()
     };
 }
 
+// Reroll all dice; doesn't count as reroll!
+private SearchDelegate do_attack_rebel_han_pilot()
+{
+    return (const(SimulationSetup) setup, ref SimulationState state)
+    {
+        assert(!state.attack_temp.used_rebel_han_pilot);
+
+        // Roll all mutable dice again
+        // NOTE: We don't have clarification on whether or not any potentially "unmodifyable"/final dice would be affected
+        // We also don't know if we should be trying to track which dice have already been rerolled "through" this reroll
+        // Thus we'll do the simplest thing for now since these interactions are not currently possible yet anyways.
+        int dice_to_roll =
+            state.attack_dice.count_mutable(DieResult.Blank) + 
+            state.attack_dice.count_mutable(DieResult.Focus) +
+            state.attack_dice.count_mutable(DieResult.Hit) +
+            state.attack_dice.count_mutable(DieResult.Crit);
+        assert(dice_to_roll > 0);
+
+        state.attack_dice.cancel_mutable();        
+        state.attack_temp.used_rebel_han_pilot = true;
+
+        // NOTE: "Roll" not "Reroll" here as it doesn't count as rerolling
+        return StateForkRoll(dice_to_roll);
+    };
+}
+
 
 
 private SearchDelegate do_attack_finish_amad()
@@ -499,14 +533,8 @@ private double search_expected_damage(const(SimulationSetup) setup, SimulationSt
         }
     }
 
-    // Reroll and recurse
-
-    // TODO: Fix this and handle arbitrary rerolls
-    assert(fork.type == StateForkType.Reroll);
-
     double expected_damage = 0.0f;
-    assert(fork.roll_count > 0);
-    roll_attack_dice!true(state, fork.roll_count, (SimulationState new_state, double probability) {
+    fork_attack_state(state, fork, (SimulationState new_state, double probability) {
         // NOTE: Rather than have the leaf nodes weight by their state probability, we just accumulate it
         // as we fork here instead. This is just to normalize the expected damage with respect to the state
         // that we started the search from rather than the global state space.

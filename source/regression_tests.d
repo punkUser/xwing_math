@@ -82,7 +82,7 @@ private SimulationResults run_test(string form_string)
             TokenState attack_tokens = to_attack_tokens2(attack_form);
             states.replace_attack_tokens(attack_tokens);
 
-            SimulationSetup setup = to_simulation_setup2(attack_form, defense_form);
+            SimulationSetup setup = to_simulation_setup(attack_form, defense_form);
             states = simulate_attack(setup, states);
         }
     }

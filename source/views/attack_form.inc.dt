@@ -52,20 +52,21 @@
                 fieldset.fieldset
                     legend Pilot and Ship Ability
                     select(name="pilot")
-                        - select_control_option_t!("pilot", form_name)("No Pilot Ability",         AttackPilot2.None);
-                        - select_control_option_t!("pilot", form_name)("(Reroll 1 die)",           AttackPilot2.Reroll_1);
-                        - select_control_option_t!("pilot", form_name)("(Reroll up to 2 dice)",    AttackPilot2.Reroll_2);
-                        - select_control_option_t!("pilot", form_name)("(Reroll up to 3 dice)",    AttackPilot2.Reroll_3);
-                        - select_control_option_t!("pilot", form_name)("Ezra Bridger",             AttackPilot2.EzraBridger);
-                        - select_control_option_t!("pilot", form_name)("Gavin Darklighter",        AttackPilot2.GavinDarklighter);
-                        - select_control_option_t!("pilot", form_name)("Lando Calrissian (Scum)",  AttackPilot2.LandoCalrissianScum);
-                        - select_control_option_t!("pilot", form_name)("Leebo",                    AttackPilot2.Leebo);
-                        - select_control_option_t!("pilot", form_name)("Major Vermeil",            AttackPilot2.MajorVermeil);
-                        - select_control_option_t!("pilot", form_name)("Rear Admiral Chiraneau",   AttackPilot2.RearAdmiralChiraneau);
-                        - select_control_option_t!("pilot", form_name)("Shara Bey",                AttackPilot2.SharaBey);
+                        - select_control_option_t!("pilot", form_name)("No Pilot Ability",         AttackPilot.None);
+                        - select_control_option_t!("pilot", form_name)("(Reroll 1 die)",           AttackPilot.Reroll_1);
+                        - select_control_option_t!("pilot", form_name)("(Reroll up to 2 dice)",    AttackPilot.Reroll_2);
+                        - select_control_option_t!("pilot", form_name)("(Reroll up to 3 dice)",    AttackPilot.Reroll_3);
+                        - select_control_option_t!("pilot", form_name)("Ezra Bridger",             AttackPilot.EzraBridger);
+                        - select_control_option_t!("pilot", form_name)("Gavin Darklighter",        AttackPilot.GavinDarklighter);
+                        - select_control_option_t!("pilot", form_name)("Han Solo (Rebel)",         AttackPilot.HanSoloRebel);
+                        - select_control_option_t!("pilot", form_name)("Lando Calrissian (Scum)",  AttackPilot.LandoCalrissianScum);
+                        - select_control_option_t!("pilot", form_name)("Leebo",                    AttackPilot.Leebo);
+                        - select_control_option_t!("pilot", form_name)("Major Vermeil",            AttackPilot.MajorVermeil);
+                        - select_control_option_t!("pilot", form_name)("Rear Admiral Chiraneau",   AttackPilot.RearAdmiralChiraneau);
+                        - select_control_option_t!("pilot", form_name)("Shara Bey",                AttackPilot.SharaBey);
                     select(name="ship")
-                        - select_control_option_t!("ship", form_name)("No Ship Ability",                AttackShip2.None);
-                        - select_control_option_t!("ship", form_name)("Advanced Targeting Computer",    AttackShip2.AdvancedTargetingComputer);
+                        - select_control_option_t!("ship", form_name)("No Ship Ability",                AttackShip.None);
+                        - select_control_option_t!("ship", form_name)("Advanced Targeting Computer",    AttackShip.AdvancedTargetingComputer);
                         
                 fieldset.fieldset
                     legend Friendly Ships

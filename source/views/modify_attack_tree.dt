@@ -41,10 +41,12 @@
     - if (after_temp.used_advanced_targeting_computer != before_temp.used_advanced_targeting_computer)
         | Use Advanced Targeting Computer to change 1 <i class="die die-hit"></i> result to a <i class="die die-crit"></i> result<br/>
             
-    - if (after_temp.used_scum_lando_crew > before_temp.used_scum_lando_crew)
+    - if (after_temp.used_scum_lando_crew != before_temp.used_scum_lando_crew)
         | Use Lando Calrissian (Scum) crew<br/>
-    - if (after_temp.used_scum_lando_pilot > before_temp.used_scum_lando_pilot)
+    - if (after_temp.used_scum_lando_pilot != before_temp.used_scum_lando_pilot)
         | Gain 1 stress to use Lando Calrissian (Scum) pilot<br/>
+    - if (after_temp.used_rebel_han_pilot != before_temp.used_rebel_han_pilot)
+        | Use Han Solo (Rebel) pilot to reroll all dice<br/>
 
     - if (locks_consumed > 0)
         | Spend lock<br/>

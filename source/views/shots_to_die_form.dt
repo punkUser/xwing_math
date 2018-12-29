@@ -28,16 +28,16 @@ block content
                     fieldset.fieldset
                         legend Pilot and Ship
                         select(name="pilot")
-                            - select_control_option_t!("pilot", form_name)("No Pilot Ability",          DefensePilot2.None);
-                            - select_control_option_t!("pilot", form_name)("(Reroll 1 die)",            DefensePilot2.Reroll_1);
-                            - select_control_option_t!("pilot", form_name)("(Reroll up to 2 dice)",     DefensePilot2.Reroll_2);
-                            - select_control_option_t!("pilot", form_name)("(Reroll up to 3 dice)",     DefensePilot2.Reroll_3);
-                            - select_control_option_t!("pilot", form_name)("Captain Feroph",            DefensePilot2.CaptainFeroph);
-                            - select_control_option_t!("pilot", form_name)("Luke Skywalker",            DefensePilot2.LukeSkywalker);
-                            - select_control_option_t!("pilot", form_name)("Norra Wexley",              DefensePilot2.NorraWexley);
+                            - select_control_option_t!("pilot", form_name)("No Pilot Ability",          DefensePilot.None);
+                            - select_control_option_t!("pilot", form_name)("(Reroll 1 die)",            DefensePilot.Reroll_1);
+                            - select_control_option_t!("pilot", form_name)("(Reroll up to 2 dice)",     DefensePilot.Reroll_2);
+                            - select_control_option_t!("pilot", form_name)("(Reroll up to 3 dice)",     DefensePilot.Reroll_3);
+                            - select_control_option_t!("pilot", form_name)("Captain Feroph",            DefensePilot.CaptainFeroph);
+                            - select_control_option_t!("pilot", form_name)("Luke Skywalker",            DefensePilot.LukeSkywalker);
+                            - select_control_option_t!("pilot", form_name)("Norra Wexley",              DefensePilot.NorraWexley);
                         select(name="ship")
-                            - select_control_option_t!("ship",  form_name)("No Ship Ability",           DefenseShip2.None);
-                            - select_control_option_t!("ship",  form_name)("Concordia Faceoff",         DefenseShip2.ConcordiaFaceoff);
+                            - select_control_option_t!("ship",  form_name)("No Ship Ability",           DefenseShip.None);
+                            - select_control_option_t!("ship",  form_name)("Concordia Faceoff",         DefenseShip.ConcordiaFaceoff);
 
                     fieldset.fieldset
                         legend Friendly Ships

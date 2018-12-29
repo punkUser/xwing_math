@@ -4,7 +4,8 @@ import core.stdc.string : memcpy;
 
 import vibe.d;
 
-enum AttackPilot2 : ubyte
+// NOTE: Add to end of these or links will break
+enum AttackPilot : ubyte
 {
     None = 0,
     Leebo,
@@ -17,8 +18,9 @@ enum AttackPilot2 : ubyte
     RearAdmiralChiraneau,
     EzraBridger,
     LandoCalrissianScum,
+    HanSoloRebel,
 }
-enum DefensePilot2 : ubyte
+enum DefensePilot : ubyte
 {
     None = 0,
     Leebo,
@@ -34,14 +36,14 @@ enum DefensePilot2 : ubyte
     LaetinAshera,
     EzraBridger,
     LandoCalrissianScum,
+    HanSoloRebel,
 }
-
-enum AttackShip2 : ubyte
+enum AttackShip : ubyte
 {
     None = 0,
     AdvancedTargetingComputer,
 }
-enum DefenseShip2 : ubyte
+enum DefenseShip : ubyte
 {
     None = 0,
     ConcordiaFaceoff,

@@ -39,7 +39,7 @@ ShotsToDieResult simulate_shots_to_die(ref const(AttackPresetForm) attack_form,
     immutable int ship_health = defense_form.ship_hull + defense_form.ship_shields;
 
     TokenState attack_tokens = to_attack_tokens2(attack_form);
-    SimulationSetup setup = to_simulation_setup2(attack_form, defense_form);
+    SimulationSetup setup = to_simulation_setup(attack_form, defense_form);
     
     double remaining_p = 1.0;
     double mean_shots_to_die_sum = 0.0;

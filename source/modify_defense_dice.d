@@ -534,14 +534,8 @@ private double search_expected_damage(const(SimulationSetup) setup, SimulationSt
         }
     }
 
-    // Reroll and recurse
-
-    // TODO: Fix this and handle arbitrary rerolls
-    assert(fork.type == StateForkType.Reroll);
-
     double expected_damage = 0.0f;
-    assert(fork.roll_count > 0);
-    roll_defense_dice!true(state, fork.roll_count, (SimulationState new_state, double probability) {
+    fork_defense_state(state, fork, (SimulationState new_state, double probability) {
         expected_damage += probability * search_expected_damage(setup, new_state, StateForkNone());
     });
 

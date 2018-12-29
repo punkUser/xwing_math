@@ -35,23 +35,23 @@
             fieldset.fieldset
                 legend Pilot and Ship Ability
                 select(name="pilot")
-                    - select_control_option_t!("pilot", form_name)("No Pilot Ability",          DefensePilot2.None);
-                    - select_control_option_t!("pilot", form_name)("(Reroll 1 die)",            DefensePilot2.Reroll_1);
-                    - select_control_option_t!("pilot", form_name)("(Reroll up to 2 dice)",     DefensePilot2.Reroll_2);
-                    - select_control_option_t!("pilot", form_name)("(Reroll up to 3 dice)",     DefensePilot2.Reroll_3);
-                    - select_control_option_t!("pilot", form_name)("Captain Feroph",            DefensePilot2.CaptainFeroph);                    
-                    - select_control_option_t!("pilot", form_name)("Ezra Bridger",              DefensePilot2.EzraBridger);
-                    - select_control_option_t!("pilot", form_name)("Laetin A'shera",            DefensePilot2.LaetinAshera);
-                    - select_control_option_t!("pilot", form_name)("Lando Calrissian (Scum)",   DefensePilot2.LandoCalrissianScum);
-                    - select_control_option_t!("pilot", form_name)("Leebo",                     DefensePilot2.Leebo);
-                    - select_control_option_t!("pilot", form_name)("Luke Skywalker",            DefensePilot2.LukeSkywalker);
-                    - select_control_option_t!("pilot", form_name)("Norra Wexley",              DefensePilot2.NorraWexley);
-                    - select_control_option_t!("pilot", form_name)("Sabin Wren (Lancer)",       DefensePilot2.SabineWrenLancer);
-                    - select_control_option_t!("pilot", form_name)("Shara Bey",                 DefensePilot2.SharaBey);
-                    - select_control_option_t!("pilot", form_name)("Zeb Orrelios",              DefensePilot2.ZebOrrelios);
+                    - select_control_option_t!("pilot", form_name)("No Pilot Ability",          DefensePilot.None);
+                    - select_control_option_t!("pilot", form_name)("(Reroll 1 die)",            DefensePilot.Reroll_1);
+                    - select_control_option_t!("pilot", form_name)("(Reroll up to 2 dice)",     DefensePilot.Reroll_2);
+                    - select_control_option_t!("pilot", form_name)("(Reroll up to 3 dice)",     DefensePilot.Reroll_3);
+                    - select_control_option_t!("pilot", form_name)("Captain Feroph",            DefensePilot.CaptainFeroph);                    
+                    - select_control_option_t!("pilot", form_name)("Ezra Bridger",              DefensePilot.EzraBridger);
+                    - select_control_option_t!("pilot", form_name)("Laetin A'shera",            DefensePilot.LaetinAshera);
+                    - select_control_option_t!("pilot", form_name)("Lando Calrissian (Scum)",   DefensePilot.LandoCalrissianScum);
+                    - select_control_option_t!("pilot", form_name)("Leebo",                     DefensePilot.Leebo);
+                    - select_control_option_t!("pilot", form_name)("Luke Skywalker",            DefensePilot.LukeSkywalker);
+                    - select_control_option_t!("pilot", form_name)("Norra Wexley",              DefensePilot.NorraWexley);
+                    - select_control_option_t!("pilot", form_name)("Sabin Wren (Lancer)",       DefensePilot.SabineWrenLancer);
+                    - select_control_option_t!("pilot", form_name)("Shara Bey",                 DefensePilot.SharaBey);
+                    - select_control_option_t!("pilot", form_name)("Zeb Orrelios",              DefensePilot.ZebOrrelios);
                 select(name="ship")
-                    - select_control_option_t!("ship",  form_name)("No Ship Ability",           DefenseShip2.None);
-                    - select_control_option_t!("ship",  form_name)("Concordia Faceoff",         DefenseShip2.ConcordiaFaceoff);
+                    - select_control_option_t!("ship",  form_name)("No Ship Ability",           DefenseShip.None);
+                    - select_control_option_t!("ship",  form_name)("Concordia Faceoff",         DefenseShip.ConcordiaFaceoff);
 
             fieldset.fieldset
                 legend Friendly Ships
