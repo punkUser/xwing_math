@@ -33,6 +33,7 @@ block content
                             - select_control_option_t!("pilot", form_name)("(Reroll up to 2 dice)",     DefensePilot.Reroll_2);
                             - select_control_option_t!("pilot", form_name)("(Reroll up to 3 dice)",     DefensePilot.Reroll_3);
                             - select_control_option_t!("pilot", form_name)("Captain Feroph",            DefensePilot.CaptainFeroph);
+                            - select_control_option_t!("pilot", form_name)("Han Solo (Rebel)",          DefensePilot.HanSoloRebel);
                             - select_control_option_t!("pilot", form_name)("Luke Skywalker",            DefensePilot.LukeSkywalker);
                             - select_control_option_t!("pilot", form_name)("Norra Wexley",              DefensePilot.NorraWexley);
                         select(name="ship")

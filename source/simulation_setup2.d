@@ -84,6 +84,8 @@ public class SimulationSetup
         bool laetin_pilot = false;
         bool ezra_pilot = false;
         bool scum_lando_pilot = false;
+        bool rebel_han_pilot = false;
+
         bool hate = false;
     };
     public Defense defense;
@@ -157,6 +159,7 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.defense.laetin_pilot                = defense.pilot == DefensePilot.LaetinAshera;
     setup.defense.ezra_pilot                  = defense.pilot == DefensePilot.EzraBridger;
     setup.defense.scum_lando_pilot            = defense.pilot == DefensePilot.LandoCalrissianScum;
+    setup.defense.rebel_han_pilot             = defense.pilot == DefensePilot.HanSoloRebel;
 
     setup.defense.c3p0                        = defense.c3p0;
     setup.defense.biggs                       = defense.biggs;

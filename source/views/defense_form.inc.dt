@@ -41,6 +41,7 @@
                     - select_control_option_t!("pilot", form_name)("(Reroll up to 3 dice)",     DefensePilot.Reroll_3);
                     - select_control_option_t!("pilot", form_name)("Captain Feroph",            DefensePilot.CaptainFeroph);                    
                     - select_control_option_t!("pilot", form_name)("Ezra Bridger",              DefensePilot.EzraBridger);
+                    - select_control_option_t!("pilot", form_name)("Han Solo (Rebel)",          DefensePilot.HanSoloRebel);
                     - select_control_option_t!("pilot", form_name)("Laetin A'shera",            DefensePilot.LaetinAshera);
                     - select_control_option_t!("pilot", form_name)("Lando Calrissian (Scum)",   DefensePilot.LandoCalrissianScum);
                     - select_control_option_t!("pilot", form_name)("Leebo",                     DefensePilot.Leebo);

@@ -50,6 +50,8 @@
         | Gain 1 stress to use Lando Calrissian (Scum) pilot<br/>
     - if (after_temp.used_rebel_millennium_falcon != before_temp.used_rebel_millennium_falcon)
         | Use Millennium Falcon (Rebel)<br/>
+    - if (after_temp.used_rebel_han_pilot != before_temp.used_rebel_han_pilot)
+        | Use Han Solo (Rebel) pilot to reroll all dice<br/>
 
     - if (locks_consumed > 0)
         | Spend lock<br/>

@@ -58,6 +58,13 @@ private StateFork after_rolling(const(SimulationSetup) setup, ref SimulationStat
     size_t search_options_count = 0;
     search_options[search_options_count++] = do_defense_finish_after_rolling();
 
+    if (setup.defense.rebel_han_pilot && !state.defense_temp.used_rebel_han_pilot)
+    {
+        // Only consider if we have blanks or focus to reroll
+        if ((state.defense_dice.count_mutable(DieResult.Blank) + state.defense_dice.count_mutable(DieResult.Focus)) > 0)
+            search_options[search_options_count++] = do_defense_rebel_han_pilot();
+    }
+
     int rerollable_results = state.defense_dice.results[DieResult.Blank] + state.defense_dice.results[DieResult.Focus];
     if (rerollable_results > 0)
     {
@@ -196,7 +203,7 @@ private StateFork modify_defense_dice(
     if (setup.defense.shara_bey_pilot && state.defense_tokens.lock > 0 && !state.defense_temp.used_shara_bey_pilot)
         search_options[search_options_count++] = do_defense_shara_bey();
 
-    // Rerolls - see comments in modify_attack_dice2 as the logic is similar
+    // Rerolls - see comments in modify_attack_dice as the logic is similar
     int rerollable_focus_results = state.defense_dice.results[DieResult.Focus];
     int rerollable_blank_results = state.defense_dice.results[DieResult.Blank];
 
@@ -373,6 +380,31 @@ private SearchDelegate do_defense_scum_lando_pilot()
         state.defense_tokens.stress = state.defense_tokens.stress + 1;
         state.defense_temp.used_scum_lando_pilot = true;
         return StateForkReroll(dice_to_reroll);
+    };
+}
+
+// Reroll all dice; doesn't count as reroll!
+private SearchDelegate do_defense_rebel_han_pilot()
+{
+    return (const(SimulationSetup) setup, ref SimulationState state)
+    {
+        assert(!state.defense_temp.used_rebel_han_pilot);
+
+        // Roll all mutable dice again
+        // NOTE: We don't have clarification on whether or not any potentially "unmodifyable"/final dice would be affected
+        // We also don't know if we should be trying to track which dice have already been rerolled "through" this reroll
+        // Thus we'll do the simplest thing for now since these interactions are not currently possible yet anyways.
+        int dice_to_roll =
+            state.defense_dice.count_mutable(DieResult.Blank) + 
+            state.defense_dice.count_mutable(DieResult.Focus) +
+            state.defense_dice.count_mutable(DieResult.Evade);
+        assert(dice_to_roll > 0);
+
+        state.defense_dice.cancel_mutable();        
+        state.defense_temp.used_rebel_han_pilot = true;
+
+        // NOTE: "Roll" not "Reroll" here as it doesn't count as rerolling
+        return StateForkRoll(dice_to_roll);
     };
 }
 
