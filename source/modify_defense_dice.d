@@ -116,6 +116,9 @@ private StateFork amdd(const(SimulationSetup) setup, ref SimulationState state)
     int rerollable_results = state.defense_dice.results[DieResult.Evade] + state.defense_dice.results[DieResult.Focus];
     if (rerollable_results > 0)
     {
+        if (setup.attack.saturation_salvo && !state.attack_temp.used_saturation_salvo)
+            search_options[search_options_count++] = do_defense_saturation_salvo();
+
         if (setup.attack.zuckuss_crew && state.attack_tokens.stress == 0)
             search_options[search_options_count++] = do_defense_zuckuss_crew();
     }
@@ -467,6 +470,24 @@ private SearchDelegate do_defense_zuckuss_crew()
         int dice_to_reroll = state.defense_dice.remove_dice_for_reroll_evade_focus(1);
         assert(dice_to_reroll == 1);
         state.attack_tokens.stress = state.attack_tokens.stress + 1;
+        return StateForkReroll(dice_to_reroll);
+    };
+}
+// As above but note that it must reroll 2 dice if able!
+private SearchDelegate do_defense_saturation_salvo()
+{
+    return (const(SimulationSetup) setup, ref SimulationState state)
+    {
+        // NOTE: *Attacker* state
+        assert(!state.attack_temp.used_saturation_salvo);
+        
+        // NOTE: If we are able to reroll 2 dice then we must, even if it's a blank
+        int dice_to_reroll = state.defense_dice.remove_dice_for_reroll_evade_focus(2);
+        if (dice_to_reroll == 1)
+            dice_to_reroll += state.defense_dice.remove_dice_for_reroll(DieResult.Blank, 1);
+        assert(dice_to_reroll == 1 || dice_to_reroll == 2);
+
+        state.attack_temp.used_saturation_salvo = true;
         return StateForkReroll(dice_to_reroll);
     };
 }

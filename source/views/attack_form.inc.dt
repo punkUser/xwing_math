@@ -83,6 +83,7 @@
                     - switch_control_t!("marksmanship",        form_name)("Marksmanship");
                     - switch_control_t!("predator",            form_name)("Predator");
                     - switch_control_t!("predictive_shot",     form_name)("Predictive Shot");
+                    - switch_control_t!("saturation_salvo",    form_name)("Saturation Salvo");
                     
                 fieldset.fieldset
                     legend Crew and Gunners

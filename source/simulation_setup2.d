@@ -33,6 +33,7 @@ public class SimulationSetup
         bool juke = false;        
         bool heavy_laser_cannon = false;
         bool ion_weapon = false;
+        bool saturation_salvo = false;
 
         bool scum_lando_crew = false;
         bool zuckuss_crew = false;
@@ -125,6 +126,7 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.attack.ezra_pilot                   = attack.pilot == AttackPilot.EzraBridger;
     setup.attack.scum_lando_pilot             = attack.pilot == AttackPilot.LandoCalrissianScum;
     setup.attack.rebel_han_pilot              = attack.pilot == AttackPilot.HanSoloRebel;
+    setup.attack.saturation_salvo             = attack.saturation_salvo;
 
     setup.attack.scum_lando_crew              = attack.scum_lando_crew;
     setup.attack.zuckuss_crew                 = attack.zuckuss_crew;

@@ -47,7 +47,8 @@ align(1) struct AttackForm
 
     mixin(bitfields!(
         bool,  "zuckuss_crew",                   1,
-        ubyte, "",                               7,
+        bool,  "saturation_salvo",               1,
+        ubyte, "",                               6,
         ));
 
     static AttackForm defaults(int attack_index)
