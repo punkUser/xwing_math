@@ -45,6 +45,11 @@ align(1) struct AttackForm
         bool,  "predictive_shot",                1,
         ));
 
+    mixin(bitfields!(
+        bool,  "zuckuss_crew",                   1,
+        ubyte, "",                               7,
+        ));
+
     static AttackForm defaults(int attack_index)
     {
         AttackForm defaults;

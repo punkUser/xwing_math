@@ -35,6 +35,7 @@ public class SimulationSetup
         bool ion_weapon = false;
 
         bool scum_lando_crew = false;
+        bool zuckuss_crew = false;
 
         bool leebo_pilot = false;
         bool shara_bey_pilot = false;
@@ -125,15 +126,17 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.attack.scum_lando_pilot             = attack.pilot == AttackPilot.LandoCalrissianScum;
     setup.attack.rebel_han_pilot              = attack.pilot == AttackPilot.HanSoloRebel;
 
+    setup.attack.scum_lando_crew              = attack.scum_lando_crew;
+    setup.attack.zuckuss_crew                 = attack.zuckuss_crew;
+
     setup.attack.fire_control_system          = attack.fire_control_system;
     setup.attack.heroic                       = attack.heroic;
     setup.attack.juke                         = attack.juke;
     setup.attack.heavy_laser_cannon           = attack.heavy_laser_cannon;
     setup.attack.ion_weapon                   = attack.ion_weapon;
     setup.attack.advanced_targeting_computer  = attack.ship == AttackShip.AdvancedTargetingComputer;
-    setup.attack.scum_lando_crew              = attack.scum_lando_crew;
     setup.attack.advanced_optics              = attack.advanced_optics;
-    setup.attack.predictive_shot              = attack.predictive_shot;
+    setup.attack.predictive_shot              = attack.predictive_shot;    
 
     // ****************************************************************************************************************
 

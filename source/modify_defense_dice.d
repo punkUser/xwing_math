@@ -96,6 +96,41 @@ private StateFork after_rolling(const(SimulationSetup) setup, ref SimulationStat
         return after_rolling(setup, state);      // Continue after rolling
 }
 
+private StateFork amdd(const(SimulationSetup) setup, ref SimulationState state)
+{
+    // Base case
+    if (state.defense_temp.finished_amdd)
+        return StateForkNone();
+
+    SearchDelegate[16] search_options;
+    size_t search_options_count = 0;
+
+    // NOTE: We put the "do nothing" option nearer the end of the list here rather than the usual start
+    // Otherwise it'll conclude that ex. when the defender has an evade it's not worth doing anything to
+    // their dice. In reality it's usually better to apply any effects that don't have much of a cost here
+    // because it could cause the defender to spend more tokens than otherwise.
+    // This isn't a perfect heuristic but in the absense of some sort of value function on tokens it's likely
+    // the best we can do in general.
+
+    // We're the attacker so we're interested in rerolling evades and focus, not blanks
+    int rerollable_results = state.defense_dice.results[DieResult.Evade] + state.defense_dice.results[DieResult.Focus];
+    if (rerollable_results > 0)
+    {
+        if (setup.attack.zuckuss_crew && state.attack_tokens.stress == 0)
+            search_options[search_options_count++] = do_defense_zuckuss_crew();
+    }
+
+    search_options[search_options_count++] = do_defense_finish_amdd();
+
+    // NOTE: We want to *maximize* the attack hits since we're the defender :)
+    StateFork fork = search_defense(setup, state, search_options[0..search_options_count], true);
+    if (fork.required())
+        return fork;
+    else
+        return amdd(setup, state);      // Continue defender modifying
+}
+
+
 
 
 // NOTE: This function has the same semantics as modify_defense_dice.
@@ -159,10 +194,10 @@ private StateFork modify_defense_dice(
     // Next the attacker modifies the dice
     if (!state.defense_temp.finished_amdd)
     {
-        if (setup.attack.juke && state.attack_tokens.evade > 0)
-            state.defense_dice.change_dice(DieResult.Evade, DieResult.Focus, 1);
-
-        state.defense_temp.finished_amdd = true;
+        StateFork fork = amdd(setup, state);
+        if (fork.required())
+            return fork;
+        assert(state.defense_temp.finished_amdd);
     }
 
     // Defender modifies dice
@@ -408,6 +443,41 @@ private SearchDelegate do_defense_rebel_han_pilot()
     };
 }
 
+// Attacker modifies defense dice (AMDD)
+private SearchDelegate do_defense_finish_amdd()
+{
+    return (const(SimulationSetup) setup, ref SimulationState state)
+    {
+        assert(!state.defense_temp.finished_amdd);
+        
+        if (setup.attack.juke && state.attack_tokens.evade > 0)
+            state.defense_dice.change_dice(DieResult.Evade, DieResult.Focus, 1);
+
+        state.defense_temp.finished_amdd = true;
+        return StateForkNone();
+    };
+}
+// NOTE: This is the attacker! So rerolls an evade if present, otherwise focus
+private SearchDelegate do_defense_zuckuss_crew()
+{
+    return (const(SimulationSetup) setup, ref SimulationState state)
+    {
+        // NOTE: *Attacker* state
+        assert(state.attack_tokens.stress == 0);
+        if (state.defense_dice.results[DieResult.Evade] > 0)
+        {
+            --state.defense_dice.results[DieResult.Evade];
+        }
+        else
+        {
+            assert(state.defense_dice.results[DieResult.Focus] > 0);
+            --state.defense_dice.results[DieResult.Focus];
+
+        }
+        state.attack_tokens.stress = state.attack_tokens.stress + 1;
+        return StateForkReroll(1);
+    };
+}
 
 
 private SearchDelegate do_defense_finish_dmdd(int evades_target)
@@ -581,7 +651,8 @@ private double search_expected_damage(const(SimulationSetup) setup, SimulationSt
 private StateFork search_defense(
     const(SimulationSetup) setup,
     ref SimulationState output_state,
-    SearchDelegate[] options)
+    SearchDelegate[] options,
+    bool maximize_damage = false)
 {
     assert(options.length > 0);
 
@@ -591,9 +662,9 @@ private StateFork search_defense(
 
     // Try each option and track which ends up with the best expected damage
     const(SimulationState) initial_state = output_state;
-    SimulationState min_state = initial_state;
-    double min_expected_damage = 100000.0f;
-    StateFork min_state_fork = StateForkNone();
+    SimulationState best_state = initial_state;
+    double best_expected_damage = maximize_damage ? -1.0f : 100000.0f;
+    StateFork best_state_fork = StateForkNone();
 
     foreach (option; options)
     {
@@ -602,15 +673,19 @@ private StateFork search_defense(
 
         assert(fork.required() || state != initial_state);
 
+        // TODO: Experiment with epsilon; this is to prefer earlier options when equivalent
+        immutable double epsilon = 1e-9;
+
         double expected_damage = search_expected_damage(setup, state, fork);
-        if (expected_damage < (min_expected_damage - 1e-9))
+        if ((!maximize_damage && expected_damage < (best_expected_damage - epsilon)) ||
+            ( maximize_damage && expected_damage > (best_expected_damage + epsilon)))
         {
-            min_expected_damage = expected_damage;
-            min_state = state;
-            min_state_fork = fork;
+            best_expected_damage = expected_damage;
+            best_state = state;
+            best_state_fork = fork;
         }
     }
 
-    output_state = min_state;
-    return min_state_fork;
+    output_state = best_state;
+    return best_state_fork;
 }
