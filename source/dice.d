@@ -97,6 +97,16 @@ public struct DiceState
         return rerolled_results;
     }
 
+    // Prefers rerolling evades, secondarily focus results (generally for AMDD)
+    int remove_dice_for_reroll_evade_focus(int max_count = int.max)
+    {
+        int rerolled_results = remove_dice_for_reroll(DieResult.Evade, max_count);
+        if (rerolled_results >= max_count) return rerolled_results;
+
+        rerolled_results += remove_dice_for_reroll(DieResult.Focus,  max_count - rerolled_results);
+        return rerolled_results;
+    }
+
     // Prefers changing rerolled dice first where limited as they are more constrained
     // NOTE: Cannot change final results by definition
     int change_dice(DieResult from, DieResult to, int max_count = int.max)

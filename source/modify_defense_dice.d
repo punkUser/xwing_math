@@ -464,18 +464,10 @@ private SearchDelegate do_defense_zuckuss_crew()
     {
         // NOTE: *Attacker* state
         assert(state.attack_tokens.stress == 0);
-        if (state.defense_dice.results[DieResult.Evade] > 0)
-        {
-            --state.defense_dice.results[DieResult.Evade];
-        }
-        else
-        {
-            assert(state.defense_dice.results[DieResult.Focus] > 0);
-            --state.defense_dice.results[DieResult.Focus];
-
-        }
+        int dice_to_reroll = state.defense_dice.remove_dice_for_reroll_evade_focus(1);
+        assert(dice_to_reroll == 1);
         state.attack_tokens.stress = state.attack_tokens.stress + 1;
-        return StateForkReroll(1);
+        return StateForkReroll(dice_to_reroll);
     };
 }
 
