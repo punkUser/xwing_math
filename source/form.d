@@ -19,6 +19,7 @@ enum AttackPilot : ubyte
     EzraBridger,
     LandoCalrissianScum,
     HanSoloRebel,
+    Rey,
 }
 enum DefensePilot : ubyte
 {
@@ -37,6 +38,7 @@ enum DefensePilot : ubyte
     EzraBridger,
     LandoCalrissianScum,
     HanSoloRebel,
+    Rey,
 }
 enum AttackShip : ubyte
 {

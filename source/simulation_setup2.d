@@ -44,6 +44,7 @@ public class SimulationSetup
         bool ezra_pilot = false;
         bool scum_lando_pilot = false;
         bool rebel_han_pilot = false;
+        bool rey_pilot = false;
 
         bool advanced_optics = false;
         bool predictive_shot = false;
@@ -87,6 +88,7 @@ public class SimulationSetup
         bool ezra_pilot = false;
         bool scum_lando_pilot = false;
         bool rebel_han_pilot = false;
+        bool rey_pilot = false;
 
         bool hate = false;
     };
@@ -126,6 +128,8 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.attack.ezra_pilot                   = attack.pilot == AttackPilot.EzraBridger;
     setup.attack.scum_lando_pilot             = attack.pilot == AttackPilot.LandoCalrissianScum;
     setup.attack.rebel_han_pilot              = attack.pilot == AttackPilot.HanSoloRebel;
+    setup.attack.rey_pilot                    = attack.pilot == AttackPilot.Rey;
+
     setup.attack.saturation_salvo             = attack.saturation_salvo;
 
     setup.attack.scum_lando_crew              = attack.scum_lando_crew;
@@ -165,6 +169,7 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.defense.ezra_pilot                  = defense.pilot == DefensePilot.EzraBridger;
     setup.defense.scum_lando_pilot            = defense.pilot == DefensePilot.LandoCalrissianScum;
     setup.defense.rebel_han_pilot             = defense.pilot == DefensePilot.HanSoloRebel;
+    setup.defense.rey_pilot                   = defense.pilot == DefensePilot.Rey;
 
     setup.defense.c3p0                        = defense.c3p0;
     setup.defense.biggs                       = defense.biggs;

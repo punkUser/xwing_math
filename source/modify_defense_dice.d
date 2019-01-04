@@ -499,6 +499,9 @@ private SearchDelegate do_defense_finish_dmdd(int evades_target)
     {
         assert(!state.defense_temp.finished_dmdd);
 
+        // Structurally it's convenient to have early returns here instead of endlessly nested if's, so set this in advance
+        state.defense_temp.finished_dmdd = true;
+
         // Free changes
         state.defense_dice.change_dice(DieResult.Focus, DieResult.Evade, setup.defense.focus_to_evade_count);
 
@@ -508,22 +511,30 @@ private SearchDelegate do_defense_finish_dmdd(int evades_target)
         state.defense_dice.change_blank_focus(DieResult.Evade, setup.defense.any_to_evade_count);
 
         int needed_evades = max(0, evades_target - state.defense_dice.count(DieResult.Evade));
-        if (needed_evades > 0)
-        {
-            state = spend_focus_calculate_force(setup, state, min(state.defense_dice.count_mutable(DieResult.Focus), needed_evades));
-            needed_evades = max(0, evades_target - state.defense_dice.count(DieResult.Evade));
+        if (needed_evades <= 0) return StateForkNone();
 
-            // If we still need evades, spend evade tokens (if there are dice to convert)
-            if (needed_evades > 0)
+        bool prefer_spend_calculate = true;
+        state = spend_focus_calculate_force(setup, state, min(state.defense_dice.count_mutable(DieResult.Focus), needed_evades), prefer_spend_calculate);
+        needed_evades = max(0, evades_target - state.defense_dice.count(DieResult.Evade));
+        if (needed_evades <= 0) return StateForkNone();
+
+        if (setup.defense.rey_pilot && state.defense_tokens.force > 0)
+        {
+            if (state.defense_dice.change_dice(DieResult.Blank, DieResult.Evade, 1) > 0)
             {
-                int evades_to_spend = min(needed_evades, state.defense_tokens.evade);
-                int evades_spent = state.defense_dice.change_dice(DieResult.Blank, DieResult.Evade, evades_to_spend);
-                evades_spent    += state.defense_dice.change_dice(DieResult.Focus, DieResult.Evade, evades_to_spend - evades_spent);
-                state.defense_tokens.evade = state.defense_tokens.evade - evades_spent;
+                state.defense_tokens.force = state.defense_tokens.force - 1;
+                --needed_evades;
+                if (needed_evades <= 0) return StateForkNone();
             }
         }
-        
-        state.defense_temp.finished_dmdd = true;
+
+        // If we still need evades, spend evade tokens (if there are dice to convert)
+        int evades_to_spend = min(needed_evades, state.defense_tokens.evade);
+        int evades_spent = state.defense_dice.change_dice(DieResult.Blank, DieResult.Evade, evades_to_spend);
+        evades_spent    += state.defense_dice.change_dice(DieResult.Focus, DieResult.Evade, evades_to_spend - evades_spent);
+        state.defense_tokens.evade = state.defense_tokens.evade - evades_spent;
+        needed_evades -= evades_spent;
+
         return StateForkNone();
     };
 }
