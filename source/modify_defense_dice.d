@@ -513,11 +513,6 @@ private SearchDelegate do_defense_finish_dmdd(int evades_target)
         int needed_evades = max(0, evades_target - state.defense_dice.count(DieResult.Evade));
         if (needed_evades <= 0) return StateForkNone();
 
-        bool prefer_spend_calculate = true;
-        state = spend_focus_calculate_force(setup, state, min(state.defense_dice.count_mutable(DieResult.Focus), needed_evades), prefer_spend_calculate);
-        needed_evades = max(0, evades_target - state.defense_dice.count(DieResult.Evade));
-        if (needed_evades <= 0) return StateForkNone();
-
         if (setup.defense.rey_pilot && state.defense_tokens.force > 0)
         {
             if (state.defense_dice.change_dice(DieResult.Blank, DieResult.Evade, 1) > 0)
@@ -527,6 +522,11 @@ private SearchDelegate do_defense_finish_dmdd(int evades_target)
                 if (needed_evades <= 0) return StateForkNone();
             }
         }
+
+        bool prefer_spend_calculate = true;
+        state = spend_focus_calculate_force(setup, state, min(state.defense_dice.count_mutable(DieResult.Focus), needed_evades), prefer_spend_calculate);
+        needed_evades = max(0, evades_target - state.defense_dice.count(DieResult.Evade));
+        if (needed_evades <= 0) return StateForkNone();
 
         // If we still need evades, spend evade tokens (if there are dice to convert)
         int evades_to_spend = min(needed_evades, state.defense_tokens.evade);

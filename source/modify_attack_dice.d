@@ -369,15 +369,17 @@ private SearchDelegate do_attack_finish_amad()
 
         state.attack_dice.change_blank_focus(DieResult.Hit, setup.attack.any_to_hit_count);
 
-        // If we have other uses for a given token, it's sometimes better to prefer to spend the other here
-        bool prefer_spend_calculate = true;
-        state = spend_focus_calculate_force(setup, state, prefer_spend_calculate);
-
+        // NOTE: Order matters here! Use Rey greedily on a blank if available first rather than wasting
+        // the force to change an eyeball below, etc.
         if (setup.attack.rey_pilot && state.attack_tokens.force > 0)
         {
             if (state.attack_dice.change_dice(DieResult.Blank, DieResult.Hit, 1) > 0)
                 state.attack_tokens.force = state.attack_tokens.force - 1;
         }
+
+        // If we have other uses for a given token, it's sometimes better to prefer to spend the other here
+        bool prefer_spend_calculate = true;
+        state = spend_focus_calculate_force(setup, state, prefer_spend_calculate);
 
         if (setup.attack.advanced_optics && state.attack_tokens.focus > 0)
         {
