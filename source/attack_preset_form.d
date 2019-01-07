@@ -19,6 +19,8 @@ public enum AttackPreset : ubyte
     _2dJukeEvade,
     _3dJukeEvade,
     _4dJukeEvade,
+    _2dAdvancedOptics,
+    _3dAdvancedOptics,
     Count
 };
 
@@ -56,6 +58,8 @@ public string attack_preset_url(ubyte attacker)
         case AttackPreset._2dJukeEvade:             return "IQACAAABAAA";
         case AttackPreset._3dJukeEvade:             return "MQACAAABAAA";
         case AttackPreset._4dJukeEvade:             return "QQACAAABAAA";
+        case AttackPreset._2dAdvancedOptics:        return "IQAAAAAAAEAA";
+        case AttackPreset._3dAdvancedOptics:        return "MQAAAAAAAEAA";
         default:                                    return "IQAAAAAAAAA";       // Failsafe!
     }
 }
