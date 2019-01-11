@@ -22,13 +22,18 @@
     
 - void output_token_spending(TokenState before, TokenState after, AttackTempState before_temp, AttackTempState after_temp)
     - int locks_consumed = before.lock - after.lock;
+    - int focus_consumed = before.focus - after.focus;
     
     - if (locks_consumed > 0 && after_temp.used_shara_bey_pilot != before_temp.used_shara_bey_pilot)
         | Spend lock to add 1 <i class="die die-focus"></i> result using Shara Bey<br/>
         - --locks_consumed;
 
-    - if (after.focus < before.focus)
-        | Spend #{before.focus - after.focus} focus<br/>
+    - if (focus_consumed > 0 && after_temp.used_advanced_optics != before_temp.used_advanced_optics)
+        | Spend focus to change 1 blank to <i class="die die-hit"></i> using Advanced Optics<br/>
+        - --focus_consumed;
+
+    - if (focus_consumed > 0)
+        | Spend #{focus_consumed} focus<br/>
     - if (after.calculate < before.calculate)
         | Spend #{before.calculate - after.calculate} calculate<br/>
     - if (after.evade < before.evade)

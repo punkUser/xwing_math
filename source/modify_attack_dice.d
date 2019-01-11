@@ -137,6 +137,9 @@ public StateFork modify_attack_dice(const(SimulationSetup) setup, ref Simulation
     if (setup.attack.shara_bey_pilot && state.attack_tokens.lock > 0 && !state.attack_temp.cannot_spend_lock && !state.attack_temp.used_shara_bey_pilot)
         search_options[search_options_count++] = do_attack_shara_bey();
 
+    if (setup.attack.advanced_optics && state.attack_tokens.focus > 0 && state.attack_dice.count(DieResult.Blank) > 0 && !state.attack_temp.used_advanced_optics)
+        search_options[search_options_count++] = do_attack_advanced_optics();
+
     // The top level decision here is which dice to reroll. As noted above, it's always desirable to reroll blanks first and thus
     // the decision is effectively just how many dice to reroll from 1..(all rerollable blanks + all rerollable focus).
     // We'll put rerolling *more* dice earlier in the list of search results so that we favor stuff like spending a lock to
@@ -351,8 +354,7 @@ private SearchDelegate do_attack_rebel_han_pilot()
         return StateForkRoll(dice_to_roll);
     };
 }
-
-
+    
 
 private SearchDelegate do_attack_finish_amad()
 {
@@ -380,12 +382,6 @@ private SearchDelegate do_attack_finish_amad()
         // If we have other uses for a given token, it's sometimes better to prefer to spend the other here
         bool prefer_spend_calculate = true;
         state = spend_focus_calculate_force(setup, state, prefer_spend_calculate);
-
-        if (setup.attack.advanced_optics && state.attack_tokens.focus > 0)
-        {
-            if (state.attack_dice.change_dice(DieResult.Blank, DieResult.Hit, 1) > 0)
-                state.attack_tokens.focus = state.attack_tokens.focus - 1;
-        }
 
         state.attack_dice.change_dice(DieResult.Hit, DieResult.Crit, setup.attack.hit_to_crit_count);
 
@@ -492,6 +488,23 @@ private SearchDelegate do_attack_shara_bey()
 
         state.attack_temp.used_shara_bey_pilot = true;
         state.attack_tokens.lock = state.attack_tokens.lock - 1;
+        return StateForkNone();
+    };
+}
+
+private SearchDelegate do_attack_advanced_optics()
+{
+    return (const(SimulationSetup) setup, ref SimulationState state)
+    {
+        assert(setup.attack.advanced_optics);
+        assert(!state.attack_temp.used_advanced_optics);
+        assert(state.attack_tokens.focus > 0);
+
+        int dice_changed = state.attack_dice.change_dice(DieResult.Blank, DieResult.Hit, 1);
+        assert(dice_changed == 1);
+
+        state.attack_temp.used_advanced_optics = true;
+        state.attack_tokens.focus = state.attack_tokens.focus - 1;
         return StateForkNone();
     };
 }

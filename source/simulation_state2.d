@@ -137,7 +137,8 @@ struct AttackTempState
         bool, "used_scum_lando_pilot",                  1,
         bool, "used_rebel_han_pilot",                   1,
         bool, "used_saturation_salvo",                  1,
-        uint,  "",                                     12,
+        bool, "used_advanced_optics",                   1,
+        uint,  "",                                     11,
     ));
 
     void reset()
