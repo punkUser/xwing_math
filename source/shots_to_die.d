@@ -29,17 +29,18 @@ ShotsToDieResult simulate_shots_to_die(ref const(AttackPresetForm) attack_form,
                                        bool precomputed = false,
                                        string label = "")
 {
+    TokenState attack_tokens = to_attack_tokens2(attack_form);
+    TokenState defense_tokens = to_defense_tokens2(defense_form);
+    SimulationSetup setup = to_simulation_setup(attack_form, defense_form);
+
     // Set up the initial state
     auto states = new SimulationStateSet();
     SimulationState initial_state = SimulationState.init;
-    initial_state.defense_tokens   = to_defense_tokens2(defense_form);
-    initial_state.probability      = 1.0;
+    initial_state.defense_tokens  = defense_tokens;
+    initial_state.probability     = 1.0;
     states.push_back(initial_state);
     
     immutable int ship_health = defense_form.ship_hull + defense_form.ship_shields;
-
-    TokenState attack_tokens = to_attack_tokens2(attack_form);
-    SimulationSetup setup = to_simulation_setup(attack_form, defense_form);
     
     double remaining_p = 1.0;
     double mean_shots_to_die_sum = 0.0;
@@ -54,6 +55,7 @@ ShotsToDieResult simulate_shots_to_die(ref const(AttackPresetForm) attack_form,
     for (; shots_to_die < max_shots; ++shots_to_die)
     {
         states.replace_attack_tokens(attack_tokens);
+        states.replace_defense_tokens(defense_tokens);
         states = simulate_attack(setup, states);
 
         double removed_p = states.remove_if_total_hits_ge(ship_health);

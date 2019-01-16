@@ -366,6 +366,14 @@ public class SimulationStateSet
         compress();
     }
 
+    // Replaces the defense tokens on *all* current states with the given ones
+    public void replace_defense_tokens(TokenState defense_tokens)
+    {
+        foreach (ref state; m_states)
+            state.defense_tokens = defense_tokens;
+        compress();
+    }
+
     // Re-sorts the array by tokens, ensuring that any states with matching tokens are sequential
     public void sort_by_tokens()
     {
