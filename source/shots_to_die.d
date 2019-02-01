@@ -55,7 +55,9 @@ ShotsToDieResult simulate_shots_to_die(ref const(AttackPresetForm) attack_form,
     for (; shots_to_die < max_shots; ++shots_to_die)
     {
         states.replace_attack_tokens(attack_tokens);
-        states.replace_defense_tokens(defense_tokens);
+        // NOTE: Can't just do this here right now as stuff like Iden is mixed into
+        // tokens and we don't want to refresh that every attack!
+        //states.replace_defense_tokens(defense_tokens);
         states = simulate_attack(setup, states);
 
         double removed_p = states.remove_if_total_hits_ge(ship_health);
