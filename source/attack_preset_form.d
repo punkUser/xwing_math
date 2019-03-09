@@ -21,6 +21,9 @@ public enum AttackPreset : ubyte
     _4dJukeEvade,
     _2dAdvancedOptics,
     _3dAdvancedOptics,
+    _4dHowlrunner,
+    _3dIonWeapon,
+    _4dIonWeapon,
     Count
 };
 
@@ -28,12 +31,14 @@ align(1) struct AttackPresetForm
 {
     // TODO: Improve our utility functions to deal with simple fields properly
     mixin(bitfields!(
-        ubyte, "preset",     8, // AttackPreset enum
-        bool,  "enabled",    1,
-        bool,  "focus",      1,
-        bool,  "lock",       1,
+        ubyte, "preset",                    8, // AttackPreset enum
+        bool,  "enabled",                   1,
+        bool,  "focus",                     1,
+        bool,  "lock",                      1,
+        bool,  "bonus_attack_enabled",      1,
+        ubyte, "bonus_attack_preset",       8, // AttackPreset enum
 
-        uint,  "",           5,
+        uint,  "",                          12,
     ));
 
     static AttackPresetForm defaults(int index = 0)
@@ -60,6 +65,9 @@ public string attack_preset_url(ubyte attacker)
         case AttackPreset._4dJukeEvade:             return "QQACAAABAAA";
         case AttackPreset._2dAdvancedOptics:        return "IQAAAAAAAEAA";
         case AttackPreset._3dAdvancedOptics:        return "MQAAAAAAAEAA";
+        case AttackPreset._4dHowlrunner:            return "QQAAAAAEAAAA";
+        case AttackPreset._3dIonWeapon:             return "MQAAAIAAAAAA";
+        case AttackPreset._4dIonWeapon:             return "QQAAAIAAAAAA";
         default:                                    return "IQAAAAAAAAA";       // Failsafe!
     }
 }
@@ -85,5 +93,14 @@ public SimulationSetup to_simulation_setup(ref const(AttackPresetForm) attack, r
     import simulation_setup2 : attack_form_setup = to_simulation_setup;
 
     auto attack_form = create_form_from_url!AttackForm(attack_preset_url(attack.preset), 0);
+    return attack_form_setup(attack_form, defense_form);
+}
+
+// Simulation setup for the optional bonus attack
+public SimulationSetup to_simulation_setup_bonus(ref const(AttackPresetForm) attack, ref const(DefenseForm) defense_form)
+{
+    import simulation_setup2 : attack_form_setup = to_simulation_setup;
+
+    auto attack_form = create_form_from_url!AttackForm(attack_preset_url(attack.bonus_attack_preset), 0);
     return attack_form_setup(attack_form, defense_form);
 }

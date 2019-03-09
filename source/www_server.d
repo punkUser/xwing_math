@@ -298,6 +298,12 @@ public class WWWServer
 
                     SimulationSetup setup = to_simulation_setup(attack_form[i], defense_form);
                     simulation_states = simulate_attack(setup, simulation_states);
+
+                    if (attack_form[i].bonus_attack_enabled)
+                    {
+                        SimulationSetup bonus_setup = to_simulation_setup_bonus(attack_form[i], defense_form);
+                        simulation_states = simulate_attack(bonus_setup, simulation_states);
+                    }
                 }
 
                 results_after_attack[i] = simulation_states.compute_results();

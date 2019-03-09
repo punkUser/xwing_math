@@ -20,17 +20,6 @@ $(document).ready(function()
 		$(this).prop("checked", state);
 	});
 	
-	// Switches that reveal other controls
-	$(".switch-toggle-hidden").find("input").change(function () {
-		var others = $(this).parents(".switch-toggle-hidden").parent().find(".switch-hidden");
-		if (this.checked)
-			others.show();
-		else
-			others.hide();
-	});
-	// Trigger an update in case we had preloaded form data
-	$(".switch-toggle-hidden").find("input").trigger("change");
-			
 	// Stepper range clamping
 	$(".stepper-number").change(function() {
 		var max = +($(this).attr("max"));

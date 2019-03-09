@@ -280,10 +280,6 @@ private SimulationStateSet simulate_single_attack(
 
 // Main entry point for simulating a new attack following any previously simulated results
 //
-// If "final attack" is set for either attacker or defender, it may use tokens or abilities that it
-// would otherwise save. Usually this is only for minor things like changing hits to crits or similar since
-// the attacker will always try and get as many hits as possible and so on.
-//
 // NOTE: Takes the initial state set as non-constant since it needs to sort it, but does not otherwise
 // modify the contents. Returns a new state set after this additional attack.
 public SimulationStateSet simulate_attack(const(SimulationSetup) setup, SimulationStateSet states)
