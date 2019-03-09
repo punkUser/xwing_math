@@ -77,6 +77,9 @@ public TokenState to_attack_tokens2(ref const(AttackPresetForm) preset_form)
     // Avoid ambiguity between the two modules...
     import attack_form : attack_form_tokens = to_attack_tokens2;
 
+    // NOTE/TODO: Since this only grabs tokens from the base attack preset and ignores any from a bonus attack,
+    // there's some unintuitive interactions with stuff like "Juke w/ Evade" being only as a bonus attack. Need to
+    // think about how best to handle this or whether to just special case it.
     auto attack_form = create_form_from_url!AttackForm(attack_preset_url(preset_form.preset), 0);
     auto tokens = attack_form_tokens(attack_form);
 

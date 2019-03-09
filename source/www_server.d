@@ -313,7 +313,7 @@ public class WWWServer
             double expected_damage = results_after_attack[$-1].total_sum.hits + results_after_attack[$-1].total_sum.crits;
             log_message("%s %s %.15f %sms",
                         req.clientAddress.toAddressString(),
-                        "/2/multi/?" ~ form_state_string,
+                        "/2/multi_preset/?" ~ form_state_string,
                         expected_damage,
                         sw.peek().total!"msecs",);
         }
