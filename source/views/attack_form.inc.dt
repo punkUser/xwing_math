@@ -1,6 +1,6 @@
 - import form;
 
-- void attack_form_t(string form_name)(string title = "", bool include_enable_toggle = false, bool include_dice = true)
+- void attack_form_t(string form_name)(string title = "", bool include_enable_toggle = false, bool include_dice = true, bool include_previous_tokens = false)
     form(id="#{form_name}_form", action="javascript:void(0);", method="POST", autocomplete="off")
         .callout.small.alert
 
@@ -29,8 +29,9 @@
                     - stepper_control_t!("defense_dice_diff",    form_name)("+/- Defense Dice", -3, 3);
                     - switch_control_t !("roll_all_hits",        form_name)("Roll All Hits");
 
-                .switch-hide-token-field
-                    - switch_control_t!("previous_tokens_enabled",   form_name)("Use Previous Attack Tokens");
+                - if (include_previous_tokens)
+                    .switch-hide-token-field
+                        - switch_control_t!("previous_tokens_enabled",   form_name)("Use Previous Attack Tokens");
 
                 .token-field
                     .grid-x.small-up-1.medium-up-1.large-up-2

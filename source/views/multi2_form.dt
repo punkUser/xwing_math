@@ -10,16 +10,16 @@ block form
         
     .grid-x.grid-margin-x.small-up-1.medium-up-2.large-up-2
         .cell
-            - attack_form_t!"attack0"("Attack 1", true);
-            - attack_form_t!"attack1"("Attack 2", true);
-            - attack_form_t!"attack2"("Attack 3", true);
-            - attack_form_t!"attack3"("Attack 4", true);
-            - attack_form_t!"attack4"("Attack 5", true);
-            - attack_form_t!"attack5"("Attack 6", true);
-            - attack_form_t!"attack6"("Attack 7", true);
-            - attack_form_t!"attack7"("Attack 8", true);
-            - attack_form_t!"attack8"("Attack 9", true);
-            - attack_form_t!"attack9"("Attack 10", true);
+            - attack_form_t!"attack0"("Attack 1",  true, true, false);
+            - attack_form_t!"attack1"("Attack 2",  true, true,  true);
+            - attack_form_t!"attack2"("Attack 3",  true, true,  true);
+            - attack_form_t!"attack3"("Attack 4",  true, true,  true);
+            - attack_form_t!"attack4"("Attack 5",  true, true,  true);
+            - attack_form_t!"attack5"("Attack 6",  true, true,  true);
+            - attack_form_t!"attack6"("Attack 7",  true, true,  true);
+            - attack_form_t!"attack7"("Attack 8",  true, true,  true);
+            - attack_form_t!"attack8"("Attack 9",  true, true,  true);
+            - attack_form_t!"attack9"("Attack 10", true, true,  true);
 
         .cell
             - defense_form_t!"defense"();
