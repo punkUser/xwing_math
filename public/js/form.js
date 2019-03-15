@@ -20,6 +20,21 @@ $(document).ready(function()
 		$(this).prop("checked", state);
 	});
 	
+	// Toggle hidden on all ".token-field" classes in the current form
+	$(".switch-hide-token-field").find("input").change(function () {
+		var root = $(this).parents("form");
+		var state = this.checked;
+		var target_elements = root.find(".token-field");
+		if (state) {
+			target_elements.hide();
+		} else {
+			target_elements.show();
+		}
+		$(this).prop("checked", state);
+	});
+	// Ensure initial visibility is consistent with form state
+	$(".switch-hide-token-field").find("input").trigger("change");
+	
 	// Stepper range clamping
 	$(".stepper-number").change(function() {
 		var max = +($(this).attr("max"));

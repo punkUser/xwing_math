@@ -159,9 +159,14 @@ public class WWWServer
         AttackForm attack4 = create_form_from_url!AttackForm(req.query.get("a5", ""), 4);
         AttackForm attack5 = create_form_from_url!AttackForm(req.query.get("a6", ""), 5);
         AttackForm attack6 = create_form_from_url!AttackForm(req.query.get("a7", ""), 6);
+        AttackForm attack7 = create_form_from_url!AttackForm(req.query.get("a8", ""), 7);
+        AttackForm attack8 = create_form_from_url!AttackForm(req.query.get("a9", ""), 8);
+        AttackForm attack9 = create_form_from_url!AttackForm(req.query.get("a10", ""), 9);
 
         auto server_settings = m_server_settings;
-        res.render!("multi2_form.dt", server_settings, defense, attack0, attack1, attack2, attack3, attack4, attack5, attack6);
+        res.render!("multi2_form.dt", server_settings, defense,
+                    attack0, attack1, attack2, attack3, attack4,
+                    attack5, attack6, attack7, attack8, attack9);
     }
 
     private void simulate_multi2(HTTPServerRequest req, HTTPServerResponse res)
@@ -170,7 +175,7 @@ public class WWWServer
 
         auto defense_form = create_form_from_fields!DefenseForm(req.json["defense"]);
 
-        AttackForm[7] attack_form;
+        AttackForm[10] attack_form;
         foreach (i; 0 .. cast(int)attack_form.length)
             attack_form[i] = create_form_from_fields!AttackForm(req.json["attack" ~ to!string(i)], i);
 
@@ -181,7 +186,7 @@ public class WWWServer
 
         // Save results for each attack as we accumulate
         int max_enabled_attack = 0;
-        SimulationResults[7] results_after_attack;
+        SimulationResults[attack_form.length] results_after_attack;
         {
             auto sw = StopWatch(AutoStart.yes);
 
@@ -196,11 +201,15 @@ public class WWWServer
 
             foreach (i; 0 .. cast(int)attack_form.length)
             {
-                TokenState attack_tokens = to_attack_tokens2(attack_form[i]);
-                simulation_states.replace_attack_tokens(attack_tokens);
-
                 if (attack_form[i].enabled)
                 {
+                    // Optionally don't replace attack tokens if selected
+                    if (!attack_form[i].previous_tokens_enabled)
+                    {
+                        TokenState attack_tokens = to_attack_tokens2(attack_form[i]);                
+                        simulation_states.replace_attack_tokens(attack_tokens);
+                    }
+
                     // NOTE: Query string parameter human visible so 1-based
                     form_state_string ~= format("&a%d=%s", (i+1), serialize_form_to_url(attack_form[i]));
                     max_enabled_attack = i;

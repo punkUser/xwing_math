@@ -27,7 +27,11 @@ html(class="no-js", lang="en")
                             li
                                 a(href="#{server_settings.url_root}2/multi_preset/?nas&a1=AgM&a2=AgM&a3=AgM&a4=AgM") 4x 3-Dice Focus
                             li
+                                a(href="#{server_settings.url_root}2/multi_preset/?nas&a1=ANsAAA&a2=ANsAAA&a3=ANsAAA&a4=ANsAAA") 4x Ion Y-Wings w/ VTG
+                            li
                                 a(href="#{server_settings.url_root}2/multi_preset/?nas&a1=AgM&a2=AgM&a3=AgM&a4=AgM&a5=AgM") 5x 3-Dice Focus
+                            li
+                                a(href="#{server_settings.url_root}2/multi_preset/?nas&a1=ANsAAA&a2=ANsAAA&a3=ANsAAA&a4=ANsAAA&a5=DQMAAA") 5x Ion Y-Wings (4 w/ VTG)
                             li
                                 a(href="#{server_settings.url_root}2/multi_preset/?nas&a1=AgM&a2=AgM&a3=AgM&a4=AgM&a5=AgM&a6=AgM") 6x 3-Dice Focus
                             li

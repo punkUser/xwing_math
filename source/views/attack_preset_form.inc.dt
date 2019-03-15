@@ -46,18 +46,7 @@
                 - switch_control_t!("lock" , form_name)("Lock");
 
                 - if (include_bonus_attack)
-                    - mixin("bool bonus_attack_enabled = " ~ form_name ~ ".bonus_attack_enabled;");
-                    .grid-x
-                        .cell.auto
-                            label(for="#{form_name}_bonus_attack_enabled") Bonus Attack
-                        .cell.shrink
-                            .switch.small
-                                - if (bonus_attack_enabled)
-                                    input.switch-input(id="#{form_name}_bonus_attack_enabled", name="bonus_attack_enabled", type="checkbox", data-toggle="#{form_name}_bonus_attack_panel", checked)
-                                - else
-                                    input.switch-input(id="#{form_name}_bonus_attack_enabled", name="bonus_attack_enabled", type="checkbox", data-toggle="#{form_name}_bonus_attack_panel")
-                                label.switch-paddle(for="#{form_name}_bonus_attack_enabled")
-
+                    - bool bonus_attack_enabled = switch_control_t!("bonus_attack_enabled", form_name)("Bonus Attack", form_name ~ "_bonus_attack_panel");
                     - string bonus_attack_initial_visibility = bonus_attack_enabled ? "" : "hide";
                     div(id="#{form_name}_bonus_attack_panel", data-toggler=".hide", class="#{bonus_attack_initial_visibility}")
                         - attack_preset_dropdown!("bonus_attack_preset", form_name)();

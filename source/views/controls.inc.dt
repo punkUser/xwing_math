@@ -1,4 +1,4 @@
-- void switch_control_t(string name, string form_name = "form")(string label)
+- bool switch_control_t(string name, string form_name = "form")(string label, string data_toggle = "")
     - mixin("bool init = " ~ form_name ~ "." ~ name ~ ";");
 
     .grid-x
@@ -6,11 +6,20 @@
             label(for="#{form_name}_#{name}") #{label}
         .shrink.cell
             .switch.small
-                - if (init)
-                    input.switch-input(id="#{form_name}_#{name}", name="#{name}", type="checkbox", checked)
+                - if (data_toggle.length > 0)
+                    - if (init)
+                        input.switch-input(id="#{form_name}_#{name}", name="#{name}", type="checkbox", checked, data-toggle="#{data_toggle}")
+                    - else
+                        input.switch-input(id="#{form_name}_#{name}", name="#{name}", type="checkbox", data-toggle="#{data_toggle}")
                 - else
-                    input.switch-input(id="#{form_name}_#{name}", name="#{name}", type="checkbox")
+                    - if (init)
+                        input.switch-input(id="#{form_name}_#{name}", name="#{name}", type="checkbox", checked)
+                    - else
+                        input.switch-input(id="#{form_name}_#{name}", name="#{name}", type="checkbox")
                 label.switch-paddle(for="#{form_name}_#{name}")
+
+    - return init;
+     
 
 - void stepper_control_t(string name, string form_name = "form")(string label, int min, int max, bool set_buttons = false)
     - import std.algorithm.comparison;

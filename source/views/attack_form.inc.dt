@@ -29,24 +29,28 @@
                     - stepper_control_t!("defense_dice_diff",    form_name)("+/- Defense Dice", -3, 3);
                     - switch_control_t !("roll_all_hits",        form_name)("Roll All Hits");
 
-                .grid-x.small-up-1.medium-up-1.large-up-2
-                    .cell
-                        fieldset.fieldset
-                            legend Tokens
-                            - stepper_control_t!("focus_count",        form_name)("Focus", 0, 7);
-                            - stepper_control_t!("calculate_count",    form_name)("Calculate", 0, 7);
-                            - stepper_control_t!("evade_count",        form_name)("Evade", 0, 7);
-                            - stepper_control_t!("reinforce_count",    form_name)("Reinforce", 0, 1);
-                            - stepper_control_t!("stress_count",       form_name)("Stress", 0, 7);
-                            //-- stepper_control_t!("jam_count",          form_name)("Jam", 0, 7);
-                            //-- stepper_control_t!("tractor_count",      form_name)("Tractor", 0, 7);
-                            //-- stepper_control_t!("ion_count",          form_name)("Ion", 0, 7);
-                            //-- stepper_control_t!("disarm_count",       form_name)("Disarm", 0, 7);
-                    .cell
-                        fieldset.fieldset
-                            legend Ship
-                            - stepper_control_t!("lock_count",         form_name)("Lock", 0, 1);
-                            - stepper_control_t!("force_count",        form_name)("Force", 0, 7);
+                .switch-hide-token-field
+                    - switch_control_t!("previous_tokens_enabled",   form_name)("Use Previous Attack Tokens");
+
+                .token-field
+                    .grid-x.small-up-1.medium-up-1.large-up-2
+                        .cell
+                            fieldset.fieldset
+                                legend Tokens
+                                - stepper_control_t!("focus_count",        form_name)("Focus", 0, 7);
+                                - stepper_control_t!("calculate_count",    form_name)("Calculate", 0, 7);
+                                - stepper_control_t!("evade_count",        form_name)("Evade", 0, 7);
+                                - stepper_control_t!("reinforce_count",    form_name)("Reinforce", 0, 1);
+                                - stepper_control_t!("stress_count",       form_name)("Stress", 0, 7);
+                                //-- stepper_control_t!("jam_count",          form_name)("Jam", 0, 7);
+                                //-- stepper_control_t!("tractor_count",      form_name)("Tractor", 0, 7);
+                                //-- stepper_control_t!("ion_count",          form_name)("Ion", 0, 7);
+                                //-- stepper_control_t!("disarm_count",       form_name)("Disarm", 0, 7);
+                        .cell
+                            fieldset.fieldset
+                                legend Ship
+                                - stepper_control_t!("lock_count",         form_name)("Lock", 0, 1);
+                                - stepper_control_t!("force_count",        form_name)("Force", 0, 7);
                             
                                 
                 fieldset.fieldset
@@ -80,7 +84,8 @@
                     - switch_control_t!("fearless",            form_name)("Fear/Ruthless");
                     - switch_control_t!("heroic",              form_name)("Heroic");
                     - switch_control_t!("juke",                form_name)("Juke");
-                    - switch_control_t!("lone_wolf",           form_name)("Lone Wolf");
+                    .token-field
+                        - switch_control_t!("lone_wolf",           form_name)("Lone Wolf");
                     - switch_control_t!("marksmanship",        form_name)("Marksmanship");
                     - switch_control_t!("predator",            form_name)("Predator");
                     - switch_control_t!("predictive_shot",     form_name)("Predictive Shot");

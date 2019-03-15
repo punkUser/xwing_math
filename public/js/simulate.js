@@ -208,6 +208,9 @@ function simulateUpdate(updateHistory = false)
 		"attack4":  serializeForm("#attack4_form"),
 		"attack5":  serializeForm("#attack5_form"),
 		"attack6":  serializeForm("#attack6_form"),
+		"attack7":  serializeForm("#attack7_form"),
+		"attack8":  serializeForm("#attack8_form"),
+		"attack9":  serializeForm("#attack9_form"),
 	};	
 	//console.log(params);
 	
