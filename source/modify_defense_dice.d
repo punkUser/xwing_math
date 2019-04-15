@@ -58,13 +58,6 @@ private StateFork after_rolling(const(SimulationSetup) setup, ref SimulationStat
     size_t search_options_count = 0;
     search_options[search_options_count++] = do_defense_finish_after_rolling();
 
-    if (setup.defense.rebel_han_pilot && !state.defense_temp.used_rebel_han_pilot)
-    {
-        // Only consider if we have blanks or focus to reroll
-        if ((state.defense_dice.count_mutable(DieResult.Blank) + state.defense_dice.count_mutable(DieResult.Focus)) > 0)
-            search_options[search_options_count++] = do_defense_rebel_han_pilot();
-    }
-
     int rerollable_results = state.defense_dice.results[DieResult.Blank] + state.defense_dice.results[DieResult.Focus];
     if (rerollable_results > 0)
     {
@@ -224,36 +217,26 @@ private StateFork modify_defense_dice(
     SearchDelegate[16] search_options;
     size_t search_options_count = 0;
 
-    // First option to try is just finishing up our defense mods (spending focus and things like that) and terminating
-
-    // NOTE: If we have any reinforce tokens, first try aiming for lower evades targets... if they produce the
-    // same expected damage as aiming to dodge everything it's better to just rely on that and likely spend fewer tokens.
-    if (state.defense_tokens.reinforce > 0)
+    // First check and "free" stuff that might avoid spending tokens but otherwise give the same expected result
+    if (setup.defense.rebel_han_pilot && !state.defense_temp.used_rebel_han_pilot)
     {
-        int evades_that_matter = evades_target - state.defense_tokens.reinforce - 1;
-        if (evades_that_matter >= 0)
-            search_options[search_options_count++] = do_defense_finish_dmdd(evades_that_matter);
+        // Only consider if we have blanks or focus to reroll
+        if ((state.defense_dice.count_mutable(DieResult.Blank) + state.defense_dice.count_mutable(DieResult.Focus)) > 0)
+            search_options[search_options_count++] = do_defense_rebel_han_pilot();
     }
-    // Regular modding to attempt to avoid all damage
-    search_options[search_options_count++] = do_defense_finish_dmdd(evades_target);
-
-    // Any token spending options we might want to do before reroll, such as those that add results
-    if (setup.defense.shara_bey_pilot && state.defense_tokens.lock > 0 && !state.defense_temp.used_shara_bey_pilot)
-        search_options[search_options_count++] = do_defense_shara_bey();
 
     // Rerolls - see comments in modify_attack_dice as the logic is similar
-    int rerollable_focus_results = state.defense_dice.results[DieResult.Focus];
-    int rerollable_blank_results = state.defense_dice.results[DieResult.Blank];
+    const int max_dice_to_reroll = state.defense_dice.results[DieResult.Blank] + state.defense_dice.results[DieResult.Focus];
 
     // Similar logic to attack rerolls - see documentation there (modify_attack_dice.d)
+    // TODO: Gas clouds changes this!
     if (setup.defense.heroic && state.defense_dice.are_all_blank() &&
-        state.defense_dice.count(DieResult.Blank) > 1 && rerollable_blank_results > 0)
+        state.defense_dice.count(DieResult.Blank) > 1 && state.defense_dice.results[DieResult.Blank] > 0)
     {
         search_options[search_options_count++] = do_defense_heroic();
     }
     else
     {
-        const int max_dice_to_reroll = rerollable_blank_results + rerollable_focus_results;
         foreach_reverse (const dice_to_reroll; 1 .. (max_dice_to_reroll+1))
         {
             if (dice_to_reroll == 3)
@@ -278,14 +261,36 @@ private StateFork modify_defense_dice(
                     search_options[search_options_count++] = do_defense_reroll_2(dice_to_reroll);
                 else if (setup.defense.reroll_3_count > state.defense_temp.used_reroll_3_count)
                     search_options[search_options_count++] = do_defense_reroll_3(dice_to_reroll);
-                else 
-                {
-                    if (state.defense_tokens.elusive)
-                        search_options[search_options_count++] = do_defense_elusive();
-                    else if (state.defense_tokens.lone_wolf)
-                        search_options[search_options_count++] = do_defense_lone_wolf();
-                }
             }
+        }
+    }
+
+    // NOTE: If we have any reinforce tokens, first try aiming for lower evades targets... if they produce the
+    // same expected damage as aiming to dodge everything it's better to just rely on that and likely spend fewer tokens.
+    // TODO: Technically we should be searching these options throughout the entire modification step but that's quite
+    // complicated and nearly impossible for humans to implement in the general case, so just handle it in the final step.
+    if (state.defense_tokens.reinforce > 0)
+    {
+        int evades_that_matter = evades_target - state.defense_tokens.reinforce - 1;
+        if (evades_that_matter >= 0)
+            search_options[search_options_count++] = do_defense_finish_dmdd(evades_that_matter);
+    }
+    // Regular modding to attempt to avoid all damage
+    search_options[search_options_count++] = do_defense_finish_dmdd(evades_target);
+
+    // Now do abilities that spend tokens or charges
+
+    if (setup.defense.shara_bey_pilot && state.defense_tokens.lock > 0 && !state.defense_temp.used_shara_bey_pilot)
+        search_options[search_options_count++] = do_defense_shara_bey();
+
+    foreach_reverse (const dice_to_reroll; 1 .. (max_dice_to_reroll+1))
+    {
+        if (dice_to_reroll == 1)
+        {
+            if (state.defense_tokens.lone_wolf)
+                search_options[search_options_count++] = do_defense_lone_wolf();
+            else if (state.defense_tokens.elusive)
+                search_options[search_options_count++] = do_defense_elusive();
         }
     }
 
@@ -428,21 +433,23 @@ private SearchDelegate do_defense_rebel_han_pilot()
     {
         assert(!state.defense_temp.used_rebel_han_pilot);
 
-        // Roll all mutable dice again
-        // NOTE: We don't have clarification on whether or not any potentially "unmodifyable"/final dice would be affected
-        // We also don't know if we should be trying to track which dice have already been rerolled "through" this reroll
-        // Thus we'll do the simplest thing for now since these interactions are not currently possible yet anyways.
-        int dice_to_roll =
-            state.defense_dice.count_mutable(DieResult.Blank) + 
-            state.defense_dice.count_mutable(DieResult.Focus) +
-            state.defense_dice.count_mutable(DieResult.Evade);
-        assert(dice_to_roll > 0);
+        // See notes in attack Han pilot...
+
+        int roll_count =
+            state.defense_dice.results[DieResult.Blank] + 
+            state.defense_dice.results[DieResult.Focus] +
+            state.defense_dice.results[DieResult.Evade];
+        int reroll_count =
+            state.defense_dice.rerolled_results[DieResult.Blank] + 
+            state.defense_dice.rerolled_results[DieResult.Focus] +
+            state.defense_dice.rerolled_results[DieResult.Evade];
+        assert((roll_count + reroll_count) > 0);
 
         state.defense_dice.cancel_mutable();        
         state.defense_temp.used_rebel_han_pilot = true;
 
         // NOTE: "Roll" not "Reroll" here as it doesn't count as rerolling
-        return StateForkRoll(dice_to_roll);
+        return StateForkRollAndReroll(roll_count, reroll_count);
     };
 }
 

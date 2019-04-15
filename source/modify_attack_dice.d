@@ -132,13 +132,12 @@ public StateFork modify_attack_dice(const(SimulationSetup) setup, ref Simulation
     }
 
     // "Free" rerolls that don't involve token spending. Check these before we finish up the attack as they might avoid token spending.
-    int rerollable_focus_results = state.attack_dice.results[DieResult.Focus];
-    int rerollable_blank_results = state.attack_dice.results[DieResult.Blank];
+    const int max_dice_to_reroll = state.attack_dice.results[DieResult.Blank] + state.attack_dice.results[DieResult.Focus];
 
     // If we can use heroic that's the only option we need for rerolls; optimal effect to reroll all dice if all are blank
     // TODO: Gas clouds changes this!
     if (setup.attack.heroic && state.attack_dice.are_all_blank() &&
-        state.attack_dice.count(DieResult.Blank) > 1 && rerollable_blank_results > 0)
+        state.attack_dice.count(DieResult.Blank) > 1 && state.defense_dice.results[DieResult.Blank] > 0)
     {
         search_options[search_options_count++] = do_attack_heroic();
     }
@@ -146,7 +145,6 @@ public StateFork modify_attack_dice(const(SimulationSetup) setup, ref Simulation
     {
         // TODO: Gas clouds changes this! Need to check focus and blank rerolls separately
         // TODO: Given gas clouds, probably want to invert this loop to instead just be based on the abilities present
-        const int max_dice_to_reroll = rerollable_blank_results + rerollable_focus_results;
         foreach_reverse (const dice_to_reroll; 1 .. (max_dice_to_reroll+1))
         {
             // NOTE: Can use "reroll up to 2/3" abilities to reroll just one if needed as well, but less desirable
@@ -178,13 +176,13 @@ public StateFork modify_attack_dice(const(SimulationSetup) setup, ref Simulation
     search_options[search_options_count++] = do_attack_finish_amad();
 
     // Now do abilities that spend tokens or charges
+
     if (setup.attack.shara_bey_pilot && state.attack_tokens.lock > 0 && !state.attack_temp.cannot_spend_lock && !state.attack_temp.used_shara_bey_pilot)
         search_options[search_options_count++] = do_attack_shara_bey();
 
     if (setup.attack.advanced_optics && state.attack_tokens.focus > 0 && state.attack_dice.count(DieResult.Blank) > 0 && !state.attack_temp.used_advanced_optics)
         search_options[search_options_count++] = do_attack_advanced_optics();
 
-    const int max_dice_to_reroll = rerollable_blank_results + rerollable_focus_results;
     foreach_reverse (const dice_to_reroll; 1 .. (max_dice_to_reroll+1))
     {
         if (dice_to_reroll == 1)
