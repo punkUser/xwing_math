@@ -24,7 +24,10 @@ private void modify_attack_tree(const(SimulationSetup) setup,
     // Make all the child nodes and append them contiguously to the list
     int first_child_index = cast(int)nodes.length;
 
-    nodes[current_node].reroll_count = fork.roll_count;     // TODO: Probably switch to a fork in struct
+    // TODO: This is a bit hacky but good enough for the moment
+    // TODO: Probably switch to a fork in struct
+    nodes[current_node].reroll_count = fork.roll_count + fork.reroll_count;
+
     fork_attack_state(nodes[current_node].after, fork, (SimulationState next_state, double probability) {
         ModifyTreeNode new_node;
         new_node.child_probability = probability;

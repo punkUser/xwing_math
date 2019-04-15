@@ -371,7 +371,7 @@ public class WWWServer
         content.crit_pdf[] = 0.0;
         content.hit_inv_cdf[] = 0.0;
 
-        foreach (int i, SimulationResult result; results.total_hits_pdf)
+        foreach (i, SimulationResult result; results.total_hits_pdf)
         {
             double total_probability = result.hits + result.crits;
             double fraction_crits = total_probability > 0.0 ? result.crits / total_probability : 0.0;
@@ -596,13 +596,13 @@ public class WWWServer
         
         content.shots_to_die_labels = new string[results.length];
         content.shots_to_die        = new double[results.length];
-        foreach (int i, r; results)
+        foreach (i, r; results)
         {
             content.shots_to_die_labels[i] = r.label;
             content.shots_to_die[i] = r.mean_shots_to_die;
             if (!r.precomputed)
             {
-                content.your_ship_index = i;
+                content.your_ship_index = cast(int)i;
                 content.expected_shots_string = format("%s%.3f", r.converged ? "" : ">", r.mean_shots_to_die);
                 content.shots_cdf = r.shots_cdf.dup;
             }

@@ -18,13 +18,6 @@ private StateFork after_rolling(const(SimulationSetup) setup, ref SimulationStat
     
     search_options[search_options_count++] = do_attack_finish_after_rolling();
 
-    if (setup.attack.rebel_han_pilot && !state.attack_temp.used_rebel_han_pilot)
-    {
-        // Only consider if we have blanks or focus to reroll
-        if ((state.attack_dice.count_mutable(DieResult.Blank) + state.attack_dice.count_mutable(DieResult.Focus)) > 0)
-            search_options[search_options_count++] = do_attack_rebel_han_pilot();
-    }
-
     int rerollable_results = state.attack_dice.results[DieResult.Blank] + state.attack_dice.results[DieResult.Focus];
     if (rerollable_results > 0)
     {
@@ -130,31 +123,20 @@ public StateFork modify_attack_dice(const(SimulationSetup) setup, ref Simulation
     SearchDelegate[32] search_options;
     size_t search_options_count = 0;
 
-    // First option to try is just finishing up our attack mods (spending focus and things like that) and terminating
-    search_options[search_options_count++] = do_attack_finish_amad();
+    // First check and "free" stuff that might avoid spending tokens but otherwise give the same expected results
+    if (setup.attack.rebel_han_pilot && !state.attack_temp.used_rebel_han_pilot)
+    {
+        // Only consider if we have blanks or focus to reroll
+        if ((state.attack_dice.count_mutable(DieResult.Blank) + state.attack_dice.count_mutable(DieResult.Focus)) > 0)
+            search_options[search_options_count++] = do_attack_rebel_han_pilot();
+    }
 
-    // Any token spending options we might want to do before reroll, such as those that add results
-    if (setup.attack.shara_bey_pilot && state.attack_tokens.lock > 0 && !state.attack_temp.cannot_spend_lock && !state.attack_temp.used_shara_bey_pilot)
-        search_options[search_options_count++] = do_attack_shara_bey();
-
-    if (setup.attack.advanced_optics && state.attack_tokens.focus > 0 && state.attack_dice.count(DieResult.Blank) > 0 && !state.attack_temp.used_advanced_optics)
-        search_options[search_options_count++] = do_attack_advanced_optics();
-
-    // The top level decision here is which dice to reroll. As noted above, it's always desirable to reroll blanks first and thus
-    // the decision is effectively just how many dice to reroll from 1..(all rerollable blanks + all rerollable focus).
-    // We'll put rerolling *more* dice earlier in the list of search results so that we favor stuff like spending a lock to
-    // reroll all dice at once vs. using a sequence of single die rerolls, *unless* the latter produces a better expected damage.
-    // Since each of these reroll loops generally consumes a single token this has the effect of roughly trying to minimize token
-    // use for the same result, although keep in mind that if doing rerolls one by one improves the expected damage, we do actually
-    // want to do that (and the forward search will figure that out for us).
-
-    // This code could be restructured a bit for performance, but given relatively small dice counts and subtlety of this logic,
-    // its desirable to keep it more easily readable/editable for now.
-
+    // "Free" rerolls that don't involve token spending. Check these before we finish up the attack as they might avoid token spending.
     int rerollable_focus_results = state.attack_dice.results[DieResult.Focus];
     int rerollable_blank_results = state.attack_dice.results[DieResult.Blank];
 
     // If we can use heroic that's the only option we need for rerolls; optimal effect to reroll all dice if all are blank
+    // TODO: Gas clouds changes this!
     if (setup.attack.heroic && state.attack_dice.are_all_blank() &&
         state.attack_dice.count(DieResult.Blank) > 1 && rerollable_blank_results > 0)
     {
@@ -162,16 +144,12 @@ public StateFork modify_attack_dice(const(SimulationSetup) setup, ref Simulation
     }
     else
     {
+        // TODO: Gas clouds changes this! Need to check focus and blank rerolls separately
+        // TODO: Given gas clouds, probably want to invert this loop to instead just be based on the abilities present
         const int max_dice_to_reroll = rerollable_blank_results + rerollable_focus_results;
         foreach_reverse (const dice_to_reroll; 1 .. (max_dice_to_reroll+1))
         {
-            // Now append to the search any effects that can reroll this set of dice
-            // Again note that *for this set of dice to reroll*, put the more desirable (less general) tokens/effects to use first
-
-            // Always prefer free rerolls - don't even add paid ones if free ones are available
             // NOTE: Can use "reroll up to 2/3" abilities to reroll just one if needed as well, but less desirable
-
-            // TODO: Various ways to clean up this logic but this keeps it logically clear at least
             if (dice_to_reroll == 3)
             {
                 if (setup.attack.reroll_3_count > state.attack_temp.used_reroll_3_count)
@@ -192,17 +170,32 @@ public StateFork modify_attack_dice(const(SimulationSetup) setup, ref Simulation
                     search_options[search_options_count++] = do_attack_reroll_2(dice_to_reroll);
                 else if (setup.attack.reroll_3_count > state.attack_temp.used_reroll_3_count)
                     search_options[search_options_count++] = do_attack_reroll_3(dice_to_reroll);
-                else 
-                {
-                    if (state.attack_tokens.lone_wolf)
-                        search_options[search_options_count++] = do_attack_lone_wolf();
-                }
             }
-        
-            // Lock can always reroll arbitrary sets of dice
-            if (state.attack_tokens.lock > 0 && !state.attack_temp.cannot_spend_lock)
-                search_options[search_options_count++] = do_attack_lock(dice_to_reroll);
         }
+    }
+
+    // Now check finishing up attack mods and stopping
+    search_options[search_options_count++] = do_attack_finish_amad();
+
+    // Now do abilities that spend tokens or charges
+    if (setup.attack.shara_bey_pilot && state.attack_tokens.lock > 0 && !state.attack_temp.cannot_spend_lock && !state.attack_temp.used_shara_bey_pilot)
+        search_options[search_options_count++] = do_attack_shara_bey();
+
+    if (setup.attack.advanced_optics && state.attack_tokens.focus > 0 && state.attack_dice.count(DieResult.Blank) > 0 && !state.attack_temp.used_advanced_optics)
+        search_options[search_options_count++] = do_attack_advanced_optics();
+
+    const int max_dice_to_reroll = rerollable_blank_results + rerollable_focus_results;
+    foreach_reverse (const dice_to_reroll; 1 .. (max_dice_to_reroll+1))
+    {
+        if (dice_to_reroll == 1)
+        {
+            if (state.attack_tokens.lone_wolf)
+                search_options[search_options_count++] = do_attack_lone_wolf();
+        }
+
+        // Lock can always reroll arbitrary sets of dice
+        if (state.attack_tokens.lock > 0 && !state.attack_temp.cannot_spend_lock)
+            search_options[search_options_count++] = do_attack_lock(dice_to_reroll);
     }
 
     // Search modifies the state to execute the best of the provided options
@@ -337,21 +330,29 @@ private SearchDelegate do_attack_rebel_han_pilot()
         assert(!state.attack_temp.used_rebel_han_pilot);
 
         // Roll all mutable dice again
+
         // NOTE: We don't have clarification on whether or not any potentially "unmodifyable"/final dice would be affected
-        // We also don't know if we should be trying to track which dice have already been rerolled "through" this reroll
-        // Thus we'll do the simplest thing for now since these interactions are not currently possible yet anyways.
-        int dice_to_roll =
-            state.attack_dice.count_mutable(DieResult.Blank) + 
-            state.attack_dice.count_mutable(DieResult.Focus) +
-            state.attack_dice.count_mutable(DieResult.Hit) +
-            state.attack_dice.count_mutable(DieResult.Crit);
-        assert(dice_to_roll > 0);
+        // so we ignore them (i.e. don't reroll them) for now.
+        
+        // NOTE: We keep track of which dice have already been rerolled "through" Han's reroll. We don't yet have a ruling
+        // on whether this is correct but it's likely the most consistent with the current rules.
+
+        int roll_count =
+            state.attack_dice.results[DieResult.Blank] + 
+            state.attack_dice.results[DieResult.Focus] +
+            state.attack_dice.results[DieResult.Hit] +
+            state.attack_dice.results[DieResult.Crit];
+        int reroll_count =
+            state.attack_dice.rerolled_results[DieResult.Blank] + 
+            state.attack_dice.rerolled_results[DieResult.Focus] +
+            state.attack_dice.rerolled_results[DieResult.Hit] +
+            state.attack_dice.rerolled_results[DieResult.Crit];
+        assert((roll_count + reroll_count) > 0);
 
         state.attack_dice.cancel_mutable();        
         state.attack_temp.used_rebel_han_pilot = true;
 
-        // NOTE: "Roll" not "Reroll" here as it doesn't count as rerolling
-        return StateForkRoll(dice_to_roll);
+        return StateForkRollAndReroll(roll_count, reroll_count);
     };
 }
     

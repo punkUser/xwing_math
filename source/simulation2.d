@@ -164,7 +164,7 @@ private SimulationStateSet simulate_single_attack(
         else
         {
             // Regular roll
-            states.roll_attack_dice(false, initial_state, setup.attack.dice);
+            states.roll_attack_dice(initial_state, setup.attack.dice);
         }
     }
 
@@ -221,7 +221,7 @@ private SimulationStateSet simulate_single_attack(
                 defense_dice = min(defense_dice, hits_crits_count);
             }
 
-            finished_states.roll_defense_dice(false, state, defense_dice);
+            finished_states.roll_defense_dice(state, defense_dice);
         }
 
         swap(states, finished_states);

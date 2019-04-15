@@ -177,8 +177,7 @@ struct DefenseTempState
 public enum StateForkType : int
 {
     None = 0,       // No fork needed
-    Reroll,         // Reroll dice into _rerolled pool (most common!)
-    Roll,           // Roll dice into regular dice pool that can be rerolled (stuff like rebel Han pilot)
+    Roll,           // Roll and reroll dice into appropriate pools based on counts
 };
 
 public struct StateFork
@@ -187,7 +186,8 @@ public struct StateFork
 
     // TODO: Could be a more complicated Variant enum or similar in the long run but this is fine for now
     StateForkType type = StateForkType.None;
-    int roll_count = 0;         // for Reroll and Roll
+    int roll_count = 0;       // Roll into regular pool. Initial role or some rare abilities like Rebel Han pilot.
+    int reroll_count = 0;     // Roll into "rerolled" pool. Most common during dice mods!
 };
 
 // Associated factor methods for convenience
@@ -195,23 +195,33 @@ public StateFork StateForkNone()
 {   
     return StateFork();
 }
-public StateFork StateForkReroll(int count)
+public StateFork StateForkRollAndReroll(int roll_count, int reroll_count)
 {   
-    assert(count > 0);
+    assert(roll_count > 0 || reroll_count > 0);
     StateFork fork;
-    fork.type = StateForkType.Reroll;
-    fork.roll_count = count;
+    fork.type = StateForkType.Roll;
+    fork.roll_count = roll_count;
+    fork.reroll_count = reroll_count;
     return fork;
 }
 public StateFork StateForkRoll(int count)
-{
+{   
     assert(count > 0);
     StateFork fork;
     fork.type = StateForkType.Roll;
     fork.roll_count = count;
+    fork.reroll_count = 0;
     return fork;
 }
-
+public StateFork StateForkReroll(int count)
+{   
+    assert(count > 0);
+    StateFork fork;
+    fork.type = StateForkType.Roll;
+    fork.roll_count = 0;
+    fork.reroll_count = count;
+    return fork;
+}
 
 public struct SimulationState
 {
@@ -256,11 +266,33 @@ public struct SimulationState
 // State forking utilities
 
 // delegate params are next_state, probability (also already baked into next_state probability)
-public void roll_attack_dice(bool reroll, SimulationState prev_state, int dice_count, void delegate(SimulationState, double) dg)
+public void roll_attack_dice(SimulationState prev_state, int roll_count, int reroll_count, void delegate(SimulationState, double) dg)
 {
-    if (reroll)
+    // NOTE: Can safely only use the first branch, but keeping the others for potential perf until we can test
+    if (roll_count > 0 && reroll_count > 0)
     {
-        dice.roll_attack_dice(dice_count, (int blank, int focus, int hit, int crit, double probability) {
+        // If they need both rolls and rerolls, we need the nested version
+        dice.roll_attack_dice(reroll_count, (int blank_reroll, int focus_reroll, int hit_reroll, int crit_reroll, double probability_reroll) {
+            dice.roll_attack_dice(roll_count, (int blank_roll, int focus_roll, int hit_roll, int crit_roll, double probability_roll) {
+                SimulationState next_state = prev_state;
+                next_state.attack_dice.rerolled_results[DieResult.Crit]  += crit_reroll;
+                next_state.attack_dice.rerolled_results[DieResult.Hit]   += hit_reroll;
+                next_state.attack_dice.rerolled_results[DieResult.Focus] += focus_reroll;
+                next_state.attack_dice.rerolled_results[DieResult.Blank] += blank_reroll;
+                next_state.attack_dice.results[DieResult.Crit]  += crit_roll;
+                next_state.attack_dice.results[DieResult.Hit]   += hit_roll;
+                next_state.attack_dice.results[DieResult.Focus] += focus_roll;
+                next_state.attack_dice.results[DieResult.Blank] += blank_roll;
+
+                double probability = probability_reroll * probability_roll;
+                next_state.probability *= probability;
+                dg(next_state, probability);
+            });
+        });
+    }
+    else if (reroll_count > 0)
+    {
+        dice.roll_attack_dice(reroll_count, (int blank, int focus, int hit, int crit, double probability) {
             SimulationState next_state = prev_state;
             next_state.attack_dice.rerolled_results[DieResult.Crit]  += crit;
             next_state.attack_dice.rerolled_results[DieResult.Hit]   += hit;
@@ -272,7 +304,7 @@ public void roll_attack_dice(bool reroll, SimulationState prev_state, int dice_c
     }
     else
     {
-        dice.roll_attack_dice(dice_count, (int blank, int focus, int hit, int crit, double probability) {
+        dice.roll_attack_dice(roll_count, (int blank, int focus, int hit, int crit, double probability) {
             SimulationState next_state = prev_state;
             next_state.attack_dice.results[DieResult.Crit]  += crit;
             next_state.attack_dice.results[DieResult.Hit]   += hit;
@@ -286,11 +318,31 @@ public void roll_attack_dice(bool reroll, SimulationState prev_state, int dice_c
 
 
 // delegate params are next_state, probability (also already baked into next_state probability)
-public void roll_defense_dice(bool reroll, SimulationState prev_state, int dice_count, void delegate(SimulationState, double) dg)
+public void roll_defense_dice(SimulationState prev_state, int roll_count, int reroll_count, void delegate(SimulationState, double) dg)
 {
-    if (reroll)
+    // NOTE: Can safely only use the first branch, but keeping the others for potential perf until we can test
+    if (roll_count > 0 && reroll_count > 0)
     {
-        dice.roll_defense_dice(dice_count, (int blank, int focus, int evade, double probability) {
+        // If they need both rolls and rerolls, we need the nested version
+        dice.roll_defense_dice(reroll_count, (int blank_reroll, int focus_reroll, int evade_reroll, double probability_reroll) {
+            dice.roll_defense_dice(roll_count, (int blank_roll, int focus_roll, int evade_roll, double probability_roll) {
+                SimulationState next_state = prev_state;
+                next_state.defense_dice.rerolled_results[DieResult.Evade] += evade_reroll;
+                next_state.defense_dice.rerolled_results[DieResult.Focus] += focus_reroll;
+                next_state.defense_dice.rerolled_results[DieResult.Blank] += blank_reroll;
+                next_state.defense_dice.results[DieResult.Evade] += evade_roll;
+                next_state.defense_dice.results[DieResult.Focus] += focus_roll;
+                next_state.defense_dice.results[DieResult.Blank] += blank_roll;
+
+                double probability = probability_reroll * probability_roll;
+                next_state.probability *= probability;
+                dg(next_state, probability);
+            });
+        });
+    }
+    else if (reroll_count > 0)
+    {
+        dice.roll_defense_dice(reroll_count, (int blank, int focus, int evade, double probability) {
             SimulationState next_state = prev_state;
             next_state.defense_dice.rerolled_results[DieResult.Evade] += evade;
             next_state.defense_dice.rerolled_results[DieResult.Focus] += focus;
@@ -301,7 +353,7 @@ public void roll_defense_dice(bool reroll, SimulationState prev_state, int dice_
     }
     else
     {
-        dice.roll_defense_dice(dice_count, (int blank, int focus, int evade, double probability) {
+        dice.roll_defense_dice(roll_count, (int blank, int focus, int evade, double probability) {
             SimulationState next_state = prev_state;
             next_state.defense_dice.results[DieResult.Evade] += evade;
             next_state.defense_dice.results[DieResult.Focus] += focus;
@@ -320,11 +372,8 @@ public void fork_attack_state(SimulationState prev_state, const StateFork fork, 
     assert(fork.required());
     switch (fork.type)
     {
-        case StateForkType.Reroll:
-            roll_attack_dice(true, prev_state, fork.roll_count, dg);
-            break;
         case StateForkType.Roll:
-            roll_attack_dice(false, prev_state, fork.roll_count, dg);
+            roll_attack_dice(prev_state, fork.roll_count, fork.reroll_count, dg);
             break;
         default: assert(false);
     }
@@ -335,11 +384,8 @@ public void fork_defense_state(SimulationState prev_state, const StateFork fork,
     assert(fork.required());
     switch (fork.type)
     {
-        case StateForkType.Reroll:
-            roll_defense_dice(true, prev_state, fork.roll_count, dg);
-            break;
         case StateForkType.Roll:
-            roll_defense_dice(false, prev_state, fork.roll_count, dg);
+            roll_defense_dice(prev_state, fork.roll_count, fork.reroll_count, dg);
             break;
         default: assert(false);
     }
@@ -435,18 +481,17 @@ public class SimulationStateSet
         return removed_p;
     }
 
-    // If "reroll" is set the dice will be put into the "rerolled_results" pool, otherwise into the regular "results" pool.
-    public void roll_attack_dice(bool reroll, SimulationState prev_state, int dice_count)
+    // NOTE: Rolls into the regular results pool
+    // Handy utilities for invoking the initial roll. Can easily be done with fork_*_state as well for more control.
+    public void roll_attack_dice(SimulationState prev_state, int roll_count)
     {
-        .roll_attack_dice(reroll, prev_state, dice_count, (SimulationState next_state, double probability) {
+        .roll_attack_dice(prev_state, roll_count, 0, (SimulationState next_state, double probability) {
             push_back(next_state);
         });
     }
-
-    // If "reroll" is set the dice will be put into the "rerolled_results" pool, otherwise into the regular "results" pool.
-    public void roll_defense_dice(bool reroll, SimulationState prev_state, int dice_count)
+    public void roll_defense_dice(SimulationState prev_state, int roll_count)
     {
-        .roll_defense_dice(reroll, prev_state, dice_count, (SimulationState next_state, double probability) {
+        .roll_defense_dice(prev_state, roll_count, 0, (SimulationState next_state, double probability) {
             push_back(next_state);
         });
     }
@@ -457,7 +502,6 @@ public class SimulationStateSet
             push_back(next_state);
         });
     }
-
     public void fork_defense_state(SimulationState prev_state, const StateFork fork)
     {
         .fork_defense_state(prev_state, fork, (SimulationState next_state, double probability) {
