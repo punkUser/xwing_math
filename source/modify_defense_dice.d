@@ -54,39 +54,9 @@ private StateFork after_rolling(const(SimulationSetup) setup, ref SimulationStat
     }
 
 
-    SearchDelegate[16] search_options;
-    size_t search_options_count = 0;
-    search_options[search_options_count++] = do_defense_finish_after_rolling();
-
-    int rerollable_results = state.defense_dice.results[DieResult.Blank] + state.defense_dice.results[DieResult.Focus];
-    if (rerollable_results > 0)
-    {
-        // Lando pilot rerolls (all blanks)
-        if (setup.defense.scum_lando_pilot && !state.defense_temp.used_scum_lando_pilot &&
-            state.defense_tokens.stress == 0 && state.defense_dice.results[DieResult.Blank] > 0) {
-            search_options[search_options_count++] = do_defense_scum_lando_pilot();
-        }
-
-        // Lando crew rerolls (logic similar to attack - see notes there)
-        if (setup.defense.scum_lando_crew && !state.defense_temp.used_scum_lando_crew && rerollable_results > 0) {
-            bool at_least_two_blanks = state.defense_dice.results[DieResult.Blank] > 1;
-            // NOTE/TODO: Hard code this to not spend reinforce on defense for now as generally it will contribute more
-            // value each attack.
-            foreach (immutable token; [GreenToken.Calculate, GreenToken.Focus, GreenToken.Evade]) {
-                if (state.defense_tokens.count(token) == 0) continue;
-                if (rerollable_results > 1)
-                    search_options[search_options_count++] = do_defense_scum_lando_crew(2, token);
-                if (!at_least_two_blanks)
-                    search_options[search_options_count++] = do_defense_scum_lando_crew(1, token);
-            }
-        }
-    }
-
-    StateFork fork = search_defense(setup, state, search_options[0..search_options_count]);
-    if (fork.required())
-        return fork;
-    else
-        return after_rolling(setup, state);      // Continue after rolling
+    // All done
+    state.defense_temp.finished_after_rolling = true;
+    return StateForkNone();
 }
 
 private StateFork amdd(const(SimulationSetup) setup, ref SimulationState state)
@@ -214,7 +184,7 @@ private StateFork modify_defense_dice(
         return StateForkNone();
 
     // Search from all our potential token spending and rerolling options to find the optimal one
-    SearchDelegate[16] search_options;
+    SearchDelegate[64] search_options;
     size_t search_options_count = 0;
 
     // First check and "free" stuff that might avoid spending tokens but otherwise give the same expected result
@@ -283,14 +253,33 @@ private StateFork modify_defense_dice(
     if (setup.defense.shara_bey_pilot && state.defense_tokens.lock > 0 && !state.defense_temp.used_shara_bey_pilot)
         search_options[search_options_count++] = do_defense_shara_bey();
 
-    foreach_reverse (const dice_to_reroll; 1 .. (max_dice_to_reroll+1))
+    // Paid rerolls
+    if (max_dice_to_reroll > 0)
     {
-        if (dice_to_reroll == 1)
-        {
-            if (state.defense_tokens.lone_wolf)
-                search_options[search_options_count++] = do_defense_lone_wolf();
-            else if (state.defense_tokens.elusive)
-                search_options[search_options_count++] = do_defense_elusive();
+        // Lando pilot rerolls (all blanks)
+        if (setup.defense.scum_lando_pilot && !state.defense_temp.used_scum_lando_pilot &&
+            state.defense_tokens.stress == 0 && state.defense_dice.results[DieResult.Blank] > 0) {
+            search_options[search_options_count++] = do_defense_scum_lando_pilot();
+        }
+
+        // Reroll single die effects (we only need to check one)
+        if (state.defense_tokens.lone_wolf)
+            search_options[search_options_count++] = do_defense_lone_wolf();
+        else if (state.defense_tokens.elusive)
+            search_options[search_options_count++] = do_defense_elusive();
+
+        // Lando crew rerolls (logic similar to attack - see notes there)
+        if (setup.defense.scum_lando_crew && !state.defense_temp.used_scum_lando_crew) {
+            bool at_least_two_blanks = state.defense_dice.results[DieResult.Blank] > 1;
+            // NOTE/TODO: Hard code this to not spend reinforce on defense for now as generally it will contribute more
+            // value each attack.
+            foreach (immutable token; [GreenToken.Calculate, GreenToken.Focus, GreenToken.Evade]) {
+                if (state.defense_tokens.count(token) == 0) continue;
+                if (max_dice_to_reroll > 1)
+                    search_options[search_options_count++] = do_defense_scum_lando_crew(2, token);
+                if (!at_least_two_blanks)
+                    search_options[search_options_count++] = do_defense_scum_lando_crew(1, token);
+            }
         }
     }
 
@@ -373,18 +362,6 @@ private SimulationState spend_focus_calculate_force(
 
 
 alias StateFork delegate(const(SimulationSetup) setup, ref SimulationState) SearchDelegate;
-
-// After rolling (before attacker modifies)
-private SearchDelegate do_defense_finish_after_rolling()
-{
-    return (const(SimulationSetup) setup, ref SimulationState state)
-    {
-        assert(!state.defense_temp.finished_after_rolling);
-        // Nothing to do here currently...
-        state.defense_temp.finished_after_rolling = true;
-        return StateForkNone();
-    };
-}
 
 // Spend green token to reroll up to 2 results.
 private SearchDelegate do_defense_scum_lando_crew(int count, GreenToken token)

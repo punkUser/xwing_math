@@ -9,44 +9,8 @@ import std.algorithm;
 
 private StateFork after_rolling(const(SimulationSetup) setup, ref SimulationState state)
 {
-    // Base case
-    if (state.attack_temp.finished_after_rolling)
-        return StateForkNone();
-
-    SearchDelegate[16] search_options;
-    size_t search_options_count = 0;
-    
-    search_options[search_options_count++] = do_attack_finish_after_rolling();
-
-    int rerollable_results = state.attack_dice.results[DieResult.Blank] + state.attack_dice.results[DieResult.Focus];
-    if (rerollable_results > 0)
-    {
-        // Lando pilot rerolls (all blanks)
-        if (setup.attack.scum_lando_pilot && !state.attack_temp.used_scum_lando_pilot &&
-            state.attack_tokens.stress == 0 && state.attack_dice.results[DieResult.Blank] > 0) {
-            search_options[search_options_count++] = do_attack_scum_lando_pilot();
-        }
-
-        // Lando crew rerolls
-        if (setup.attack.scum_lando_crew && !state.attack_temp.used_scum_lando_crew) {
-            // Try rerolling 1 or 2 results with each green token we have (in order of general preference)
-            // NOTE: Always reroll blanks, so only try 1 if it's a focus
-            bool at_least_two_blanks = state.attack_dice.results[DieResult.Blank] > 1;
-            foreach (immutable token; [GreenToken.Reinforce, GreenToken.Evade, GreenToken.Calculate, GreenToken.Focus]) {
-                if (state.attack_tokens.count(token) == 0) continue;
-                if (rerollable_results > 1)
-                    search_options[search_options_count++] = do_attack_scum_lando_crew(2, token);
-                if (!at_least_two_blanks)
-                    search_options[search_options_count++] = do_attack_scum_lando_crew(1, token);
-            }
-        }
-    }
-
-    StateFork fork = search_attack(setup, state, search_options[0..search_options_count]);
-    if (fork.required())
-        return fork;
-    else
-        return after_rolling(setup, state);      // Continue after rolling
+    // Nothing to do here for now
+    return StateForkNone();
 }
 
 
@@ -79,13 +43,14 @@ private StateFork dmad(const(SimulationSetup) setup, ref SimulationState state)
 public StateFork modify_attack_dice(const(SimulationSetup) setup, ref SimulationState state)
 {
     // First have to do any "after rolling" abilities
-    if (!state.attack_temp.finished_after_rolling)
-    {
-        StateFork fork = after_rolling(setup, state);
-        if (fork.required())
-            return fork;
-        assert(state.attack_temp.finished_after_rolling);
-    }
+    // NOTE: Nothing to do here for now
+    //if (!state.attack_temp.finished_after_rolling)
+    //{
+    //    StateFork fork = after_rolling(setup, state);
+    //    if (fork.required())
+    //        return fork;
+    //    assert(state.attack_temp.finished_after_rolling);
+    //}
 
     // Next the defender modifies the dice
     if (!state.attack_temp.finished_dmad)
@@ -120,7 +85,7 @@ public StateFork modify_attack_dice(const(SimulationSetup) setup, ref Simulation
         return StateForkNone();
 
     // Search from all our potential token spending and rerolling options to find the optimal one
-    SearchDelegate[32] search_options;
+    SearchDelegate[64] search_options;
     size_t search_options_count = 0;
 
     // First check and "free" stuff that might avoid spending tokens but otherwise give the same expected results
@@ -135,7 +100,6 @@ public StateFork modify_attack_dice(const(SimulationSetup) setup, ref Simulation
     const int max_dice_to_reroll = state.attack_dice.results[DieResult.Blank] + state.attack_dice.results[DieResult.Focus];
 
     // If we can use heroic that's the only option we need for rerolls; optimal effect to reroll all dice if all are blank
-    // TODO: Gas clouds changes this!
     if (setup.attack.heroic && state.attack_dice.are_all_blank() &&
         state.attack_dice.count(DieResult.Blank) > 1 && state.defense_dice.results[DieResult.Blank] > 0)
     {
@@ -143,8 +107,6 @@ public StateFork modify_attack_dice(const(SimulationSetup) setup, ref Simulation
     }
     else
     {
-        // TODO: Gas clouds changes this! Need to check focus and blank rerolls separately
-        // TODO: Given gas clouds, probably want to invert this loop to instead just be based on the abilities present
         foreach_reverse (const dice_to_reroll; 1 .. (max_dice_to_reroll+1))
         {
             // NOTE: Can use "reroll up to 2/3" abilities to reroll just one if needed as well, but less desirable
@@ -183,17 +145,40 @@ public StateFork modify_attack_dice(const(SimulationSetup) setup, ref Simulation
     if (setup.attack.advanced_optics && state.attack_tokens.focus > 0 && state.attack_dice.count(DieResult.Blank) > 0 && !state.attack_temp.used_advanced_optics)
         search_options[search_options_count++] = do_attack_advanced_optics();
 
-    foreach_reverse (const dice_to_reroll; 1 .. (max_dice_to_reroll+1))
+    // Paid rerolls
+    if (max_dice_to_reroll > 0)
     {
-        if (dice_to_reroll == 1)
-        {
-            if (state.attack_tokens.lone_wolf)
-                search_options[search_options_count++] = do_attack_lone_wolf();
+        // Lando pilot rerolls (all blanks)
+        if (setup.attack.scum_lando_pilot && !state.attack_temp.used_scum_lando_pilot &&
+            state.attack_tokens.stress == 0 && state.attack_dice.results[DieResult.Blank] > 0) {
+            search_options[search_options_count++] = do_attack_scum_lando_pilot();
+        }
+    
+        if (state.attack_tokens.lone_wolf) {
+            search_options[search_options_count++] = do_attack_lone_wolf();
+        }
+
+        // Lando crew rerolls
+        if (setup.attack.scum_lando_crew && !state.attack_temp.used_scum_lando_crew) {
+            // Try rerolling 1 or 2 results with each green token we have (in order of general preference)
+            // NOTE: Always reroll blanks, so only try 1 if it's a focus
+            bool at_least_two_blanks = state.attack_dice.results[DieResult.Blank] > 1;
+            foreach (immutable token; [GreenToken.Reinforce, GreenToken.Evade, GreenToken.Calculate, GreenToken.Focus]) {
+                if (state.attack_tokens.count(token) == 0) continue;
+                if (max_dice_to_reroll > 1)
+                    search_options[search_options_count++] = do_attack_scum_lando_crew(2, token);
+                if (!at_least_two_blanks)
+                    search_options[search_options_count++] = do_attack_scum_lando_crew(1, token);
+            }
         }
 
         // Lock can always reroll arbitrary sets of dice
         if (state.attack_tokens.lock > 0 && !state.attack_temp.cannot_spend_lock)
-            search_options[search_options_count++] = do_attack_lock(dice_to_reroll);
+        {
+            // NOTE: Currently no effects that change blanks *but not focus* to hits, so safe to always reroll all blanks
+            foreach_reverse (const dice_to_reroll; max(1, state.attack_dice.results[DieResult.Blank]) .. (max_dice_to_reroll+1))
+                search_options[search_options_count++] = do_attack_lock(dice_to_reroll);
+        }
     }
 
     // Search modifies the state to execute the best of the provided options
@@ -266,18 +251,6 @@ private SimulationState spend_focus_calculate_force(
 
 
 alias StateFork delegate(const(SimulationSetup) setup, ref SimulationState) SearchDelegate;
-
-// After rolling (before defender modifies)
-private SearchDelegate do_attack_finish_after_rolling()
-{
-    return (const(SimulationSetup) setup, ref SimulationState state)
-    {
-        assert(!state.attack_temp.finished_after_rolling);
-        // Nothing to do here currently...
-        state.attack_temp.finished_after_rolling = true;
-        return StateForkNone();
-    };
-}
 
 // Spend green token to reroll up to 2 results.
 private SearchDelegate do_attack_scum_lando_crew(int count, GreenToken token)
