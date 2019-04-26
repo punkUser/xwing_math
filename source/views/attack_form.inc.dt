@@ -71,8 +71,9 @@
                         - select_control_option_t!("pilot", form_name)("Rey",                      AttackPilot.Rey);
                         - select_control_option_t!("pilot", form_name)("Shara Bey",                AttackPilot.SharaBey);
                     select(name="ship")
-                        - select_control_option_t!("ship", form_name)("No Ship Ability",                AttackShip.None);
+                        - select_control_option_t!("ship", form_name)("No Ship Ability or Config",      AttackShip.None);
                         - select_control_option_t!("ship", form_name)("Advanced Targeting Computer",    AttackShip.AdvancedTargetingComputer);
+                        - select_control_option_t!("ship", form_name)("Calibrated Laser Targeting",     AttackShip.CalibratedLaserTargeting);
                         
                 fieldset.fieldset
                     legend Friendly Ships

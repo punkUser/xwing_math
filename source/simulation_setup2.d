@@ -107,6 +107,7 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.attack.roll_all_hits                = attack.roll_all_hits;
 
     setup.attack.add_blank_count             += attack.finn_gunner ? 1 : 0;
+    setup.attack.add_focus_count             += attack.ship == AttackShip.CalibratedLaserTargeting ? 1 : 0;
     setup.attack.reroll_1_count              += attack.howlrunner ? 1 : 0;
     setup.attack.reroll_1_count              += attack.predator ? 1 : 0;
     setup.attack.reroll_1_count              += attack.saw_gerrera_pilot ? 1 : 0;

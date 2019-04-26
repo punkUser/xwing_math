@@ -44,6 +44,7 @@ enum AttackShip : ubyte
 {
     None = 0,
     AdvancedTargetingComputer,
+    CalibratedLaserTargeting,       // Technically a config, but close enough
 }
 enum DefenseShip : ubyte
 {
