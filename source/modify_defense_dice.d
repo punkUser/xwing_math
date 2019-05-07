@@ -199,38 +199,40 @@ private StateFork modify_defense_dice(
     const int max_dice_to_reroll = state.defense_dice.results[DieResult.Blank] + state.defense_dice.results[DieResult.Focus];
 
     // Similar logic to attack rerolls - see documentation there (modify_attack_dice.d)
-    // TODO: Gas clouds changes this!
-    if (setup.defense.heroic && state.defense_dice.are_all_blank() &&
-        state.defense_dice.count(DieResult.Blank) > 1 && state.defense_dice.results[DieResult.Blank] > 0)
+    if (max_dice_to_reroll > 0)
     {
-        search_options[search_options_count++] = do_defense_heroic();
-    }
-    else
-    {
-        foreach_reverse (const dice_to_reroll; 1 .. (max_dice_to_reroll+1))
+        if (setup.defense.heroic && state.defense_dice.are_all_blank() && state.defense_dice.count(DieResult.Blank) > 1)
         {
-            if (dice_to_reroll == 3)
+            search_options[search_options_count++] = do_defense_heroic();
+        }
+        else
+        {
+            // TODO: Gas clouds changes this!
+            foreach_reverse (const dice_to_reroll; 1 .. (max_dice_to_reroll+1))
             {
-                if (setup.defense.reroll_3_count > state.defense_temp.used_reroll_3_count)
-                    search_options[search_options_count++] = do_defense_reroll_3(dice_to_reroll);
-            }
-            else if (dice_to_reroll == 2)
-            {
-                if (setup.defense.reroll_2_count > state.defense_temp.used_reroll_2_count)
-                    search_options[search_options_count++] = do_defense_reroll_2(dice_to_reroll);
-                else if (setup.defense.reroll_3_count > state.defense_temp.used_reroll_3_count)
-                    search_options[search_options_count++] = do_defense_reroll_3(dice_to_reroll);
-            }
-            else if (dice_to_reroll == 1)
-            {
-                if (setup.defense.rebel_millennium_falcon && state.defense_tokens.evade > 0 && !state.defense_temp.used_rebel_millennium_falcon)
-                    search_options[search_options_count++] = do_defense_rebel_millennium_falcon();
-                else if (setup.defense.reroll_1_count > state.defense_temp.used_reroll_1_count)
-                    search_options[search_options_count++] = do_defense_reroll_1();
-                else if (setup.defense.reroll_2_count > state.defense_temp.used_reroll_2_count)
-                    search_options[search_options_count++] = do_defense_reroll_2(dice_to_reroll);
-                else if (setup.defense.reroll_3_count > state.defense_temp.used_reroll_3_count)
-                    search_options[search_options_count++] = do_defense_reroll_3(dice_to_reroll);
+                if (dice_to_reroll == 3)
+                {
+                    if (setup.defense.reroll_3_count > state.defense_temp.used_reroll_3_count)
+                        search_options[search_options_count++] = do_defense_reroll_3(dice_to_reroll);
+                }
+                else if (dice_to_reroll == 2)
+                {
+                    if (setup.defense.reroll_2_count > state.defense_temp.used_reroll_2_count)
+                        search_options[search_options_count++] = do_defense_reroll_2(dice_to_reroll);
+                    else if (setup.defense.reroll_3_count > state.defense_temp.used_reroll_3_count)
+                        search_options[search_options_count++] = do_defense_reroll_3(dice_to_reroll);
+                }
+                else if (dice_to_reroll == 1)
+                {
+                    if (setup.defense.rebel_millennium_falcon && state.defense_tokens.evade > 0 && !state.defense_temp.used_rebel_millennium_falcon)
+                        search_options[search_options_count++] = do_defense_rebel_millennium_falcon();
+                    else if (setup.defense.reroll_1_count > state.defense_temp.used_reroll_1_count)
+                        search_options[search_options_count++] = do_defense_reroll_1();
+                    else if (setup.defense.reroll_2_count > state.defense_temp.used_reroll_2_count)
+                        search_options[search_options_count++] = do_defense_reroll_2(dice_to_reroll);
+                    else if (setup.defense.reroll_3_count > state.defense_temp.used_reroll_3_count)
+                        search_options[search_options_count++] = do_defense_reroll_3(dice_to_reroll);
+                }
             }
         }
     }

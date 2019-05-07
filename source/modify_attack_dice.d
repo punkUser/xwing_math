@@ -99,37 +99,39 @@ public StateFork modify_attack_dice(const(SimulationSetup) setup, ref Simulation
     // "Free" rerolls that don't involve token spending. Check these before we finish up the attack as they might avoid token spending.
     const int max_dice_to_reroll = state.attack_dice.results[DieResult.Blank] + state.attack_dice.results[DieResult.Focus];
 
-    // If we can use heroic that's the only option we need for rerolls; optimal effect to reroll all dice if all are blank
-    if (setup.attack.heroic && state.attack_dice.are_all_blank() &&
-        state.attack_dice.count(DieResult.Blank) > 1 && state.defense_dice.results[DieResult.Blank] > 0)
+    if (max_dice_to_reroll > 0)
     {
-        search_options[search_options_count++] = do_attack_heroic();
-    }
-    else
-    {
-        foreach_reverse (const dice_to_reroll; 1 .. (max_dice_to_reroll+1))
+        // If we can use heroic that's the only option we need for rerolls; optimal effect to reroll all dice if all are blank
+        if (setup.attack.heroic && state.attack_dice.are_all_blank() && state.attack_dice.count(DieResult.Blank) > 1)
         {
-            // NOTE: Can use "reroll up to 2/3" abilities to reroll just one if needed as well, but less desirable
-            if (dice_to_reroll == 3)
+            search_options[search_options_count++] = do_attack_heroic();
+        }
+        else
+        {
+            foreach_reverse (const dice_to_reroll; 1 .. (max_dice_to_reroll+1))
             {
-                if (setup.attack.reroll_3_count > state.attack_temp.used_reroll_3_count)
-                    search_options[search_options_count++] = do_attack_reroll_3(dice_to_reroll);
-            }
-            else if (dice_to_reroll == 2)
-            {
-                if (setup.attack.reroll_2_count > state.attack_temp.used_reroll_2_count)
-                    search_options[search_options_count++] = do_attack_reroll_2(dice_to_reroll);
-                else if (setup.attack.reroll_3_count > state.attack_temp.used_reroll_3_count)
-                    search_options[search_options_count++] = do_attack_reroll_3(dice_to_reroll);
-            }
-            else if (dice_to_reroll == 1)
-            {
-                if (setup.attack.reroll_1_count > state.attack_temp.used_reroll_1_count)
-                    search_options[search_options_count++] = do_attack_reroll_1();
-                else if (setup.attack.reroll_2_count > state.attack_temp.used_reroll_2_count)
-                    search_options[search_options_count++] = do_attack_reroll_2(dice_to_reroll);
-                else if (setup.attack.reroll_3_count > state.attack_temp.used_reroll_3_count)
-                    search_options[search_options_count++] = do_attack_reroll_3(dice_to_reroll);
+                // NOTE: Can use "reroll up to 2/3" abilities to reroll just one if needed as well, but less desirable
+                if (dice_to_reroll == 3)
+                {
+                    if (setup.attack.reroll_3_count > state.attack_temp.used_reroll_3_count)
+                        search_options[search_options_count++] = do_attack_reroll_3(dice_to_reroll);
+                }
+                else if (dice_to_reroll == 2)
+                {
+                    if (setup.attack.reroll_2_count > state.attack_temp.used_reroll_2_count)
+                        search_options[search_options_count++] = do_attack_reroll_2(dice_to_reroll);
+                    else if (setup.attack.reroll_3_count > state.attack_temp.used_reroll_3_count)
+                        search_options[search_options_count++] = do_attack_reroll_3(dice_to_reroll);
+                }
+                else if (dice_to_reroll == 1)
+                {
+                    if (setup.attack.reroll_1_count > state.attack_temp.used_reroll_1_count)
+                        search_options[search_options_count++] = do_attack_reroll_1();
+                    else if (setup.attack.reroll_2_count > state.attack_temp.used_reroll_2_count)
+                        search_options[search_options_count++] = do_attack_reroll_2(dice_to_reroll);
+                    else if (setup.attack.reroll_3_count > state.attack_temp.used_reroll_3_count)
+                        search_options[search_options_count++] = do_attack_reroll_3(dice_to_reroll);
+                }
             }
         }
     }
