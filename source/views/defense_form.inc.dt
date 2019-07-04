@@ -1,12 +1,13 @@
 - import form;
 
-- void defense_form_t(string form_name)(bool include_dice = true, bool include_hit_points = false)
+- void defense_form_t(string form_name)(bool include_dice = true, bool include_hull = false, bool include_shields = false)
     form(id="defense_form", action="javascript:void(0);", method="POST", autocomplete="off")
         .callout.small.success
             - if (include_dice)
                 - stepper_control_t!("dice",         form_name)("Defense Dice", 0, 7);
-            - if (include_hit_points)
+            - if (include_hull)
                 - stepper_control_t!("ship_hull",    form_name)("Hull",         1, 20);
+            - if (include_shields)
                 - stepper_control_t!("ship_shields", form_name)("Shields",      0, 20);
 
             .grid-x.small-up-1.medium-up-1.large-up-2

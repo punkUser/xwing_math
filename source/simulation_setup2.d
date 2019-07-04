@@ -34,6 +34,7 @@ public class SimulationSetup
         bool heavy_laser_cannon = false;
         bool ion_weapon = false;
         bool saturation_salvo = false;
+        bool plasma_torpedoes = false;
 
         bool scum_lando_crew = false;
         bool zuckuss_crew = false;
@@ -143,7 +144,8 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.attack.ion_weapon                   = attack.ion_weapon;
     setup.attack.advanced_targeting_computer  = attack.ship == AttackShip.AdvancedTargetingComputer;
     setup.attack.advanced_optics              = attack.advanced_optics;
-    setup.attack.predictive_shot              = attack.predictive_shot;    
+    setup.attack.predictive_shot              = attack.predictive_shot;
+    setup.attack.plasma_torpedoes             = attack.plasma_torpedoes;
 
     // ****************************************************************************************************************
 

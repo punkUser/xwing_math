@@ -49,7 +49,8 @@ align(1) struct AttackForm
         bool,  "zuckuss_crew",                   1,
         bool,  "saturation_salvo",               1,
         bool,  "previous_tokens_enabled",        1,
-        ubyte, "",                               5,
+        bool,  "plasma_torpedoes",               1,
+        ubyte, "",                               4,
         ));
 
     static AttackForm defaults(int attack_index)

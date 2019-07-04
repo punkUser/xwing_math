@@ -110,4 +110,5 @@
                     .switch-mutex
                         - switch_control_t!("heavy_laser_cannon",   form_name)("Heavy Laser Cannon");
                         - switch_control_t!("ion_weapon",           form_name)("Ion Weapon");
+                        - switch_control_t!("plasma_torpedoes",     form_name)("Plasma Torpedoes");
                         - switch_control_t!("proton_torpedoes",     form_name)("Proton Torpedoes");

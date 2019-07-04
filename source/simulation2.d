@@ -71,6 +71,11 @@ public SimulationState neutralize_results(const(SimulationSetup) setup, Simulati
     // If Iden was used, the attack is considered to have hit
     bool attack_hit = total_damage > 0 || state.defense_tokens.iden_used;
 
+    if (setup.attack.plasma_torpedoes && attack_hit)
+    {
+        state.final_hits += 1;
+    }
+
     if (setup.attack.ion_weapon && total_damage > 0)
     {
         // Ions deal the first hit as a regular damage and any excess hits as ion tokens
