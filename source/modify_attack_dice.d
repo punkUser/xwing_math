@@ -340,6 +340,9 @@ private SearchDelegate do_attack_finish_amad()
 
         // Free changes
         state.attack_dice.change_dice(DieResult.Focus, DieResult.Crit, setup.attack.focus_to_crit_count);
+        // NOTE: We treat Saw as a "free" change for now since we're not tracking damage to the attacker
+        if (setup.attack.saw_gerrera_crew)
+            state.attack_dice.change_dice(DieResult.Focus, DieResult.Crit);
         state.attack_dice.change_dice(DieResult.Focus, DieResult.Hit, setup.attack.focus_to_hit_count);
 
         if (setup.attack.major_vermeil_pilot && state.defense_tokens.green_token_count() == 0)

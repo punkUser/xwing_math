@@ -98,6 +98,7 @@
                     - switch_control_t!("agent_kallus",        form_name)("Agent Kallus");
                     - switch_control_t!("finn_gunner",         form_name)("Finn");
                     - switch_control_t!("scum_lando_crew",     form_name)("Lando Calrissian (Scum)");
+                    - switch_control_t!("saw_gerrera_crew",    form_name)("Saw Gerrera");
                     - switch_control_t!("zuckuss_crew",        form_name)("Zuckuss");
 
                 fieldset.fieldset

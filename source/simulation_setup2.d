@@ -38,6 +38,7 @@ public class SimulationSetup
 
         bool scum_lando_crew = false;
         bool zuckuss_crew = false;
+        bool saw_gerrera_crew = false;
 
         bool leebo_pilot = false;
         bool shara_bey_pilot = false;
@@ -136,6 +137,7 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
 
     setup.attack.scum_lando_crew              = attack.scum_lando_crew;
     setup.attack.zuckuss_crew                 = attack.zuckuss_crew;
+    setup.attack.saw_gerrera_crew             = attack.saw_gerrera_crew;
 
     setup.attack.fire_control_system          = attack.fire_control_system;
     setup.attack.heroic                       = attack.heroic;
