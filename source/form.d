@@ -20,6 +20,8 @@ enum AttackPilot : ubyte
     LandoCalrissianScum,
     HanSoloRebel,
     Rey,
+    FinnPod_Blank,    // Add blank
+    FinnPod_Focus,    // Add focus
 }
 enum DefensePilot : ubyte
 {
@@ -39,6 +41,8 @@ enum DefensePilot : ubyte
     LandoCalrissianScum,
     HanSoloRebel,
     Rey,
+    FinnPod_Blank,    // Add blank
+    FinnPod_Focus,    // Add focus
 }
 enum AttackShip : ubyte
 {

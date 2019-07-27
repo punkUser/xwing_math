@@ -62,6 +62,8 @@
                         - select_control_option_t!("pilot", form_name)("(Reroll up to 2 dice)",    AttackPilot.Reroll_2);
                         - select_control_option_t!("pilot", form_name)("(Reroll up to 3 dice)",    AttackPilot.Reroll_3);
                         - select_control_option_t!("pilot", form_name)("Ezra Bridger",             AttackPilot.EzraBridger);
+                        - select_control_option_t!("pilot", form_name)("Finn (add blank)",         AttackPilot.FinnPod_Blank);
+                        - select_control_option_t!("pilot", form_name)("Finn (add focus)",         AttackPilot.FinnPod_Focus);
                         - select_control_option_t!("pilot", form_name)("Gavin Darklighter",        AttackPilot.GavinDarklighter);
                         - select_control_option_t!("pilot", form_name)("Han Solo (Rebel)",         AttackPilot.HanSoloRebel);
                         - select_control_option_t!("pilot", form_name)("Lando Calrissian (Scum)",  AttackPilot.LandoCalrissianScum);

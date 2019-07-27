@@ -109,6 +109,8 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.attack.roll_all_hits                = attack.roll_all_hits;
 
     setup.attack.add_blank_count             += attack.finn_gunner ? 1 : 0;
+    setup.attack.add_blank_count             += attack.pilot == AttackPilot.FinnPod_Blank ? 1 : 0;
+    setup.attack.add_focus_count             += attack.pilot == AttackPilot.FinnPod_Focus ? 1 : 0;
     setup.attack.add_focus_count             += attack.ship == AttackShip.CalibratedLaserTargeting ? 1 : 0;
     setup.attack.reroll_1_count              += attack.howlrunner ? 1 : 0;
     setup.attack.reroll_1_count              += attack.predator ? 1 : 0;
@@ -155,6 +157,8 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.defense.max_force_count             = defense.max_force_count;
 
     setup.defense.add_blank_count            += defense.finn_gunner ? 1 : 0;
+    setup.defense.add_blank_count            += defense.pilot == DefensePilot.FinnPod_Blank ? 1 : 0;
+    setup.defense.add_focus_count            += defense.pilot == DefensePilot.FinnPod_Focus ? 1 : 0;
     setup.defense.add_focus_count            += defense.pilot == DefensePilot.SabineWrenLancer ? 1 : 0;
     setup.defense.add_evade_count            += defense.pilot == DefensePilot.NorraWexley ? 1 : 0;    
 
