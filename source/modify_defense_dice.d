@@ -168,13 +168,11 @@ private StateFork modify_defense_dice(
 
     // Defender modifies dice
 
-    // Add results
-    if (!state.defense_temp.used_add_results)
+    // Currently adding blanks is never harmful, so we'll eagerly add them right away
+    if (!state.defense_temp.used_add_blank_results)
     {
         state.defense_dice.results[DieResult.Blank] += setup.defense.add_blank_count;
-        state.defense_dice.results[DieResult.Focus] += setup.defense.add_focus_count;
-        state.defense_dice.results[DieResult.Evade] += setup.defense.add_evade_count;
-        state.defense_temp.used_add_results = true;
+        state.defense_temp.used_add_blank_results = true;
     }
 
     // Base case and early outs
@@ -194,6 +192,11 @@ private StateFork modify_defense_dice(
         if ((state.defense_dice.count_mutable(DieResult.Blank) + state.defense_dice.count_mutable(DieResult.Focus)) > 0)
             search_options[search_options_count++] = do_defense_rebel_han_pilot();
     }
+
+    // Adding results
+    // NOTE: These need to be part of the search as they may turn off other abilities like heroic
+    if (!state.defense_temp.used_add_focus_evade_results)
+        search_options[search_options_count++] = do_defense_add_focus_evade_results();
 
     // Rerolls - see comments in modify_attack_dice as the logic is similar
     const int max_dice_to_reroll = state.defense_dice.results[DieResult.Blank] + state.defense_dice.results[DieResult.Focus];
@@ -628,6 +631,18 @@ private SearchDelegate do_defense_shara_bey()
 
         state.defense_temp.used_shara_bey_pilot = true;
         state.defense_tokens.lock = state.defense_tokens.lock - 1;
+        return StateForkNone();
+    };
+}
+
+private SearchDelegate do_defense_add_focus_evade_results()
+{
+    return (const(SimulationSetup) setup, ref SimulationState state)
+    {
+        assert(!state.defense_temp.used_add_focus_evade_results);
+        state.defense_dice.results[DieResult.Focus] += setup.defense.add_focus_count;
+        state.defense_dice.results[DieResult.Evade] += setup.defense.add_evade_count;
+        state.defense_temp.used_add_focus_evade_results = true;
         return StateForkNone();
     };
 }

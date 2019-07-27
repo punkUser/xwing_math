@@ -64,11 +64,10 @@ public StateFork modify_attack_dice(const(SimulationSetup) setup, ref Simulation
     // Attacker modifies
 
     // Add results
-    if (!state.attack_temp.used_add_results)
+    if (!state.attack_temp.used_add_blank_results)
     {
         state.attack_dice.results[DieResult.Blank] += setup.attack.add_blank_count;
-        state.attack_dice.results[DieResult.Focus] += setup.attack.add_focus_count;
-        state.attack_temp.used_add_results = true;
+        state.attack_temp.used_add_blank_results = true;
     }
 
     // Before we might spend tokens, see if we can do any of our passive effects
@@ -95,6 +94,9 @@ public StateFork modify_attack_dice(const(SimulationSetup) setup, ref Simulation
         if ((state.attack_dice.count_mutable(DieResult.Blank) + state.attack_dice.count_mutable(DieResult.Focus)) > 0)
             search_options[search_options_count++] = do_attack_rebel_han_pilot();
     }
+
+    if (!state.attack_temp.used_add_focus_results)
+        search_options[search_options_count++] = do_attack_add_focus_results();
 
     // "Free" rerolls that don't involve token spending. Check these before we finish up the attack as they might avoid token spending.
     const int max_dice_to_reroll = state.attack_dice.results[DieResult.Blank] + state.attack_dice.results[DieResult.Focus];
@@ -479,6 +481,17 @@ private SearchDelegate do_attack_advanced_optics()
 
         state.attack_temp.used_advanced_optics = true;
         state.attack_tokens.focus = state.attack_tokens.focus - 1;
+        return StateForkNone();
+    };
+}
+
+private SearchDelegate do_attack_add_focus_results()
+{
+    return (const(SimulationSetup) setup, ref SimulationState state)
+    {
+        assert(!state.attack_temp.used_add_focus_results);
+        state.attack_dice.results[DieResult.Focus] += setup.attack.add_focus_count;
+        state.attack_temp.used_add_focus_results = true;
         return StateForkNone();
     };
 }

@@ -128,7 +128,8 @@ struct AttackTempState
         bool, "finished_amad",                          1,      // finished attacker modding attack dice
         bool, "cannot_spend_lock",                      1,      // ex. after using fire-control system
         bool, "used_advanced_targeting_computer",       1,
-        bool, "used_add_results",                       1,
+        bool, "used_add_blank_results",                 1,
+        bool, "used_add_focus_results",                 1,
         uint, "used_reroll_1_count",                    3,
         uint, "used_reroll_2_count",                    3,      // Up to 2 dice
         uint, "used_reroll_3_count",                    3,      // Up to 3 dice
@@ -138,7 +139,7 @@ struct AttackTempState
         bool, "used_rebel_han_pilot",                   1,
         bool, "used_saturation_salvo",                  1,
         bool, "used_advanced_optics",                   1,
-        uint,  "",                                     11,
+        uint,  "",                                     10,
     ));
 
     void reset()
@@ -154,7 +155,8 @@ struct DefenseTempState
         bool, "finished_amdd",                          1,      // finished attacker modding defense dice
         bool, "finished_dmdd",                          1,      // finished defender modding defense dice
         bool, "used_c3p0",                              1,
-        bool, "used_add_results",                       1,
+        bool, "used_add_blank_results",                 1,
+        bool, "used_add_focus_evade_results",           1,
         uint, "used_reroll_1_count",                    3,
         uint, "used_reroll_2_count",                    3,      // Up to 2 dice
         uint, "used_reroll_3_count",                    3,      // Up to 3 dice
@@ -163,7 +165,7 @@ struct DefenseTempState
         bool, "used_rebel_millennium_falcon",           1,
         bool, "used_scum_lando_pilot",                  1,
         bool, "used_rebel_han_pilot",                   1,
-        uint, "",                                      13,
+        uint, "",                                      12,
         ));
 
     void reset()
