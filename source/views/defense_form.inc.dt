@@ -51,7 +51,7 @@
                     - select_control_option_t!("pilot", form_name)("Luke Skywalker",            DefensePilot.LukeSkywalker);
                     - select_control_option_t!("pilot", form_name)("Norra Wexley",              DefensePilot.NorraWexley);
                     - select_control_option_t!("pilot", form_name)("Rey",                       DefensePilot.Rey);
-                    - select_control_option_t!("pilot", form_name)("Sabin Wren (Lancer)",       DefensePilot.SabineWrenLancer);
+                    - select_control_option_t!("pilot", form_name)("Sabine Wren (Lancer)",      DefensePilot.SabineWrenLancer);
                     - select_control_option_t!("pilot", form_name)("Shara Bey",                 DefensePilot.SharaBey);
                     - select_control_option_t!("pilot", form_name)("Zeb Orrelios",              DefensePilot.ZebOrrelios);
                 select(name="ship")
