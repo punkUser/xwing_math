@@ -199,7 +199,9 @@ private StateFork modify_defense_dice(
         search_options[search_options_count++] = do_defense_add_focus_evade_results();
 
     // Rerolls - see comments in modify_attack_dice as the logic is similar
-    const int max_dice_to_reroll = state.defense_dice.results[DieResult.Blank] + state.defense_dice.results[DieResult.Focus];
+    const int max_blanks_to_reroll = state.defense_dice.results[DieResult.Blank];
+    const int max_focus_to_reroll = state.defense_dice.results[DieResult.Focus];
+    const int max_dice_to_reroll = max_blanks_to_reroll + max_focus_to_reroll;
 
     // Similar logic to attack rerolls - see documentation there (modify_attack_dice.d)
     if (max_dice_to_reroll > 0)
@@ -210,31 +212,41 @@ private StateFork modify_defense_dice(
         }
         else
         {
-            // TODO: Gas clouds changes this!
-            foreach_reverse (const dice_to_reroll; 1 .. (max_dice_to_reroll+1))
+            // Currently there aren't any defender effects that allow one to reroll more than 3 dice at once
+            const int blanks_loop_count = min(3, max_blanks_to_reroll) + 1;
+            const int focus_loop_count = min(3, max_focus_to_reroll) + 1;
+
+            // TODO: Consider various rearrangements of these loops
+            foreach (const blanks_to_reroll; 0 .. blanks_loop_count)
             {
-                if (dice_to_reroll == 3)
+                foreach (const focus_to_reroll; 0 .. focus_loop_count)
                 {
-                    if (setup.defense.reroll_3_count > state.defense_temp.used_reroll_3_count)
-                        search_options[search_options_count++] = do_defense_reroll_3(dice_to_reroll);
-                }
-                else if (dice_to_reroll == 2)
-                {
-                    if (setup.defense.reroll_2_count > state.defense_temp.used_reroll_2_count)
-                        search_options[search_options_count++] = do_defense_reroll_2(dice_to_reroll);
-                    else if (setup.defense.reroll_3_count > state.defense_temp.used_reroll_3_count)
-                        search_options[search_options_count++] = do_defense_reroll_3(dice_to_reroll);
-                }
-                else if (dice_to_reroll == 1)
-                {
-                    if (setup.defense.rebel_millennium_falcon && state.defense_tokens.evade > 0 && !state.defense_temp.used_rebel_millennium_falcon)
-                        search_options[search_options_count++] = do_defense_rebel_millennium_falcon();
-                    else if (setup.defense.reroll_1_count > state.defense_temp.used_reroll_1_count)
-                        search_options[search_options_count++] = do_defense_reroll_1();
-                    else if (setup.defense.reroll_2_count > state.defense_temp.used_reroll_2_count)
-                        search_options[search_options_count++] = do_defense_reroll_2(dice_to_reroll);
-                    else if (setup.defense.reroll_3_count > state.defense_temp.used_reroll_3_count)
-                        search_options[search_options_count++] = do_defense_reroll_3(dice_to_reroll);
+                    int dice_to_reroll = blanks_to_reroll + focus_to_reroll;
+                    if (dice_to_reroll == 0)
+                        continue;
+                    else if (dice_to_reroll == 1)
+                    {
+                        if (setup.defense.rebel_millennium_falcon && state.defense_tokens.evade > 0 && !state.defense_temp.used_rebel_millennium_falcon)
+                            search_options[search_options_count++] = do_defense_rebel_millennium_falcon();
+                        else if (setup.defense.reroll_1_count > state.defense_temp.used_reroll_1_count)
+                            search_options[search_options_count++] = do_defense_reroll_1(blanks_to_reroll, focus_to_reroll);
+                        else if (setup.defense.reroll_2_count > state.defense_temp.used_reroll_2_count)
+                            search_options[search_options_count++] = do_defense_reroll_2(blanks_to_reroll, focus_to_reroll);
+                        else if (setup.defense.reroll_3_count > state.defense_temp.used_reroll_3_count)
+                            search_options[search_options_count++] = do_defense_reroll_3(blanks_to_reroll, focus_to_reroll);
+                    }
+                    else if (dice_to_reroll == 2)
+                    {
+                        if (setup.defense.reroll_2_count > state.defense_temp.used_reroll_2_count)
+                            search_options[search_options_count++] = do_defense_reroll_2(blanks_to_reroll, focus_to_reroll);
+                        else if (setup.defense.reroll_3_count > state.defense_temp.used_reroll_3_count)
+                            search_options[search_options_count++] = do_defense_reroll_3(blanks_to_reroll, focus_to_reroll);
+                    }
+                    else if (dice_to_reroll == 3)
+                    {
+                        if (setup.defense.reroll_3_count > state.defense_temp.used_reroll_3_count)
+                            search_options[search_options_count++] = do_defense_reroll_3(blanks_to_reroll, focus_to_reroll);
+                    }
                 }
             }
         }
@@ -493,6 +505,7 @@ private SearchDelegate do_defense_finish_dmdd(int evades_target)
 
         // Free changes
         state.defense_dice.change_dice(DieResult.Focus, DieResult.Evade, setup.defense.focus_to_evade_count);
+        state.defense_dice.change_dice(DieResult.Blank, DieResult.Evade, setup.defense.blank_to_evade_count);
 
         if (setup.defense.captain_feroph_pilot && state.attack_tokens.green_token_count() == 0)
             state.defense_dice.change_blank_focus(DieResult.Evade, 1);
@@ -539,39 +552,41 @@ private SearchDelegate do_defense_heroic()
     };
 }
 
-// Rerolls a blank if present, otherwise focus
-private SearchDelegate do_defense_reroll_1()
+private SearchDelegate do_defense_reroll_1(int blanks_count, int focus_count)
 {
     return (const(SimulationSetup) setup, ref SimulationState state)
     {
         assert(setup.defense.reroll_1_count > state.defense_temp.used_reroll_1_count);
-        int dice_to_reroll = state.defense_dice.remove_dice_for_reroll_blank_focus(1);
+        int dice_to_reroll = state.defense_dice.remove_dice_for_reroll(DieResult.Blank, blanks_count);
+        dice_to_reroll    += state.defense_dice.remove_dice_for_reroll(DieResult.Focus, focus_count);
         state.defense_temp.used_reroll_1_count = state.defense_temp.used_reroll_1_count + 1;
         assert(dice_to_reroll == 1);
         return StateForkReroll(dice_to_reroll);
     };
 }
-private SearchDelegate do_defense_reroll_2(int count = 2)
+private SearchDelegate do_defense_reroll_2(int blanks_count, int focus_count)
 {
     return (const(SimulationSetup) setup, ref SimulationState state)
     {
-        assert(count > 0 && count <= 2);
         assert(setup.defense.reroll_2_count > state.defense_temp.used_reroll_2_count);
-        int dice_to_reroll = state.defense_dice.remove_dice_for_reroll_blank_focus(count);
+        int dice_to_reroll = state.defense_dice.remove_dice_for_reroll(DieResult.Blank, blanks_count);
+        dice_to_reroll    += state.defense_dice.remove_dice_for_reroll(DieResult.Focus, focus_count);
         state.defense_temp.used_reroll_2_count = state.defense_temp.used_reroll_2_count + 1;
-        assert(dice_to_reroll == count);
+        assert(dice_to_reroll == (blanks_count + focus_count));
+        assert(dice_to_reroll <= 2);
         return StateForkReroll(dice_to_reroll);
     };
 }
-private SearchDelegate do_defense_reroll_3(int count = 3)
+private SearchDelegate do_defense_reroll_3(int blanks_count, int focus_count)
 {
     return (const(SimulationSetup) setup, ref SimulationState state)
     {
-        assert(count > 0 && count <= 3);
         assert(setup.defense.reroll_3_count > state.defense_temp.used_reroll_3_count);
-        int dice_to_reroll = state.defense_dice.remove_dice_for_reroll_blank_focus(count);
+        int dice_to_reroll = state.defense_dice.remove_dice_for_reroll(DieResult.Blank, blanks_count);
+        dice_to_reroll    += state.defense_dice.remove_dice_for_reroll(DieResult.Focus, focus_count);
         state.defense_temp.used_reroll_3_count = state.defense_temp.used_reroll_3_count + 1;
-        assert(dice_to_reroll == count);
+        assert(dice_to_reroll == (blanks_count + focus_count));
+        assert(dice_to_reroll <= 3);
         return StateForkReroll(dice_to_reroll);
     };
 }

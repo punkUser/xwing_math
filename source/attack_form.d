@@ -51,7 +51,8 @@ align(1) struct AttackForm
         bool,  "previous_tokens_enabled",        1,
         bool,  "plasma_torpedoes",               1,
         bool,  "saw_gerrera_crew",               1,
-        ubyte, "",                               3,
+        bool,  "gas_cloud_blank_to_evade",       1,
+        ubyte, "",                               2,
         ));
 
     static AttackForm defaults(int attack_index)

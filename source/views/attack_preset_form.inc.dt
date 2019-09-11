@@ -14,8 +14,18 @@
         - select_control_option_t!(control_name, form_name)("4 Dice, Howlrunner",               AttackPreset._4dHowlrunner           );
         - select_control_option_t!(control_name, form_name)("4 Dice, Ion",                      AttackPreset._4dIonWeapon            );
         - select_control_option_t!(control_name, form_name)("4 Dice, Juke (w/ Evade)",          AttackPreset._4dJukeEvade            );
-        - select_control_option_t!(control_name, form_name)("4 Dice, Proton Torpedoes",         AttackPreset._4dProtonTorpedoes      );
-        - select_control_option_t!(control_name, form_name)("4 Dice, Proton Torpedoes, Wedge",  AttackPreset._4dProtonTorpedoesWedge );
+        - select_control_option_t!(control_name, form_name)("4 Dice, Proton Torpedoes",         AttackPreset._4dProtonTorpedoes      );        
+        //- select_control_option_t!(control_name, form_name)("4 Dice, Proton Torpedoes, Wedge",  AttackPreset._4dProtonTorpedoesWedge ); DEPRECATED
+
+- void defender_modification_dropdown(string control_name, string form_name)()
+    - import attack_preset_form;
+    select(name="#{control_name}")
+        - select_control_option_t!(control_name, form_name)("No Obstruction or Range Bonus",    DefenderModificationPreset._None                  );
+        - select_control_option_t!(control_name, form_name)("+1 Defense Dice",                  DefenderModificationPreset._p1DefenseDice         );
+        - select_control_option_t!(control_name, form_name)("+1 Defense Dice, Gas Cloud",       DefenderModificationPreset._p1DefenseDice_GasCloud);
+        - select_control_option_t!(control_name, form_name)("+2 Defense Dice",                  DefenderModificationPreset._p2DefenseDice         );
+        - select_control_option_t!(control_name, form_name)("+2 Defense Dice, Gas Cloud",       DefenderModificationPreset._p2DefenseDice_GasCloud);        
+        - select_control_option_t!(control_name, form_name)("-1 Defense Dice",                  DefenderModificationPreset._m1DefenseDice         );
 
 - void attack_preset_form_t(string form_name)(string title = "", bool include_enable_toggle = false, bool include_bonus_attack = false)
     form(id="#{form_name}_form", action="javascript:void(0);", method="POST", autocomplete="off")
@@ -44,6 +54,7 @@
                 - attack_preset_dropdown!("preset", form_name)();
                 - switch_control_t!("focus", form_name)("Focus");
                 - switch_control_t!("lock" , form_name)("Lock");
+                - defender_modification_dropdown!("defender_modification", form_name)();
 
                 - if (include_bonus_attack)
                     - bool bonus_attack_enabled = switch_control_t!("bonus_attack_enabled", form_name)("Bonus Attack", form_name ~ "_bonus_attack_panel");

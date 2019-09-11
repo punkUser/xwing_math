@@ -339,7 +339,9 @@ private SearchDelegate do_attack_finish_amad()
         assert(!state.attack_temp.finished_amad);
 
         // Free changes
+        state.attack_dice.change_dice(DieResult.Blank, DieResult.Focus, setup.attack.blank_to_focus_count);
         state.attack_dice.change_dice(DieResult.Focus, DieResult.Crit, setup.attack.focus_to_crit_count);
+
         // NOTE: We treat Saw as a "free" change for now since we're not tracking damage to the attacker
         if (setup.attack.saw_gerrera_crew)
             state.attack_dice.change_dice(DieResult.Focus, DieResult.Crit);
@@ -506,7 +508,10 @@ private SearchDelegate do_defense_finish_dmad()
     return (const(SimulationSetup) setup, ref SimulationState state)
     {
         assert(!state.attack_temp.finished_dmad);
-        // Nothing to do here currently...
+        
+        if (setup.defense.plated_hull)
+            state.attack_dice.change_dice(DieResult.Crit, DieResult.Hit, 1);
+
         state.attack_temp.finished_dmad = true;
         return StateForkNone();
     };

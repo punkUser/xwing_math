@@ -70,7 +70,7 @@ public class WWWServer
         router.post(m_server_settings.url_root ~ "2/ship_durability/simulate.json", &simulate_ship_durability);
 
         // Index and misc
-        router.get (m_server_settings.url_root, staticRedirect(m_server_settings.url_root ~ "2/multi/", HTTPStatus.movedPermanently));
+        router.get (m_server_settings.url_root, staticRedirect(m_server_settings.url_root ~ "2/multi_preset/", HTTPStatus.Found));
         router.get (m_server_settings.url_root ~ "faq/", &about);
         router.get (m_server_settings.url_root ~ "about/", staticRedirect(m_server_settings.url_root ~ "faq/", HTTPStatus.movedPermanently));
             
@@ -346,7 +346,7 @@ public class WWWServer
 
     private SimulateJsonContent.Result assemble_json_result(
         ref const(SimulationResults) results,
-        int min_hits = 7,
+        int min_hits = 0,
         int attacker_index = -1, int defender_index = -1)
     {
         SimulateJsonContent.Result content;

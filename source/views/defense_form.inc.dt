@@ -57,6 +57,7 @@
                 select(name="ship")
                     - select_control_option_t!("ship",  form_name)("No Ship Ability or Config", DefenseShip.None);
                     - select_control_option_t!("ship",  form_name)("Concordia Faceoff",         DefenseShip.ConcordiaFaceoff);
+                    - select_control_option_t!("ship",  form_name)("Plated Hull",               DefenseShip.PlatedHull);
 
             fieldset.fieldset
                 legend Friendly Ships

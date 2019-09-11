@@ -49,6 +49,8 @@ private static immutable Test[] k_regression_test_cases = [
     { "3f+Zuckuss vs 3f",          "d=gwAAAAAAAAAA&a1=MQgAAAAAAAAB",                   0.912757873535156 },
     { "2f+Heroic vs 2+Heroic",     "d=AgAAAAAAIAAA&a1=IQgAAAAAACAA",                   0.805532455444336 },
     { "3 hits vs 2f+Finn+Heroic",  "d=ggAAAAoAIAAA&a1=MQAAAAACAAAA",                   0.574218750000000 },
+    { "+/- defense dice",          "d=giAACAAAAAAA&a1=MQgAAAAgAAAA&a2=MQgAAAAAAAAA&a3=MQgAAADAAQAA&a4=MQgAAACgAQAA",
+                                                                                       4.655666604837959 },
 ];
 
 // State set is cleared - merely passed in to reuse memory

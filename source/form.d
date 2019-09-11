@@ -22,6 +22,7 @@ enum AttackPilot : ubyte
     Rey,
     FinnPod_Blank,    // Add blank
     FinnPod_Focus,    // Add focus
+    Broadside,        // Blank to focus
 }
 enum DefensePilot : ubyte
 {
@@ -54,6 +55,7 @@ enum DefenseShip : ubyte
 {
     None = 0,
     ConcordiaFaceoff,
+    PlatedHull,
 }
 
 

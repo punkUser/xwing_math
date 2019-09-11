@@ -1,6 +1,6 @@
 - import form;
 
-- void attack_form_t(string form_name)(string title = "", bool include_enable_toggle = false, bool include_dice = true, bool include_previous_tokens = false)
+- void attack_form_t(string form_name)(string title = "", bool include_enable_toggle = false, bool include_dice = true, bool include_previous_tokens = false, bool include_defender_modifications = false)
     form(id="#{form_name}_form", action="javascript:void(0);", method="POST", autocomplete="off")
         .callout.small.alert
 
@@ -26,7 +26,6 @@
             div(id="#{form_name}_panel", data-toggler=".hide", class="#{initial_visibility}")
                 - if (include_dice)
                     - stepper_control_t!("dice",                 form_name)("Attack Dice",  0, 7);
-                    - stepper_control_t!("defense_dice_diff",    form_name)("+/- Defense Dice", -3, 3);
                     - switch_control_t !("roll_all_hits",        form_name)("Roll All Hits");
 
                 - if (include_previous_tokens)
@@ -61,6 +60,7 @@
                         - select_control_option_t!("pilot", form_name)("(Reroll 1 die)",           AttackPilot.Reroll_1);
                         - select_control_option_t!("pilot", form_name)("(Reroll up to 2 dice)",    AttackPilot.Reroll_2);
                         - select_control_option_t!("pilot", form_name)("(Reroll up to 3 dice)",    AttackPilot.Reroll_3);
+                        - select_control_option_t!("pilot", form_name)("Broadside",                AttackPilot.Broadside);
                         - select_control_option_t!("pilot", form_name)("Ezra Bridger",             AttackPilot.EzraBridger);
                         - select_control_option_t!("pilot", form_name)("Finn (add blank)",         AttackPilot.FinnPod_Blank);
                         - select_control_option_t!("pilot", form_name)("Finn (add focus)",         AttackPilot.FinnPod_Focus);
@@ -115,3 +115,8 @@
                         - switch_control_t!("ion_weapon",           form_name)("Ion Weapon");
                         - switch_control_t!("plasma_torpedoes",     form_name)("Plasma Torpedoes");
                         - switch_control_t!("proton_torpedoes",     form_name)("Proton Torpedoes");
+
+                - if (include_defender_modifications)
+                    .callout.success
+                        - stepper_control_t!("defense_dice_diff",       form_name)("+/- Defense Dice", -3, 3);
+                        - switch_control_t!("gas_cloud_blank_to_evade", form_name)("Gas Cloud (Blank -> Evade)");

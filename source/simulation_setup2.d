@@ -24,6 +24,7 @@ public class SimulationSetup
         int focus_to_crit_count = 0;
         int any_to_hit_count = 0;
         int hit_to_crit_count = 0;
+        int blank_to_focus_count = 0;
 
         int defense_dice_diff = 0;
 
@@ -71,6 +72,7 @@ public class SimulationSetup
 
         // Change
         int focus_to_evade_count = 0;
+        int blank_to_evade_count = 0;
         int any_to_evade_count = 0;
 
         bool c3p0 = false;              // Guess 1 unconditionally if calculate available
@@ -80,6 +82,7 @@ public class SimulationSetup
         bool rebel_millennium_falcon = false;    // 1 reroll if evading
         bool heroic = false;
         bool brilliant_evasion = false;
+        bool plated_hull = false;       // 1 crit -> hit on attack dice
 
         bool zeb_pilot = false;
         bool leebo_pilot = false;
@@ -105,7 +108,6 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
 
     // Grab the relevant form values for this attacker
     setup.attack.dice                         = attack.dice;
-    setup.attack.defense_dice_diff            = attack.defense_dice_diff;
     setup.attack.roll_all_hits                = attack.roll_all_hits;
 
     setup.attack.add_blank_count             += attack.finn_gunner ? 1 : 0;
@@ -126,6 +128,7 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.attack.hit_to_crit_count           += attack.pilot == AttackPilot.GavinDarklighter ? 1 : 0;
     setup.attack.focus_to_hit_count          += attack.fanatical ? 1 : 0;
     setup.attack.any_to_hit_count            += attack.fearless ? 1 : 0;
+    setup.attack.blank_to_focus_count        += attack.pilot == AttackPilot.Broadside ? 1 : 0;
 
     setup.attack.leebo_pilot                  = attack.pilot == AttackPilot.Leebo;
     setup.attack.shara_bey_pilot              = attack.pilot == AttackPilot.SharaBey;
@@ -150,6 +153,13 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.attack.advanced_optics              = attack.advanced_optics;
     setup.attack.predictive_shot              = attack.predictive_shot;
     setup.attack.plasma_torpedoes             = attack.plasma_torpedoes;
+
+    // ****************************************************************************************************************
+    // Per attack defense mods
+
+    // TODO: Revisit just adding this to defense directly
+    setup.attack.defense_dice_diff            = attack.defense_dice_diff;
+    setup.defense.blank_to_evade_count       += attack.gas_cloud_blank_to_evade;
 
     // ****************************************************************************************************************
 
@@ -188,6 +198,7 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.defense.heroic                      = defense.heroic;
     setup.defense.brilliant_evasion           = defense.brilliant_evasion;
     setup.defense.hate                        = defense.hate;
+    setup.defense.plated_hull                 = (defense.ship == DefenseShip.PlatedHull);
 
     return setup;
 }

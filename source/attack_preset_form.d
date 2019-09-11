@@ -15,7 +15,7 @@ public enum AttackPreset : ubyte
     _3dHowlrunner,
     _4d,
     _4dProtonTorpedoes,
-    _4dProtonTorpedoesWedge,
+    _4dProtonTorpedoesWedge,        // Deprecated now that we can put the -1 defense die in defender modifications
     _2dJukeEvade,
     _3dJukeEvade,
     _4dJukeEvade,
@@ -24,6 +24,27 @@ public enum AttackPreset : ubyte
     _4dHowlrunner,
     _3dIonWeapon,
     _4dIonWeapon,
+    Count
+};
+
+public enum DefenderModificationPreset : ubyte
+{
+    // NOTE: Do not change the order or it will invalidate links!
+    // NOTE: Not all of these are shown in the dropdown right now, but enumerated for completeness/future use
+    _None,
+    _GasCloud,
+    _p1DefenseDice,
+    _p1DefenseDice_GasCloud,
+    _p2DefenseDice,
+    _p2DefenseDice_GasCloud,
+    _p3DefenseDice,
+    _p3DefenseDice_GasCloud,
+    _m1DefenseDice,
+    _m1DefenseDice_GasCloud,
+    _m2DefenseDice,
+    _m2DefenseDice_GasCloud,
+    _m3DefenseDice,
+    _m3DefenseDice_GasCloud,
     Count
 };
 
@@ -37,8 +58,9 @@ align(1) struct AttackPresetForm
         bool,  "lock",                      1,
         bool,  "bonus_attack_enabled",      1,
         ubyte, "bonus_attack_preset",       8, // AttackPreset enum
+        ubyte, "defender_modification",     8, // DefenderModificationPreset enum
 
-        uint,  "",                          12,
+        uint,  "",                          4,
     ));
 
     static AttackPresetForm defaults(int index = 0)
@@ -90,12 +112,65 @@ public TokenState to_attack_tokens2(ref const(AttackPresetForm) preset_form)
     return tokens;
 }
 
+// This is a bit messy, but similar to what we are doing in tokens...
+// apply defender mods "on top of" the preset we already have applied.
+private AttackForm apply_defender_modification(ref const(AttackForm) attack_form_in, ubyte defender_modification)
+{
+    AttackForm attack_form = attack_form_in;
+    
+    switch (defender_modification)
+    {
+        case DefenderModificationPreset._p1DefenseDice:
+        case DefenderModificationPreset._p1DefenseDice_GasCloud:
+            attack_form.defense_dice_diff = 1;
+            break;
+        case DefenderModificationPreset._p2DefenseDice:
+        case DefenderModificationPreset._p2DefenseDice_GasCloud:
+            attack_form.defense_dice_diff = 2;
+            break;
+        case DefenderModificationPreset._p3DefenseDice:
+        case DefenderModificationPreset._p3DefenseDice_GasCloud:
+            attack_form.defense_dice_diff = 3;
+            break;
+        case DefenderModificationPreset._m1DefenseDice:
+        case DefenderModificationPreset._m1DefenseDice_GasCloud:
+            attack_form.defense_dice_diff = 1;
+            break;
+        case DefenderModificationPreset._m2DefenseDice:
+        case DefenderModificationPreset._m2DefenseDice_GasCloud:
+            attack_form.defense_dice_diff = 2;
+            break;
+        case DefenderModificationPreset._m3DefenseDice:
+        case DefenderModificationPreset._m3DefenseDice_GasCloud:
+            attack_form.defense_dice_diff = 3;
+            break;
+        default: break;
+    }
+    switch (defender_modification)
+    {
+        case DefenderModificationPreset._GasCloud:
+        case DefenderModificationPreset._p1DefenseDice_GasCloud:
+        case DefenderModificationPreset._p2DefenseDice_GasCloud:
+        case DefenderModificationPreset._p3DefenseDice_GasCloud:
+        case DefenderModificationPreset._m1DefenseDice_GasCloud:
+        case DefenderModificationPreset._m2DefenseDice_GasCloud:
+        case DefenderModificationPreset._m3DefenseDice_GasCloud:
+            attack_form.gas_cloud_blank_to_evade = true;
+            break;
+        default: break;
+    }
+
+    return attack_form;
+}
+
 public SimulationSetup to_simulation_setup(ref const(AttackPresetForm) attack, ref const(DefenseForm) defense_form)
 {
     // Avoid ambiguity between the two modules...
     import simulation_setup2 : attack_form_setup = to_simulation_setup;
 
     auto attack_form = create_form_from_url!AttackForm(attack_preset_url(attack.preset), 0);
+    attack_form = apply_defender_modification(attack_form, attack.defender_modification);
+    
     return attack_form_setup(attack_form, defense_form);
 }
 
@@ -105,5 +180,8 @@ public SimulationSetup to_simulation_setup_bonus(ref const(AttackPresetForm) att
     import simulation_setup2 : attack_form_setup = to_simulation_setup;
 
     auto attack_form = create_form_from_url!AttackForm(attack_preset_url(attack.bonus_attack_preset), 0);
+    // Same defender mod for bonus attack
+    attack_form = apply_defender_modification(attack_form, attack.defender_modification);
+
     return attack_form_setup(attack_form, defense_form);
 }
