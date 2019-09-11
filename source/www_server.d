@@ -346,7 +346,7 @@ public class WWWServer
 
     private SimulateJsonContent.Result assemble_json_result(
         ref const(SimulationResults) results,
-        int min_hits = 0,
+        int min_hits,
         int attacker_index = -1, int defender_index = -1)
     {
         SimulateJsonContent.Result content;
