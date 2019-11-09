@@ -4,7 +4,7 @@
     form(id="defense_form", action="javascript:void(0);", method="POST", autocomplete="off")
         .callout.small.success
             - if (include_dice)
-                - stepper_control_t!("dice",         form_name)("Defense Dice", 0, 7);
+                - stepper_control_t!("dice",         form_name)("Defense Dice", 0, 6);
             - if (include_hull)
                 - stepper_control_t!("ship_hull",    form_name)("Hull",         1, 20);
             - if (include_shields)
@@ -14,15 +14,15 @@
                 .cell
                     fieldset.fieldset
                         legend Tokens
-                        - stepper_control_t!("focus_count",       form_name)("Focus", 0, 7);
-                        - stepper_control_t!("calculate_count",   form_name)("Calculate", 0, 7);
-                        - stepper_control_t!("evade_count",       form_name)("Evade", 0, 7);
+                        - stepper_control_t!("focus_count",       form_name)("Focus", 0, 6);
+                        - stepper_control_t!("calculate_count",   form_name)("Calculate", 0, 6);
+                        - stepper_control_t!("evade_count",       form_name)("Evade", 0, 6);
                         - stepper_control_t!("reinforce_count",   form_name)("Reinforce", 0, 1);
-                        - stepper_control_t!("stress_count",     form_name)("Stress", 0, 7);
-                        //-- stepper_control_t!("jam_count",        form_name)("Jam", 0, 7);
-                        //-- stepper_control_t!("tractor_count",    form_name)("Tractor", 0, 7);
-                        //-- stepper_control_t!("ion_count",        form_name)("Ion", 0, 7);
-                        //-- stepper_control_t!("disarm_count",     form_name)("Disarm", 0, 7);
+                        - stepper_control_t!("stress_count",     form_name)("Stress", 0, 6);
+                        //-- stepper_control_t!("jam_count",        form_name)("Jam", 0, 6);
+                        //-- stepper_control_t!("tractor_count",    form_name)("Tractor", 0, 6);
+                        //-- stepper_control_t!("ion_count",        form_name)("Ion", 0, 6);
+                        //-- stepper_control_t!("disarm_count",     form_name)("Disarm", 0, 6);
                 .cell
                     fieldset.fieldset
                         legend Ship

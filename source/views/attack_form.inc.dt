@@ -25,7 +25,7 @@
             - string initial_visibility = enabled ? "" : "hide";
             div(id="#{form_name}_panel", data-toggler=".hide", class="#{initial_visibility}")
                 - if (include_dice)
-                    - stepper_control_t!("dice",                 form_name)("Attack Dice",  0, 7);
+                    - stepper_control_t!("dice",                 form_name)("Attack Dice",  0, 6);
                     - switch_control_t !("roll_all_hits",        form_name)("Roll All Hits");
 
                 - if (include_previous_tokens)
@@ -37,15 +37,15 @@
                         .cell
                             fieldset.fieldset
                                 legend Tokens
-                                - stepper_control_t!("focus_count",        form_name)("Focus", 0, 7);
-                                - stepper_control_t!("calculate_count",    form_name)("Calculate", 0, 7);
-                                - stepper_control_t!("evade_count",        form_name)("Evade", 0, 7);
+                                - stepper_control_t!("focus_count",        form_name)("Focus", 0, 6);
+                                - stepper_control_t!("calculate_count",    form_name)("Calculate", 0, 6);
+                                - stepper_control_t!("evade_count",        form_name)("Evade", 0, 6);
                                 - stepper_control_t!("reinforce_count",    form_name)("Reinforce", 0, 1);
-                                - stepper_control_t!("stress_count",       form_name)("Stress", 0, 7);
-                                //-- stepper_control_t!("jam_count",          form_name)("Jam", 0, 7);
-                                //-- stepper_control_t!("tractor_count",      form_name)("Tractor", 0, 7);
-                                //-- stepper_control_t!("ion_count",          form_name)("Ion", 0, 7);
-                                //-- stepper_control_t!("disarm_count",       form_name)("Disarm", 0, 7);
+                                - stepper_control_t!("stress_count",       form_name)("Stress", 0, 6);
+                                //-- stepper_control_t!("jam_count",          form_name)("Jam", 0, 6);
+                                //-- stepper_control_t!("tractor_count",      form_name)("Tractor", 0, 6);
+                                //-- stepper_control_t!("ion_count",          form_name)("Ion", 0, 6);
+                                //-- stepper_control_t!("disarm_count",       form_name)("Disarm", 0, 6);
                         .cell
                             fieldset.fieldset
                                 legend Ship

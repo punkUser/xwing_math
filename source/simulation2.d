@@ -160,16 +160,19 @@ private SimulationStateSet simulate_single_attack(
         initial_state.defense_tokens = defense_tokens;
         initial_state.probability    = 1.0;
 
+        // NOTE: 0-6 dice rolled after modifiers, as per the rules
+        int attack_dice_count = clamp(setup.attack.dice, 0, 6);
+
         // If "roll all hits" is set just statically add that single option
         if (setup.attack.roll_all_hits)
         {
-            initial_state.attack_dice.results[DieResult.Hit] = cast(ubyte)setup.attack.dice;
+            initial_state.attack_dice.results[DieResult.Hit] = cast(ubyte)attack_dice_count;
             states.push_back(initial_state);
         }
         else
         {
             // Regular roll
-            states.roll_attack_dice(initial_state, setup.attack.dice);
+            states.roll_attack_dice(initial_state, attack_dice_count);
         }
     }
 
@@ -214,19 +217,21 @@ private SimulationStateSet simulate_single_attack(
         {
             SimulationState state = states.pop_back();
 
-            int defense_dice = setup.defense.dice;
+            int defense_dice_count = setup.defense.dice + setup.attack.defense_dice_diff;
             if (state.defense_tokens.stealth_device)
-                ++defense_dice;
-            defense_dice = max(defense_dice + setup.attack.defense_dice_diff, 0);
+                ++defense_dice_count;
 
             // If predictive shot was used, clamp defense dice appropriately
             if (state.attack_tokens.predictive_shot_used)
             {
                 int hits_crits_count = state.attack_dice.final_results[DieResult.Hit] + state.attack_dice.final_results[DieResult.Crit];
-                defense_dice = min(defense_dice, hits_crits_count);
+                defense_dice_count = min(defense_dice_count, hits_crits_count);
             }
 
-            finished_states.roll_defense_dice(state, defense_dice);
+            // NOTE: 0-6 dice rolled after modifiers, as per the rules
+            defense_dice_count = clamp(defense_dice_count, 0, 6);
+
+            finished_states.roll_defense_dice(state, defense_dice_count);
         }
 
         swap(states, finished_states);
