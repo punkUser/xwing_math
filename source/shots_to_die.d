@@ -22,6 +22,7 @@ public struct ShotsToDieResult
     bool converged;                             // If false, mean_shots_to_die is an approximate lower bound
     bool precomputed;
     immutable(double)[] shots_cdf;
+    int shots_cdf_ui_length;                    // Suggested CDF clipping length
 };
 
 ShotsToDieResult simulate_shots_to_die(ref const(AttackPresetForm) attack_form,
@@ -52,6 +53,7 @@ ShotsToDieResult simulate_shots_to_die(ref const(AttackPresetForm) attack_form,
     cdf[0] = 0.0;
 
     int shots_to_die = 1;
+    int cdf_ui_length = 1;
     for (; shots_to_die < max_shots; ++shots_to_die)
     {
         states.replace_attack_tokens(attack_tokens);
@@ -71,6 +73,9 @@ ShotsToDieResult simulate_shots_to_die(ref const(AttackPresetForm) attack_form,
         //writefln("%s: %s states, mean_shots_to_die = %s, remaining_p = %s",
         //         shots_to_die, states.length(), mean_shots_to_die, remaining_p);
 
+        if (remaining_p > 0.001)
+            ++cdf_ui_length;
+
         // Termination conditions
         if (states.empty() || remaining_p < 1e-6)
         {
@@ -85,6 +90,10 @@ ShotsToDieResult simulate_shots_to_die(ref const(AttackPresetForm) attack_form,
         }
     }
 
+    // If we have the data, allow the final UI CDF value
+    if (cdf_ui_length < shots_to_die)
+        ++cdf_ui_length;
+
     //writefln("mean_shots_to_die: %s shots%s", mean_shots_to_die, converged ? "" : " (didn't converge)");
 
     ShotsToDieResult result;
@@ -93,8 +102,8 @@ ShotsToDieResult simulate_shots_to_die(ref const(AttackPresetForm) attack_form,
     result.converged = converged;
     result.precomputed = precomputed;
 
-    // TODO: Consider clipping the PDF tail more than we do for computation of the mean (for UI, etc)
     result.shots_cdf = cdf[0..shots_to_die].idup;
+    result.shots_cdf_ui_length = cdf_ui_length;
 
     return result;
 }

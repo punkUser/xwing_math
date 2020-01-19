@@ -556,6 +556,9 @@ public class WWWServer
         string[] shots_to_die_labels;
         double[] shots_to_die;
         double[][] shots_cdfs;
+        // Suggested length of the graph if focusing on a given CDF
+        // CDF above will still include all the computed data in case certain UI modes expose it
+        int[] shots_cdfs_ui_length;
 
         // Which index is the requested ship in the arrays
         int your_ship_index;
@@ -596,14 +599,18 @@ public class WWWServer
                                            serialize_form_to_url(defense_form),
                                            serialize_form_to_url(attack_form));
         
-        content.shots_to_die_labels = new string[results.length];
-        content.shots_to_die        = new double[results.length];
-        content.shots_cdfs          = new double[][results.length];
+        // TODO: At this point it might make more sense for the JS to flatten/arrange these arrays as needed
+        // rather than us pulling them into parallel arrays arbitrarily.
+        content.shots_to_die_labels  = new string[results.length];
+        content.shots_to_die         = new double[results.length];
+        content.shots_cdfs           = new double[][results.length];
+        content.shots_cdfs_ui_length = new int[results.length];
         foreach (i, r; results)
         {
             content.shots_to_die_labels[i] = r.label;
             content.shots_to_die[i] = r.mean_shots_to_die;
             content.shots_cdfs[i] = r.shots_cdf.dup;
+            content.shots_cdfs_ui_length[i] = r.shots_cdf_ui_length;
             if (!r.precomputed)
             {
                 content.your_ship_index = cast(int)i;

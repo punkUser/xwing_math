@@ -30,7 +30,7 @@ function setComparisonCDF(index)
 function updateCharts()
 {
 	if (window.shots_chart != null)
-	{				
+	{
 		window.shots_chart.data.labels = shots_to_die_data.shots_to_die_labels;
 		window.shots_chart.data.datasets[0].data = shots_to_die_data.shots_to_die;
 		window.shots_chart.data.datasets[0].borderColor = Array(shots_to_die_data.shots_to_die_labels.length).fill('rgb(54, 162, 235)');
@@ -45,7 +45,9 @@ function updateCharts()
 	
 	if (window.cdf_chart != null)
 	{
-		var cdf = shots_to_die_data.shots_cdfs[shots_to_die_data.your_ship_index];
+		var index = shots_to_die_data.your_ship_index;
+		var cdf = shots_to_die_data.shots_cdfs[index];
+		cdf.length = shots_to_die_data.shots_cdfs_ui_length[index];
 		
 		window.cdf_chart.data.datasets[0].data = arrayToCDFDataset(cdf);
 		window.cdf_chart.options.scales.xAxes[0].ticks.min = 1;
