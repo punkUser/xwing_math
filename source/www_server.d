@@ -552,11 +552,13 @@ public class WWWServer
         // Query string that can be used in the URL to get back to the form state that generated this
         string form_state_string;
 
+        // One per ship (including precomputed comparisons)
         string[] shots_to_die_labels;
         double[] shots_to_die;
-        double[] shots_cdf;
-        int your_ship_index;        // For coloring the bar
+        double[][] shots_cdfs;
 
+        // Which index is the requested ship in the arrays
+        int your_ship_index;
         string expected_shots_string;
     };
 
@@ -596,15 +598,16 @@ public class WWWServer
         
         content.shots_to_die_labels = new string[results.length];
         content.shots_to_die        = new double[results.length];
+        content.shots_cdfs          = new double[][results.length];
         foreach (i, r; results)
         {
             content.shots_to_die_labels[i] = r.label;
             content.shots_to_die[i] = r.mean_shots_to_die;
+            content.shots_cdfs[i] = r.shots_cdf.dup;
             if (!r.precomputed)
             {
                 content.your_ship_index = cast(int)i;
                 content.expected_shots_string = format("%s%.3f", r.converged ? "" : ">", r.mean_shots_to_die);
-                content.shots_cdf = r.shots_cdf.dup;
             }
         }
 

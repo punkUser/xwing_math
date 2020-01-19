@@ -21,7 +21,7 @@ public struct ShotsToDieResult
     double mean_shots_to_die;
     bool converged;                             // If false, mean_shots_to_die is an approximate lower bound
     bool precomputed;
-    immutable(double)[] shots_cdf;              // NOTE: Not filled if precomputed = true
+    immutable(double)[] shots_cdf;
 };
 
 ShotsToDieResult simulate_shots_to_die(ref const(AttackPresetForm) attack_form,
@@ -94,8 +94,7 @@ ShotsToDieResult simulate_shots_to_die(ref const(AttackPresetForm) attack_form,
     result.precomputed = precomputed;
 
     // TODO: Consider clipping the PDF tail more than we do for computation of the mean (for UI, etc)
-    if (!precomputed)
-        result.shots_cdf = cdf[0..shots_to_die].idup;
+    result.shots_cdf = cdf[0..shots_to_die].idup;
 
     return result;
 }

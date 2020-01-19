@@ -1,3 +1,62 @@
+var shots_to_die_data = [];
+
+function arrayToCDFDataset(p)
+{
+	// NOTE: Skip 0,0 element as it isn't interesting
+	return p.slice(1).map(function(item, index) {
+		return {
+			x: index + 1,
+			y: item
+		};
+	});
+}
+
+// Set index negative to clear out the comparison CDF
+function setComparisonCDF(index)
+{
+	var cdf_length = window.cdf_chart.data.datasets[0].data.length + 1;
+	var cdf = Array(cdf_length).fill(0.0);
+	
+	if (index >= 0 && index < shots_to_die_data.shots_cdfs.length && index != shots_to_die_data.your_ship_index)
+	{
+		cdf = shots_to_die_data.shots_cdfs[index].concat(Array(cdf_length).fill(1.0));
+		cdf.length = cdf_length;
+	}
+	
+	window.cdf_chart.data.datasets[1].data = arrayToCDFDataset(cdf);
+	window.cdf_chart.update();
+}
+
+function updateCharts()
+{
+	if (window.shots_chart != null)
+	{				
+		window.shots_chart.data.labels = shots_to_die_data.shots_to_die_labels;
+		window.shots_chart.data.datasets[0].data = shots_to_die_data.shots_to_die;
+		window.shots_chart.data.datasets[0].borderColor = Array(shots_to_die_data.shots_to_die_labels.length).fill('rgb(54, 162, 235)');
+		window.shots_chart.data.datasets[0].backgroundColor = Array(shots_to_die_data.shots_to_die_labels.length).fill('rgba(54, 162, 235, 0.5)');
+		
+		// Your ship color
+		window.shots_chart.data.datasets[0].borderColor[shots_to_die_data.your_ship_index] = 'rgb(255, 99, 132)';
+		window.shots_chart.data.datasets[0].backgroundColor[shots_to_die_data.your_ship_index] = 'rgba(255, 99, 132, 0.5)';
+		
+		window.shots_chart.update();
+	}
+	
+	if (window.cdf_chart != null)
+	{
+		var cdf = shots_to_die_data.shots_cdfs[shots_to_die_data.your_ship_index];
+		
+		window.cdf_chart.data.datasets[0].data = arrayToCDFDataset(cdf);
+		window.cdf_chart.options.scales.xAxes[0].ticks.min = 1;
+		window.cdf_chart.options.scales.xAxes[0].ticks.max = cdf.length - 1;
+		
+		setComparisonCDF(-1);
+	}
+	
+	$("#shots-title").html("Expected Shots: " + shots_to_die_data.expected_shots_string);
+}
+
 function setupCharts()
 {
 	var shots_element = document.getElementById("shots-canvas");
@@ -32,7 +91,7 @@ function setupCharts()
 						label: function(tooltipItem, data) {
 							return Math.abs(tooltipItem.xLabel).toFixed(3);
 						},
-					},
+					}
 				},
 				scales: {
 					xAxes: [{
@@ -44,7 +103,16 @@ function setupCharts()
 							beginAtZero: true,
 						},
 					}],
-				}
+				},
+				onClick: function(mouse_event, chart_elements) {
+					var index = -1;
+					if (chart_elements.length == 1) {
+						var bar = chart_elements[0];
+						if (bar._datasetIndex == 0)
+							index = bar._index;
+					}
+					setComparisonCDF(index);
+				},
 			}
 		});
 	}
@@ -56,15 +124,26 @@ function setupCharts()
 		window.cdf_chart = new Chart(cdf_ctx, {
 			type: 'scatter',
 			data: {
-				datasets: [{
-					showLine: true,
-					borderColor: 'rgb(255, 99, 132)',
-					backgroundColor: 'rgba(255, 99, 132, 0.2)',
-					borderWidth: 2,
-					pointRadius: 1,
-					fill: "origin",
-					data: [],
-				}],
+				datasets: [
+					{
+						showLine: true,
+						borderColor: 'rgb(255, 99, 132)',
+						backgroundColor: 'rgba(255, 99, 132, 0.2)',
+						borderWidth: 2,
+						pointRadius: 1,
+						fill: "origin",
+						data: [],
+					},
+					{
+						showLine: true,
+						borderColor: 'rgb(54, 162, 235)',
+						backgroundColor: 'rgba(54, 162, 235, 0.2)',
+						borderWidth: 2,
+						pointRadius: 1,
+						fill: "origin",
+						data: [],
+					}
+				],
 			},
 			options: {
 				responsive: true,
@@ -82,7 +161,7 @@ function setupCharts()
 						label: function(tooltipItem, data) {
 							return Math.abs(tooltipItem.xLabel) + ": " + Math.abs(tooltipItem.yLabel).toFixed(6);
 						},
-					},
+					}
 				},
 				scales: {
 					xAxes: [{
@@ -122,38 +201,9 @@ function simulateUpdate(updateHistory = false)
 		contentType: "application/json; charset=utf-8",
 		dataType: "json",
 		success: function(data)
-		{			
-			if (window.shots_chart != null)
-			{				
-				window.shots_chart.data.labels = data.shots_to_die_labels;
-				window.shots_chart.data.datasets[0].data = data.shots_to_die;
-				window.shots_chart.data.datasets[0].borderColor = Array(data.shots_to_die_labels.length).fill('rgb(54, 162, 235)');
-				window.shots_chart.data.datasets[0].backgroundColor = Array(data.shots_to_die_labels.length).fill('rgba(54, 162, 235, 0.5)');
-				
-				// Your ship color
-				window.shots_chart.data.datasets[0].borderColor[data.your_ship_index] = 'rgb(255, 99, 132)';
-				window.shots_chart.data.datasets[0].backgroundColor[data.your_ship_index] = 'rgba(255, 99, 132, 0.5)';
-				
-				window.shots_chart.update();
-			}
-			
-			if (window.cdf_chart != null)
-			{				
-				// NOTE: Skip 0,0 element as it isn't interesting
-				var result = data.shots_cdf.slice(1).map(function(item, index) {
-					return {
-						x: index + 1,
-						y: item
-					};
-				});
-				window.cdf_chart.data.datasets[0].data = result;
-				window.cdf_chart.options.scales.xAxes[0].ticks.min = 1;
-				window.cdf_chart.options.scales.xAxes[0].ticks.max = result.length - 1;
-				
-				window.cdf_chart.update();
-			}		
-			
-			$("#shots-title").html("Expected Shots: " + data.expected_shots_string);
+		{
+			shots_to_die_data = data;
+			updateCharts();
 			
 			if (updateHistory && window.history.pushState && data.form_state_string.length > 0)
 			{

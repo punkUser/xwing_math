@@ -4,8 +4,8 @@
 	],
 	"copyright": "Copyright © 2019, Andrew Lauritzen",
 	"dependencies": {
-		"diet-ng": "~>1.5.0",
-		"vibe-d": "~>0.8.5"
+		"diet-ng": "~>1.6.1",
+		"vibe-d": "~>0.8.6"
 	},
 	"description": "X-Wing Probability Calculator",
 	"name": "xwing_math",
