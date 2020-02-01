@@ -17,6 +17,7 @@ block form
             - attack_preset_form_t!"attack4"("Attack 5", true, true);
             - attack_preset_form_t!"attack5"("Attack 6", true, true);
             - attack_preset_form_t!"attack6"("Attack 7", true, true);
+            - attack_preset_form_t!"attack7"("Attack 8", true, true);
 
         .cell
             - defense_form_t!"defense"();

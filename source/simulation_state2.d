@@ -28,13 +28,13 @@ public struct TokenState
         // Green tokens               
         uint, "focus",                4,        
         uint, "calculate",            4,
-        uint, "evade",                4,
+        uint, "evade",                8,    // Laetin...
         uint, "reinforce",            2,
                                       
         // Red tokens                 
         uint, "stress",               4,
                                       
-        bool, "lone_wolf",            1,      // Recurrent
+        bool, "lone_wolf",            1,    // Recurrent
         bool, "stealth_device",       1,
 
         // NOTE: Instead of tracking a single field ion token count, we basically track whether
@@ -59,7 +59,7 @@ public struct TokenState
         bool, "iden_used",            1,      // tracking so we can treat the attack as "hitting"
         bool, "predictive_shot_used", 1,      // tracking for Predictive Shot use at start of attack
 
-        uint, "",                    27,
+        uint, "",                    23,
         )
     );
 

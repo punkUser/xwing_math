@@ -76,6 +76,7 @@
                         - select_control_option_t!("ship", form_name)("No Ship Ability or Config",      AttackShip.None);
                         - select_control_option_t!("ship", form_name)("Advanced Targeting Computer",    AttackShip.AdvancedTargetingComputer);
                         - select_control_option_t!("ship", form_name)("Calibrated Laser Targeting",     AttackShip.CalibratedLaserTargeting);
+                        - select_control_option_t!("ship", form_name)("Networked Calculations",         AttackShip.NetworkedCalculations);
                         
                 fieldset.fieldset
                     legend Friendly Ships

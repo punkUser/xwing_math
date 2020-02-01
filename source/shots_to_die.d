@@ -48,7 +48,7 @@ ShotsToDieResult simulate_shots_to_die(ref const(AttackPresetForm) attack_form,
     double mean_shots_to_die = 0.0;
     bool converged = false;
 
-    immutable max_shots = 200;
+    immutable max_shots = 100;
     double[max_shots] cdf;
     cdf[0] = 0.0;
 
@@ -73,9 +73,6 @@ ShotsToDieResult simulate_shots_to_die(ref const(AttackPresetForm) attack_form,
         //writefln("%s: %s states, mean_shots_to_die = %s, remaining_p = %s",
         //         shots_to_die, states.length(), mean_shots_to_die, remaining_p);
 
-        if (remaining_p > 0.001)
-            ++cdf_ui_length;
-
         // Termination conditions
         if (states.empty() || remaining_p < 1e-6)
         {
@@ -88,6 +85,9 @@ ShotsToDieResult simulate_shots_to_die(ref const(AttackPresetForm) attack_form,
             converged = false;
             break;
         }
+
+        if (remaining_p > 0.001)
+            ++cdf_ui_length;
     }
 
     // If we have the data, allow the final UI CDF value

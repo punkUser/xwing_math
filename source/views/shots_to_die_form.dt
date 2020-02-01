@@ -34,11 +34,13 @@ block content
                             - select_control_option_t!("pilot", form_name)("(Reroll up to 3 dice)",     DefensePilot.Reroll_3);
                             - select_control_option_t!("pilot", form_name)("Captain Feroph",            DefensePilot.CaptainFeroph);
                             - select_control_option_t!("pilot", form_name)("Han Solo (Rebel)",          DefensePilot.HanSoloRebel);
+                            - select_control_option_t!("pilot", form_name)("Laetin A'shera",            DefensePilot.LaetinAshera);
                             - select_control_option_t!("pilot", form_name)("Luke Skywalker",            DefensePilot.LukeSkywalker);
                             - select_control_option_t!("pilot", form_name)("Norra Wexley",              DefensePilot.NorraWexley);
                         select(name="ship")
                             - select_control_option_t!("ship",  form_name)("No Ship Ability",           DefenseShip.None);
                             - select_control_option_t!("ship",  form_name)("Concordia Faceoff",         DefenseShip.ConcordiaFaceoff);
+                            - select_control_option_t!("ship",  form_name)("Networked Calculations",    DefenseShip.NetworkedCalculations);
 
                     fieldset.fieldset
                         legend Friendly Ships

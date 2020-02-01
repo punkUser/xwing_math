@@ -259,9 +259,10 @@ public class WWWServer
         AttackPresetForm attack4 = create_form_from_url!AttackPresetForm(req.query.get("a5", ""), 4);
         AttackPresetForm attack5 = create_form_from_url!AttackPresetForm(req.query.get("a6", ""), 5);
         AttackPresetForm attack6 = create_form_from_url!AttackPresetForm(req.query.get("a7", ""), 6);
+        AttackPresetForm attack7 = create_form_from_url!AttackPresetForm(req.query.get("a8", ""), 7);
 
         auto server_settings = m_server_settings;
-        res.render!("multi2_preset_form.dt", server_settings, defense, attack0, attack1, attack2, attack3, attack4, attack5, attack6);
+        res.render!("multi2_preset_form.dt", server_settings, defense, attack0, attack1, attack2, attack3, attack4, attack5, attack6, attack7);
     }
 
     private void simulate_multi2_preset(HTTPServerRequest req, HTTPServerResponse res)
@@ -270,7 +271,7 @@ public class WWWServer
 
         auto defense_form = create_form_from_fields!DefenseForm(req.json["defense"]);
 
-        AttackPresetForm[7] attack_form;
+        AttackPresetForm[8] attack_form;
         foreach (i; 0 .. cast(int)attack_form.length)
             attack_form[i] = create_form_from_fields!AttackPresetForm(req.json["attack" ~ to!string(i)], i);
 
@@ -281,7 +282,7 @@ public class WWWServer
 
         // Save results for each attack as we accumulate
         int max_enabled_attack = 0;
-        SimulationResults[7] results_after_attack;
+        SimulationResults[attack_form.length] results_after_attack;
         {
             auto sw = StopWatch(AutoStart.yes);
 

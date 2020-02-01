@@ -51,7 +51,6 @@ function updateCharts()
 		
 		window.cdf_chart.data.datasets[0].data = arrayToCDFDataset(cdf);
 		window.cdf_chart.options.scales.xAxes[0].ticks.min = 1;
-		window.cdf_chart.options.scales.xAxes[0].ticks.max = cdf.length - 1;
 		
 		setComparisonCDF(-1);
 	}

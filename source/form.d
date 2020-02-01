@@ -50,12 +50,14 @@ enum AttackShip : ubyte
     None = 0,
     AdvancedTargetingComputer,
     CalibratedLaserTargeting,       // Technically a config, but close enough
+    NetworkedCalculations,
 }
 enum DefenseShip : ubyte
 {
     None = 0,
     ConcordiaFaceoff,
     PlatedHull,
+    NetworkedCalculations,
 }
 
 

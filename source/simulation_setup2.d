@@ -36,6 +36,8 @@ public class SimulationSetup
         bool ion_weapon = false;
         bool saturation_salvo = false;
         bool plasma_torpedoes = false;
+        bool advanced_optics = false;
+        bool predictive_shot = false;
 
         bool scum_lando_crew = false;
         bool zuckuss_crew = false;
@@ -48,9 +50,6 @@ public class SimulationSetup
         bool scum_lando_pilot = false;
         bool rebel_han_pilot = false;
         bool rey_pilot = false;
-
-        bool advanced_optics = false;
-        bool predictive_shot = false;
     };
     public Attack attack;
 
@@ -83,6 +82,7 @@ public class SimulationSetup
         bool heroic = false;
         bool brilliant_evasion = false;
         bool plated_hull = false;       // 1 crit -> hit on attack dice
+        bool hate = false;
 
         bool zeb_pilot = false;
         bool leebo_pilot = false;
@@ -94,8 +94,6 @@ public class SimulationSetup
         bool scum_lando_pilot = false;
         bool rebel_han_pilot = false;
         bool rey_pilot = false;
-
-        bool hate = false;
     };
     public Defense defense;
 };
@@ -113,7 +111,7 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.attack.add_blank_count             += attack.finn_gunner ? 1 : 0;
     setup.attack.add_blank_count             += attack.pilot == AttackPilot.FinnPod_Blank ? 1 : 0;
     setup.attack.add_focus_count             += attack.pilot == AttackPilot.FinnPod_Focus ? 1 : 0;
-    setup.attack.add_focus_count             += attack.ship == AttackShip.CalibratedLaserTargeting ? 1 : 0;
+    setup.attack.add_focus_count             += attack.ship  == AttackShip.CalibratedLaserTargeting ? 1 : 0;
     setup.attack.reroll_1_count              += attack.howlrunner ? 1 : 0;
     setup.attack.reroll_1_count              += attack.predator ? 1 : 0;
     setup.attack.reroll_1_count              += attack.saw_gerrera_pilot ? 1 : 0;
@@ -122,6 +120,7 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.attack.reroll_3_count              += attack.pilot == AttackPilot.Reroll_3 ? 1 : 0;
 
     setup.attack.focus_to_hit_count          += attack.agent_kallus ? 1 : 0;
+    setup.attack.focus_to_hit_count          += attack.ship  == AttackShip.NetworkedCalculations ? 1 : 0;
     setup.attack.focus_to_crit_count         += attack.pilot == AttackPilot.RearAdmiralChiraneau ? 1 : 0;
     setup.attack.hit_to_crit_count           += attack.proton_torpedoes;
     setup.attack.hit_to_crit_count           += attack.marksmanship;
@@ -178,6 +177,7 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.defense.reroll_3_count             += defense.pilot == DefensePilot.Reroll_3 ? 1 : 0;
 
     setup.defense.any_to_evade_count         += defense.ship  == DefenseShip.ConcordiaFaceoff ? 1 : 0;
+    setup.defense.focus_to_evade_count       += defense.ship  == DefenseShip.NetworkedCalculations ? 1 : 0;
 
     setup.defense.leebo_pilot                 = defense.pilot == DefensePilot.Leebo;    
     setup.defense.luke_pilot                  = defense.pilot == DefensePilot.LukeSkywalker;
