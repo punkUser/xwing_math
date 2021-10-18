@@ -20,13 +20,13 @@ private static immutable double[] k_factorials_table = [
     87178291200,		// 14!
 ];
 
-private pure double factorial(int n)
+private pure double factorial(int n) nothrow
 {
     assert(n < k_factorials_table.length);
     return k_factorials_table[n];
 }
 
-private pure double[count] compute_power_table(ulong count)(ulong num, ulong denom)
+private pure double[count] compute_power_table(ulong count)(ulong num, ulong denom) nothrow
 {
     double[15] table;
     table[0] = 1.0;
@@ -44,7 +44,7 @@ private pure double[count] compute_power_table(ulong count)(ulong num, ulong den
     return table;
 }
 
-private pure double fractional_power(ulong num, ulong denom)(int power)
+private pure double fractional_power(ulong num, ulong denom)(int power) nothrow
 {
     static immutable auto k_power_table = compute_power_table!15(num, denom);
     assert(power < k_power_table.length);
@@ -56,7 +56,7 @@ private pure double fractional_power(ulong num, ulong denom)(int power)
 // NOTE: Can optimize power functions into a table fairly easily as well but performance
 // improvement is negligable and readability is greater this way.
 
-public pure double compute_attack_roll_probability(int blank, int focus, int hit, int crit)
+public pure double compute_attack_roll_probability(int blank, int focus, int hit, int crit) nothrow
 {
     // P(blank) = 2/8
     // P(focus) = 2/8
@@ -74,7 +74,7 @@ public pure double compute_attack_roll_probability(int blank, int focus, int hit
     return roll_probability;
 }
 
-public pure double compute_defense_roll_probability(int blank, int focus, int evade)
+public pure double compute_defense_roll_probability(int blank, int focus, int evade) nothrow
 {
     // P(blank) = 3/8
     // P(focus) = 2/8

@@ -325,9 +325,6 @@ public SimulationStateSet simulate_attack(const(SimulationSetup) setup, Simulati
             initial_state.defense_tokens != second_attack_initial_state.defense_tokens ||
             !second_attack_states)
         {
-            // This can be expensive for lots of states so worth allowing other things to run occasionally
-            vibe.core.core.yield();
-
             //auto sw = StopWatch(AutoStart.yes);
 
             // New token state set, so run a new simulation

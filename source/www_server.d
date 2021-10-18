@@ -70,7 +70,7 @@ public class WWWServer
         router.post(m_server_settings.url_root ~ "2/ship_durability/simulate.json", &simulate_ship_durability);
 
         // Index and misc
-        router.get (m_server_settings.url_root, staticRedirect(m_server_settings.url_root ~ "2/multi_preset/", HTTPStatus.Found));
+        router.get (m_server_settings.url_root, staticRedirect(m_server_settings.url_root ~ "2/multi_preset/", HTTPStatus.found));
         router.get (m_server_settings.url_root ~ "faq/", &about);
         router.get (m_server_settings.url_root ~ "about/", staticRedirect(m_server_settings.url_root ~ "faq/", HTTPStatus.movedPermanently));
             
@@ -147,6 +147,36 @@ public class WWWServer
         string form_state_string;
     };
 
+    private SimulationStateSet simulate_with_timeout
+        (SimulationSetup setup, SimulationStateSet simulation_states, core.time.Duration timeout = 30.seconds)
+    {
+        // This is useful to quickly skip subsequent attacks/simulations if an earlier one fails (and thus returns an empty state set)
+        if (simulation_states.empty())
+            return simulation_states;
+
+        SimulationStateSet output_states = new SimulationStateSet();
+        bool success = false;
+
+        auto simulate_task = vibe.core.core.runTask(() nothrow {
+            try
+            {
+                output_states = simulate_attack(setup, simulation_states);
+                success = true;
+            }
+            catch (Exception e)
+            {
+                // Do something probably
+            }
+        });
+        
+        vibe.core.core.Timer watchdog_timer = vibe.core.core.createTimer(() { simulate_task.interrupt(); });
+        watchdog_timer.rearm(timeout);
+        simulate_task.join();
+        watchdog_timer.stop();
+
+        return output_states;
+    }
+
     private void multi2(HTTPServerRequest req, HTTPServerResponse res)
     {
         DefenseForm defense = create_form_from_url!DefenseForm(req.query.get("d", ""));
@@ -198,7 +228,7 @@ public class WWWServer
             initial_state.defense_tokens   = defense_tokens;
             initial_state.probability      = 1.0;
             simulation_states.push_back(initial_state);
-
+            
             foreach (i; 0 .. cast(int)attack_form.length)
             {
                 if (attack_form[i].enabled)
@@ -215,19 +245,17 @@ public class WWWServer
                     max_enabled_attack = i;
                     
                     SimulationSetup setup = to_simulation_setup(attack_form[i], defense_form);
-                    simulation_states = simulate_attack(setup, simulation_states);
+                    simulation_states = simulate_with_timeout(setup, simulation_states);
                 }
 
                 results_after_attack[i] = simulation_states.compute_results();
             }
 
-            // NOTE: This is kinda similar to the access log, but convenient for now
-            double expected_damage = results_after_attack[$-1].total_sum.hits + results_after_attack[$-1].total_sum.crits;
-            log_message("%s %s %.15f %sms",
+            log_message("%s %s %sms %s",
                         req.clientAddress.toAddressString(),
                         "/2/multi/?" ~ form_state_string,
-                        expected_damage,
-                        sw.peek().total!"msecs",);
+                        sw.peek().total!"msecs",
+                        simulation_states.empty() ? "TIMEOUT" : "");
         }
 
         SimulateJsonContent content;
@@ -307,12 +335,12 @@ public class WWWServer
                     max_enabled_attack = i;
 
                     SimulationSetup setup = to_simulation_setup(attack_form[i], defense_form);
-                    simulation_states = simulate_attack(setup, simulation_states);
+                    simulation_states = simulate_with_timeout(setup, simulation_states);
 
                     if (attack_form[i].bonus_attack_enabled)
                     {
                         SimulationSetup bonus_setup = to_simulation_setup_bonus(attack_form[i], defense_form);
-                        simulation_states = simulate_attack(bonus_setup, simulation_states);
+                        simulation_states = simulate_with_timeout(bonus_setup, simulation_states);
                     }
                 }
 
@@ -320,12 +348,11 @@ public class WWWServer
             }
 
             // NOTE: This is kinda similar to the access log, but convenient for now
-            double expected_damage = results_after_attack[$-1].total_sum.hits + results_after_attack[$-1].total_sum.crits;
-            log_message("%s %s %.15f %sms",
+            log_message("%s %s %sms %s",
                         req.clientAddress.toAddressString(),
                         "/2/multi_preset/?" ~ form_state_string,
-                        expected_damage,
-                        sw.peek().total!"msecs",);
+                        sw.peek().total!"msecs",
+                        simulation_states.empty() ? "TIMEOUT" : "");
         }
 
         SimulateJsonContent content;

@@ -259,7 +259,13 @@ function simulateUpdate(updateHistory = false)
 			$("html, body").animate({
 				scrollTop: $("#simulate-results").offset().top
 			}, 300);
-		}
+		},
+		//error: function(jqXHR, textStatus, errorThrown)
+		//{
+		//	console.log(jqXHR);
+		//	console.log(textStatus);
+		//	console.log(errorThrown);			
+		//}
 	})
 }
 
@@ -276,7 +282,6 @@ $(document).ready(function()
 	if (window.location.search.length > 0) {
 		// If there's an "nas" (no autosubmit) param, respect that		
 		var urlParams = new URLSearchParams(window.location.search);
-		console.log(urlParams.has('nas'));
 		if (!urlParams.has('nas'))
 			simulateUpdate(false);
 	}

@@ -6,7 +6,7 @@ public struct TokenResults
         string name;        // UI name to use for the field
     };    
 
-    public void initialize(const(Field)[] fields, T)(double probability, T state)
+    public void initialize(const(Field)[] fields, T)(double probability, T state) nothrow
     {
         assert(fields.length <= m_values.length);
 
@@ -20,7 +20,7 @@ public struct TokenResults
     }
 
     // Used for computing weighted probabilities of various results
-    ref TokenResults opOpAssign(string op)(in TokenResults rhs) if (op == "+")
+    ref TokenResults opOpAssign(string op)(in TokenResults rhs) nothrow if (op == "+")
     {
         // Super hacky, but good enough for now!
         if (!m_initialized)
@@ -42,9 +42,9 @@ public struct TokenResults
     private bool m_initialized = false;
 
     // Could do an iteration range or something but this is good enough for now
-    public size_t field_count() const { return m_fields.length; }
-    public string field_name(size_t i) const { return m_fields[i].name; }
-    public double result(size_t i) const { return m_values[i]; }
+    public size_t field_count() const nothrow { return m_fields.length; }
+    public string field_name(size_t i) const nothrow { return m_fields[i].name; }
+    public double result(size_t i) const nothrow { return m_values[i]; }
 };
 
 
@@ -57,7 +57,7 @@ public struct SimulationResult
     TokenResults defense_tokens;
 };
 
-public SimulationResult accumulate_result(SimulationResult a, SimulationResult b)
+public SimulationResult accumulate_result(SimulationResult a, SimulationResult b) nothrow
 {
     a.probability       += b.probability;
     a.hits              += b.hits;

@@ -10,6 +10,8 @@ import std.algorithm;
 import std.stdio;
 import std.conv;
 
+import vibe.core.core;
+
 public enum GreenToken
 {
     Focus = 0,
@@ -64,7 +66,7 @@ public struct TokenState
     );
 
     // Utilities
-    void add_ion_tokens(int count)
+    void add_ion_tokens(int count) nothrow
     {
         while (count > 0)
         {
@@ -75,7 +77,7 @@ public struct TokenState
         }
     }
 
-    uint count(GreenToken token) const
+    uint count(GreenToken token) const nothrow
     {
         switch (token) {
             case GreenToken.Focus:      return focus;
@@ -86,7 +88,7 @@ public struct TokenState
         }
     }
 
-    uint green_token_count() const
+    uint green_token_count() const nothrow
     {
         return focus + calculate + evade + reinforce;
     }
@@ -142,7 +144,7 @@ struct AttackTempState
         uint,  "",                                     10,
     ));
 
-    void reset()
+    void reset() nothrow
     {
         this = AttackTempState.init;
     }
@@ -168,7 +170,7 @@ struct DefenseTempState
         uint, "",                                      12,
         ));
 
-    void reset()
+    void reset() nothrow
     {
         this = DefenseTempState.init;
     }
@@ -193,11 +195,11 @@ public struct StateFork
 };
 
 // Associated factor methods for convenience
-public StateFork StateForkNone()
+public StateFork StateForkNone() nothrow
 {   
     return StateFork();
 }
-public StateFork StateForkRollAndReroll(int roll_count, int reroll_count)
+public StateFork StateForkRollAndReroll(int roll_count, int reroll_count) nothrow
 {   
     assert(roll_count > 0 || reroll_count > 0);
     StateFork fork;
@@ -206,7 +208,7 @@ public StateFork StateForkRollAndReroll(int roll_count, int reroll_count)
     fork.reroll_count = reroll_count;
     return fork;
 }
-public StateFork StateForkRoll(int count)
+public StateFork StateForkRoll(int count) nothrow
 {   
     assert(count > 0);
     StateFork fork;
@@ -215,7 +217,7 @@ public StateFork StateForkRoll(int count)
     fork.reroll_count = 0;
     return fork;
 }
-public StateFork StateForkReroll(int count)
+public StateFork StateForkReroll(int count) nothrow
 {   
     assert(count > 0);
     StateFork fork;
@@ -250,12 +252,12 @@ public struct SimulationState
     alias key this;
 
     // Compare only the key portion of the state
-    int opCmp(ref const SimulationState s) const
+    int opCmp(ref const SimulationState s) const nothrow
     {
         // TODO: Optimize this more for common early outs?
         return memcmp(&this.key, &s.key, Key.sizeof);
     }
-    bool opEquals(ref const SimulationState s) const
+    bool opEquals(ref const SimulationState s) const nothrow
     { 
         // TODO: Optimize this more for common early outs?
         return (this.key == s.key);
@@ -366,12 +368,28 @@ public void roll_defense_dice(SimulationState prev_state, int roll_count, int re
     }
 }
 
+private void YieldOccasionally()
+{
+    // Thread-local counter to rate limit our calls to yield slightly to reduce overhead in uncontended cases
+    static int Count = 0;
+    ++Count;
+    if (Count > 1000)
+    {
+        vibe.core.core.yield();
+        //writeln("Yield");
+        Count = 0;
+    }
+}
+
 // general state fork based on StateFork struct
 // Currently will assert if fork.required() is false; could change to a noop if it makes sense at any call sites
 // delegate params are next_state, probability (also already baked into next_state probability)
 public void fork_attack_state(SimulationState prev_state, const StateFork fork, void delegate(SimulationState, double) dg)
 {
     assert(fork.required());
+
+    YieldOccasionally();
+
     switch (fork.type)
     {
         case StateForkType.Roll:
@@ -384,6 +402,9 @@ public void fork_attack_state(SimulationState prev_state, const StateFork fork, 
 public void fork_defense_state(SimulationState prev_state, const StateFork fork, void delegate(SimulationState, double) dg)
 {
     assert(fork.required());
+
+    YieldOccasionally();
+
     switch (fork.type)
     {
         case StateForkType.Roll:
@@ -399,7 +420,7 @@ public void fork_defense_state(SimulationState prev_state, const StateFork fork,
 
 public class SimulationStateSet
 {
-    public this()
+    public this() nothrow
     {
         // TODO: Experiment with this
         m_states.reserve(50);
@@ -407,7 +428,7 @@ public class SimulationStateSet
 
     // Replaces the attack tokens on *all* current states with the given ones
     // Generally this is done in preparation for simulating another attack *from a different attacker*
-    public void replace_attack_tokens(TokenState attack_tokens)
+    public void replace_attack_tokens(TokenState attack_tokens) nothrow
     {
         foreach (ref state; m_states)
             state.attack_tokens = attack_tokens;
@@ -415,7 +436,7 @@ public class SimulationStateSet
     }
 
     // Replaces the defense tokens on *all* current states with the given ones
-    public void replace_defense_tokens(TokenState defense_tokens)
+    public void replace_defense_tokens(TokenState defense_tokens) nothrow
     {
         foreach (ref state; m_states)
             state.defense_tokens = defense_tokens;
@@ -423,7 +444,7 @@ public class SimulationStateSet
     }
 
     // Re-sorts the array by tokens, ensuring that any states with matching tokens are sequential
-    public void sort_by_tokens()
+    public void sort_by_tokens() nothrow
     {
         multiSort!(
             (a, b) => memcmp(&a.attack_tokens,  &b.attack_tokens,  TokenState.sizeof) < 0,
@@ -435,7 +456,7 @@ public class SimulationStateSet
     // adding their probabilities together. This is very important for performance and states
     // should be simplified as much as possible before calling this to allow as many state collapses
     // as possible.
-    public void compress()
+    public void compress() nothrow
     {
         if (m_states.empty()) return;
 
@@ -469,7 +490,7 @@ public class SimulationStateSet
 
     // Removes any states that have total hits >= the given value and returns their combined probability
     // NOTE: We could generalize this to take an arbitrary predicate, but this is all we need for now.
-    double remove_if_total_hits_ge(int target_hits)
+    double remove_if_total_hits_ge(int target_hits) nothrow
     {
         // Partition into states to keep on the left and states to drop on the right        
         bool total_hits_less(ref const(SimulationState) s) { return s.final_hits + s.final_crits < target_hits; }
@@ -511,7 +532,7 @@ public class SimulationStateSet
         });
     }
 
-    public SimulationResults compute_results() const
+    public SimulationResults compute_results() const nothrow
     {
         SimulationResults results;
 
@@ -549,9 +570,9 @@ public class SimulationStateSet
         return results;
     }
 
-    public @property size_t length() const { return m_states.length; }
-    public bool empty() const { return m_states.empty(); }
-    public void clear_for_reuse() { m_states.length = 0; }
+    public @property size_t length() const nothrow { return m_states.length; }
+    public bool empty() const nothrow { return m_states.empty(); }
+    public void clear_for_reuse() nothrow { m_states.length = 0; }
 
     public SimulationState pop_back()
     {
@@ -559,7 +580,7 @@ public class SimulationStateSet
         m_states.removeBack();
         return back;
     }
-    public void push_back(SimulationState v)
+    public void push_back(SimulationState v) nothrow
     {
         m_states.insertBack(v);
     }
