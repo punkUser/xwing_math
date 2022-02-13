@@ -354,7 +354,7 @@ private SearchDelegate do_attack_finish_amad()
 
         // NOTE: Order matters here! Use Rey greedily on a blank if available first rather than wasting
         // the force to change an eyeball below, etc.
-        if (setup.attack.rey_pilot && state.attack_tokens.force > 0)
+        if (setup.attack.force_blank_to_hit_pilot && state.attack_tokens.force > 0)
         {
             if (state.attack_dice.change_dice(DieResult.Blank, DieResult.Hit, 1) > 0)
                 state.attack_tokens.force = state.attack_tokens.force - 1;
@@ -509,8 +509,9 @@ private SearchDelegate do_defense_finish_dmad()
     {
         assert(!state.attack_temp.finished_dmad);
         
-        if (setup.defense.plated_hull)
-            state.attack_dice.change_dice(DieResult.Crit, DieResult.Hit, 1);
+        state.attack_dice.change_dice(DieResult.Crit, DieResult.Hit, setup.defense.attack_crit_to_hit_count);
+        state.attack_dice.change_dice(DieResult.Hit, DieResult.Focus, setup.defense.attack_hit_to_focus_count);
+        state.attack_dice.change_dice(DieResult.Focus, DieResult.Blank, setup.defense.attack_focus_to_blank_count);
 
         state.attack_temp.finished_dmad = true;
         return StateForkNone();

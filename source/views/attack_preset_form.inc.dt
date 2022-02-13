@@ -22,9 +22,7 @@
     select(name="#{control_name}")
         - select_control_option_t!(control_name, form_name)("No Obstruction or Range Bonus",    DefenderModificationPreset._None                  );
         - select_control_option_t!(control_name, form_name)("+1 Defense Dice",                  DefenderModificationPreset._p1DefenseDice         );
-        - select_control_option_t!(control_name, form_name)("+1 Defense Dice, Gas Cloud",       DefenderModificationPreset._p1DefenseDice_GasCloud);
-        - select_control_option_t!(control_name, form_name)("+2 Defense Dice",                  DefenderModificationPreset._p2DefenseDice         );
-        - select_control_option_t!(control_name, form_name)("+2 Defense Dice, Gas Cloud",       DefenderModificationPreset._p2DefenseDice_GasCloud);        
+        - select_control_option_t!(control_name, form_name)("+2 Defense Dice",                  DefenderModificationPreset._p2DefenseDice         );      
         - select_control_option_t!(control_name, form_name)("-1 Defense Dice",                  DefenderModificationPreset._m1DefenseDice         );
 
 - void attack_preset_form_t(string form_name)(string title = "", bool include_enable_toggle = false, bool include_bonus_attack = false)

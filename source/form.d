@@ -10,19 +10,22 @@ enum AttackPilot : ubyte
     None = 0,
     Leebo,
     SharaBey,
-    Reroll_1,         // Boba/Horton w/ 1 reroll
-    Reroll_2,         // Boba/Horton w/ 2 rerolls
-    Reroll_3,         // Boba/Horton w/ 3 rerolls
+    Reroll_1, 
+    Reroll_2, 
+    Reroll_3, 
     GavinDarklighter,
     MajorVermeil,
     RearAdmiralChiraneau,
     EzraBridger,
     LandoCalrissianScum,
     HanSoloRebel,
-    Rey,
-    FinnPod_Blank,    // Add blank
-    FinnPod_Focus,    // Add focus
-    Broadside,        // Blank to focus
+    Rey,                // Spend force for blank -> hit
+    FinnPod_Blank,      // Add blank
+    FinnPod_Focus,      // Add focus
+    Broadside,          // Blank to focus
+    VaderD,             // Spend force for blank -> hit
+    JangoFett,          // Defense die focus -> blank
+
 }
 enum DefensePilot : ubyte
 {
@@ -31,9 +34,9 @@ enum DefensePilot : ubyte
     NorraWexley,
     LukeSkywalker,
     SharaBey,
-    Reroll_1,         // Boba/Horton w/ 1 reroll
-    Reroll_2,         // Boba/Horton w/ 2 rerolls
-    Reroll_3,         // Boba/Horton w/ 3 rerolls
+    Reroll_1, 
+    Reroll_2, 
+    Reroll_3, 
     ZebOrrelios,
     CaptainFeroph,
     SabineWrenLancer,
@@ -42,8 +45,9 @@ enum DefensePilot : ubyte
     LandoCalrissianScum,
     HanSoloRebel,
     Rey,
-    FinnPod_Blank,    // Add blank
-    FinnPod_Focus,    // Add focus
+    FinnPod_Blank,      // Add blank
+    FinnPod_Focus,      // Add focus
+    JangoFett,          // Attack die focus -> blank
 }
 enum AttackShip : ubyte
 {

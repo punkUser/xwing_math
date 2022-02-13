@@ -31,20 +31,21 @@ public enum DefenderModificationPreset : ubyte
 {
     // NOTE: Do not change the order or it will invalidate links!
     // NOTE: Not all of these are shown in the dropdown right now, but enumerated for completeness/future use
+    // NOTE: Gas cloud ones are no longer exposed but maintained here for now to keep links valid
     _None,
-    _GasCloud,
+    _Unused_GasCloud0,
     _p1DefenseDice,
-    _p1DefenseDice_GasCloud,
+    _Unused_GasCloud1,
     _p2DefenseDice,
-    _p2DefenseDice_GasCloud,
+    _Unused_GasCloud2,
     _p3DefenseDice,
-    _p3DefenseDice_GasCloud,
+    _Unused_GasCloud3,
     _m1DefenseDice,
-    _m1DefenseDice_GasCloud,
+    _Unused_GasCloud4,
     _m2DefenseDice,
-    _m2DefenseDice_GasCloud,
+    _Unused_GasCloud5,
     _m3DefenseDice,
-    _m3DefenseDice_GasCloud,
+    _Unused_GasCloud6,
     Count
 };
 
@@ -121,41 +122,22 @@ private AttackForm apply_defender_modification(ref const(AttackForm) attack_form
     switch (defender_modification)
     {
         case DefenderModificationPreset._p1DefenseDice:
-        case DefenderModificationPreset._p1DefenseDice_GasCloud:
             attack_form.defense_dice_diff = 1;
             break;
         case DefenderModificationPreset._p2DefenseDice:
-        case DefenderModificationPreset._p2DefenseDice_GasCloud:
             attack_form.defense_dice_diff = 2;
             break;
         case DefenderModificationPreset._p3DefenseDice:
-        case DefenderModificationPreset._p3DefenseDice_GasCloud:
             attack_form.defense_dice_diff = 3;
             break;
         case DefenderModificationPreset._m1DefenseDice:
-        case DefenderModificationPreset._m1DefenseDice_GasCloud:
             attack_form.defense_dice_diff = 1;
             break;
         case DefenderModificationPreset._m2DefenseDice:
-        case DefenderModificationPreset._m2DefenseDice_GasCloud:
             attack_form.defense_dice_diff = 2;
             break;
         case DefenderModificationPreset._m3DefenseDice:
-        case DefenderModificationPreset._m3DefenseDice_GasCloud:
             attack_form.defense_dice_diff = 3;
-            break;
-        default: break;
-    }
-    switch (defender_modification)
-    {
-        case DefenderModificationPreset._GasCloud:
-        case DefenderModificationPreset._p1DefenseDice_GasCloud:
-        case DefenderModificationPreset._p2DefenseDice_GasCloud:
-        case DefenderModificationPreset._p3DefenseDice_GasCloud:
-        case DefenderModificationPreset._m1DefenseDice_GasCloud:
-        case DefenderModificationPreset._m2DefenseDice_GasCloud:
-        case DefenderModificationPreset._m3DefenseDice_GasCloud:
-            attack_form.gas_cloud_blank_to_evade = true;
             break;
         default: break;
     }

@@ -45,6 +45,7 @@
                     - select_control_option_t!("pilot", form_name)("Finn (add blank)",          DefensePilot.FinnPod_Blank);
                     - select_control_option_t!("pilot", form_name)("Finn (add focus)",          DefensePilot.FinnPod_Focus);
                     - select_control_option_t!("pilot", form_name)("Han Solo (Rebel)",          DefensePilot.HanSoloRebel);
+                    - select_control_option_t!("pilot", form_name)("Jango Fett",                DefensePilot.JangoFett);
                     - select_control_option_t!("pilot", form_name)("Laetin A'shera",            DefensePilot.LaetinAshera);
                     - select_control_option_t!("pilot", form_name)("Lando Calrissian (Scum)",   DefensePilot.LandoCalrissianScum);
                     - select_control_option_t!("pilot", form_name)("Leebo",                     DefensePilot.Leebo);

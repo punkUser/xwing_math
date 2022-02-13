@@ -26,12 +26,14 @@ public class SimulationSetup
         int hit_to_crit_count = 0;
         int blank_to_focus_count = 0;
 
+        // Change defense dice
         int defense_dice_diff = 0;
+        int defense_evade_to_focus_count = 0;
+        int defense_focus_to_blank_count = 0;
 
         bool heroic = false;
         bool fire_control_system = false;
         bool advanced_targeting_computer = false;
-        bool juke = false;        
         bool heavy_laser_cannon = false;
         bool ion_weapon = false;
         bool saturation_salvo = false;
@@ -49,7 +51,7 @@ public class SimulationSetup
         bool ezra_pilot = false;
         bool scum_lando_pilot = false;
         bool rebel_han_pilot = false;
-        bool rey_pilot = false;
+        bool force_blank_to_hit_pilot = false;
     };
     public Attack attack;
 
@@ -74,6 +76,11 @@ public class SimulationSetup
         int blank_to_evade_count = 0;
         int any_to_evade_count = 0;
 
+        // Change attack dice
+        int attack_crit_to_hit_count = 0;
+        int attack_hit_to_focus_count = 0;
+        int attack_focus_to_blank_count = 0;
+
         bool c3p0 = false;              // Guess 1 unconditionally if calculate available
         bool selfless = false;
         bool biggs = false;
@@ -81,7 +88,6 @@ public class SimulationSetup
         bool rebel_millennium_falcon = false;    // 1 reroll if evading
         bool heroic = false;
         bool brilliant_evasion = false;
-        bool plated_hull = false;       // 1 crit -> hit on attack dice
         bool hate = false;
 
         bool zeb_pilot = false;
@@ -93,7 +99,7 @@ public class SimulationSetup
         bool ezra_pilot = false;
         bool scum_lando_pilot = false;
         bool rebel_han_pilot = false;
-        bool rey_pilot = false;
+        bool force_blank_to_evade_pilot = false;
     };
     public Defense defense;
 };
@@ -104,7 +110,6 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
 {
     SimulationSetup setup = new SimulationSetup;
 
-    // Grab the relevant form values for this attacker
     setup.attack.dice                         = attack.dice;
     setup.attack.roll_all_hits                = attack.roll_all_hits;
 
@@ -129,13 +134,17 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.attack.any_to_hit_count            += attack.fearless ? 1 : 0;
     setup.attack.blank_to_focus_count        += attack.pilot == AttackPilot.Broadside ? 1 : 0;
 
+    setup.attack.defense_dice_diff            = attack.defense_dice_diff;
+    setup.attack.defense_evade_to_focus_count+= attack.juke ? 1 : 0;
+    setup.attack.defense_focus_to_blank_count+= attack.pilot == AttackPilot.JangoFett ? 1 : 0;
+
     setup.attack.leebo_pilot                  = attack.pilot == AttackPilot.Leebo;
     setup.attack.shara_bey_pilot              = attack.pilot == AttackPilot.SharaBey;
     setup.attack.major_vermeil_pilot          = attack.pilot == AttackPilot.MajorVermeil;
     setup.attack.ezra_pilot                   = attack.pilot == AttackPilot.EzraBridger;
     setup.attack.scum_lando_pilot             = attack.pilot == AttackPilot.LandoCalrissianScum;
     setup.attack.rebel_han_pilot              = attack.pilot == AttackPilot.HanSoloRebel;
-    setup.attack.rey_pilot                    = attack.pilot == AttackPilot.Rey;
+    setup.attack.force_blank_to_hit_pilot     = attack.pilot == AttackPilot.Rey || attack.pilot == AttackPilot.VaderD;
 
     setup.attack.saturation_salvo             = attack.saturation_salvo;
 
@@ -145,20 +154,12 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
 
     setup.attack.fire_control_system          = attack.fire_control_system;
     setup.attack.heroic                       = attack.heroic;
-    setup.attack.juke                         = attack.juke;
     setup.attack.heavy_laser_cannon           = attack.heavy_laser_cannon;
     setup.attack.ion_weapon                   = attack.ion_weapon;
     setup.attack.advanced_targeting_computer  = attack.ship == AttackShip.AdvancedTargetingComputer;
     setup.attack.advanced_optics              = attack.advanced_optics;
     setup.attack.predictive_shot              = attack.predictive_shot;
     setup.attack.plasma_torpedoes             = attack.plasma_torpedoes;
-
-    // ****************************************************************************************************************
-    // Per attack defense mods
-
-    // TODO: Revisit just adding this to defense directly
-    setup.attack.defense_dice_diff            = attack.defense_dice_diff;
-    setup.defense.blank_to_evade_count       += attack.gas_cloud_blank_to_evade;
 
     // ****************************************************************************************************************
 
@@ -179,6 +180,9 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.defense.any_to_evade_count         += defense.ship  == DefenseShip.ConcordiaFaceoff ? 1 : 0;
     setup.defense.focus_to_evade_count       += defense.ship  == DefenseShip.NetworkedCalculations ? 1 : 0;
 
+    setup.defense.attack_crit_to_hit_count   += (defense.ship == DefenseShip.PlatedHull);
+    setup.defense.attack_focus_to_blank_count+= defense.pilot == DefensePilot.JangoFett ? 1 : 0;
+
     setup.defense.leebo_pilot                 = defense.pilot == DefensePilot.Leebo;    
     setup.defense.luke_pilot                  = defense.pilot == DefensePilot.LukeSkywalker;
     setup.defense.shara_bey_pilot             = defense.pilot == DefensePilot.SharaBey;
@@ -188,7 +192,7 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.defense.ezra_pilot                  = defense.pilot == DefensePilot.EzraBridger;
     setup.defense.scum_lando_pilot            = defense.pilot == DefensePilot.LandoCalrissianScum;
     setup.defense.rebel_han_pilot             = defense.pilot == DefensePilot.HanSoloRebel;
-    setup.defense.rey_pilot                   = defense.pilot == DefensePilot.Rey;
+    setup.defense.force_blank_to_evade_pilot  = defense.pilot == DefensePilot.Rey;
 
     setup.defense.c3p0                        = defense.c3p0;
     setup.defense.biggs                       = defense.biggs;
@@ -198,7 +202,6 @@ public SimulationSetup to_simulation_setup(ref const(AttackForm) attack, ref con
     setup.defense.heroic                      = defense.heroic;
     setup.defense.brilliant_evasion           = defense.brilliant_evasion;
     setup.defense.hate                        = defense.hate;
-    setup.defense.plated_hull                 = (defense.ship == DefenseShip.PlatedHull);
 
     return setup;
 }

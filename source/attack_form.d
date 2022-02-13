@@ -51,7 +51,7 @@ align(1) struct AttackForm
         bool,  "previous_tokens_enabled",        1,
         bool,  "plasma_torpedoes",               1,
         bool,  "saw_gerrera_crew",               1,
-        bool,  "gas_cloud_blank_to_evade",       1,
+        bool,  "_depreciated_gas_cloud",         1, // NOTE: No longer exposed. Will eventually remove/reuse for something else
         ubyte, "",                               2,
         ));
 

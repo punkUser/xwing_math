@@ -454,8 +454,8 @@ private SearchDelegate do_defense_finish_amdd()
     {
         assert(!state.defense_temp.finished_amdd);
         
-        if (setup.attack.juke && state.attack_tokens.evade > 0)
-            state.defense_dice.change_dice(DieResult.Evade, DieResult.Focus, 1);
+        state.defense_dice.change_dice(DieResult.Evade, DieResult.Focus, setup.attack.defense_evade_to_focus_count);
+        state.defense_dice.change_dice(DieResult.Focus, DieResult.Blank, setup.attack.defense_focus_to_blank_count);
 
         state.defense_temp.finished_amdd = true;
         return StateForkNone();
@@ -515,7 +515,7 @@ private SearchDelegate do_defense_finish_dmdd(int evades_target)
         int needed_evades = max(0, evades_target - state.defense_dice.count(DieResult.Evade));
         if (needed_evades <= 0) return StateForkNone();
 
-        if (setup.defense.rey_pilot && state.defense_tokens.force > 0)
+        if (setup.defense.force_blank_to_evade_pilot && state.defense_tokens.force > 0)
         {
             if (state.defense_dice.change_dice(DieResult.Blank, DieResult.Evade, 1) > 0)
             {

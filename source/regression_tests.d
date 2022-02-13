@@ -51,10 +51,11 @@ private static immutable Test[] k_regression_test_cases = [
     { "3 hits vs 2f+Finn+Heroic",  "d=ggAAAAoAIAAA&a1=MQAAAAACAAAA",                   0.574218750000000 },
     { "+/- defense dice",          "d=giAACAAAAAAA&a1=MQgAAAAgAAAA&a2=MQgAAAAAAAAA&a3=MQgAAADAAQAA&a4=MQgAAACgAQAA",
                                                                                        4.655666604837959 },
+    //{ "Slow",                      "d=gwAAAAcAAAAA&a1=UQgAIEUZAv4T",                   4.114107190165669 },
 ];
 
 // State set is cleared - merely passed in to reuse memory
-private SimulationResults run_test(string form_string)
+public SimulationResults run_test(string form_string)
 {
     // Super simple form string parsing... good enough for our purposes here
     // TODO: See if it's worth getting rid of the GC here eventually.
@@ -100,9 +101,6 @@ private SimulationResults run_test(string form_string)
 // NOTE: These aren't really unit tests, but we're piggy-backing off of the convenience of "dub test" for now.
 unittest
 {
-    SimulationState initial_state = SimulationState.init;
-    initial_state.probability      = 1.0;
-
     foreach (ref test; k_regression_test_cases)
     {
         auto sw = StopWatch(AutoStart.yes);
