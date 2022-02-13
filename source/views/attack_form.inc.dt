@@ -61,6 +61,7 @@
                         - select_control_option_t!("pilot", form_name)("(Reroll up to 2 dice)",    AttackPilot.Reroll_2);
                         - select_control_option_t!("pilot", form_name)("(Reroll up to 3 dice)",    AttackPilot.Reroll_3);
                         - select_control_option_t!("pilot", form_name)("Broadside",                AttackPilot.Broadside);
+                        - select_control_option_t!("pilot", form_name)("Dather Vader (Defender)",  AttackPilot.VaderD);
                         - select_control_option_t!("pilot", form_name)("Ezra Bridger",             AttackPilot.EzraBridger);
                         - select_control_option_t!("pilot", form_name)("Finn (add blank)",         AttackPilot.FinnPod_Blank);
                         - select_control_option_t!("pilot", form_name)("Finn (add focus)",         AttackPilot.FinnPod_Focus);
@@ -73,7 +74,6 @@
                         - select_control_option_t!("pilot", form_name)("Rear Admiral Chiraneau",   AttackPilot.RearAdmiralChiraneau);
                         - select_control_option_t!("pilot", form_name)("Rey",                      AttackPilot.Rey);
                         - select_control_option_t!("pilot", form_name)("Shara Bey",                AttackPilot.SharaBey);
-                        - select_control_option_t!("pilot", form_name)("Vader (Defender)",         AttackPilot.VaderD);
                     select(name="ship")
                         - select_control_option_t!("ship", form_name)("No Ship Ability or Config",      AttackShip.None);
                         - select_control_option_t!("ship", form_name)("Advanced Targeting Computer",    AttackShip.AdvancedTargetingComputer);
